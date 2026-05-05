@@ -1,18 +1,19 @@
 {
-  "name": "design-docs",
-  "description": "Industry-grade documentation discipline for AI-driven engineering. Typed doc taxonomy (Feature LLD, Bug Report, ADR, Postmortem, Runbook, Design Doc), enforced gates (4-gate spec review + Refs: commit gate + bug iteration loop), mandatory mermaid diagrams, and AGENTS.md / llms.txt sync. Use whenever a feature, bug, decision, incident, runbook, or component architecture needs documentation before code.",
+  "name": "orchestra",
+  "description": "Disciplined AI engineering toolkit — typed design docs, enforced gates, agent orchestration patterns. Use when a feature, bug, architectural decision, incident, runbook, or component architecture needs documentation before code. Currently ships the design-docs skill (Feature LLD / Bug Report / ADR / Postmortem / Runbook / Design Doc / AGENTS.md / llms.txt) with 4-gate spec review and Refs:-line commit gate. Future skills: workflow, skills-registry, task-tracking.",
   "version": "1.0.0",
   "author": {
     "name": "Hassan Mohiddin",
     "email": "hassangameryt15@gmail.com"
   },
-  "homepage": "https://github.com/mohammedhassanmohiddin/design-docs-claude",
+  "homepage": "https://github.com/mohammedhassanmohiddin/orchestra",
   "repository": {
     "type": "git",
-    "url": "https://github.com/mohammedhassanmohiddin/design-docs-claude"
+    "url": "https://github.com/mohammedhassanmohiddin/orchestra"
   },
   "license": "MIT",
   "keywords": [
+    "agent-orchestration",
     "documentation",
     "design-docs",
     "adr",
@@ -25,7 +26,8 @@
     "llms-txt",
     "mermaid",
     "spec-driven-development",
-    "doc-driven-development"
+    "doc-driven-development",
+    "claude-code"
   ],
   "config": {
     "mode": "solo",
@@ -39,7 +41,7 @@
       "runbooks": "docs/runbooks",
       "plans": "docs/plans"
     },
-    "comment_doc_paths": "Override any path to point at your repo layout. Defaults match the canonical SCALE / industry layout.",
+    "comment_doc_paths": "Override any path to point at your repo layout. Defaults match the canonical industry layout.",
     "spec_review_skill": "superpowers:requesting-code-review",
     "comment_spec_review_skill": "Skill name to invoke for Step 4.5 spec review. Set to null to skip. Default points at the superpowers plugin's review skill — change to your project's review skill if different."
   }

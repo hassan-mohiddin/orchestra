@@ -1,9 +1,0 @@
-{
-  "PostToolUse": [
-    {
-      "matcher": "Edit|Write",
-      "command": "python3 -c \"import sys; from pathlib import Path; p = Path(sys.argv[1] if len(sys.argv)>1 else '').name; sys.exit(0)\"",
-      "description": "Stub — replace with project-specific post-write validation if desired"
-    }
-  ]
-}

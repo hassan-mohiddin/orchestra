@@ -1,18 +1,20 @@
 {
-  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "orchestra",
   "description": "Disciplined AI engineering toolkit for Claude Code — typed design docs, enforced gates, agent orchestration patterns.",
   "owner": {
     "name": "Hassan Mohiddin",
-    "url": "https://github.com/hassan-mohiddin"
+    "email": "hassangameryt15@gmail.com"
   },
   "plugins": [
     {
       "name": "orchestra",
       "description": "First skill: design-docs (Feature LLD / Bug Report / ADR / Postmortem / Runbook / Design Doc / AGENTS.md / llms.txt) with 4-gate spec review and Refs:-line commit gate. Future skills: workflow, skills-registry, task-tracking.",
-      "category": "development",
+      "version": "1.0.0",
       "source": "./",
-      "homepage": "https://github.com/hassan-mohiddin/orchestra"
+      "author": {
+        "name": "Hassan Mohiddin",
+        "email": "hassangameryt15@gmail.com"
+      }
     }
   ]
 }

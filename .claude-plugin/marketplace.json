@@ -11,7 +11,10 @@
   "plugins": [
     {
       "name": "orchestra",
-      "source": "./",
+      "source": {
+        "source": "url",
+        "url": "https://github.com/hassan-mohiddin/orchestra.git"
+      },
       "description": "First skill: design-docs (Feature LLD / Bug Report / ADR / Postmortem / Runbook / Design Doc / AGENTS.md / llms.txt) with 4-gate spec review and Refs:-line commit gate. Future skills: workflow, skills-registry, task-tracking.",
       "version": "1.0.0",
       "author": {

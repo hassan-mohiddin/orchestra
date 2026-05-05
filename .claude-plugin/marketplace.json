@@ -1,0 +1,42 @@
+{
+  "name": "orchestra",
+  "owner": {
+    "name": "Hassan Mohiddin",
+    "url": "https://github.com/hassan-mohiddin"
+  },
+  "metadata": {
+    "version": "1.0.0",
+    "description": "Disciplined AI engineering toolkit for Claude Code — typed design docs, enforced gates, agent orchestration patterns."
+  },
+  "plugins": [
+    {
+      "name": "orchestra",
+      "source": ".",
+      "description": "First skill: design-docs (Feature LLD / Bug Report / ADR / Postmortem / Runbook / Design Doc / AGENTS.md / llms.txt) with 4-gate spec review and Refs:-line commit gate. Future skills: workflow, skills-registry, task-tracking.",
+      "version": "1.0.0",
+      "author": {
+        "name": "Hassan Mohiddin",
+        "url": "https://github.com/hassan-mohiddin"
+      },
+      "license": "MIT",
+      "homepage": "https://github.com/hassan-mohiddin/orchestra",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/hassan-mohiddin/orchestra"
+      },
+      "keywords": [
+        "agent-orchestration",
+        "documentation",
+        "design-docs",
+        "adr",
+        "postmortem",
+        "runbook",
+        "agents-md",
+        "llms-txt",
+        "mermaid",
+        "spec-driven-development",
+        "doc-driven-development"
+      ]
+    }
+  ]
+}

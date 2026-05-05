@@ -15,11 +15,11 @@ This skill encodes patterns from Michael Nygard (ADR), Google SRE (postmortems),
 
 ## Plugin config
 
-Read the plugin config from `.claude/settings.local.json` or `.claude/settings.json`:
+Read the Orchestra plugin config from `.claude/settings.local.json` or `.claude/settings.json`:
 
 ```json
 {
-  "design-docs": {
+  "orchestra": {
     "mode": "solo",
     "doc_paths": {
       "features": "docs/features",

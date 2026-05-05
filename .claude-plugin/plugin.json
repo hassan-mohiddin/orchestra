@@ -17,6 +17,7 @@
     "agent-orchestration",
     "doc-driven-development",
     "spec-driven-development",
-    "mermaid"
+    "mermaid",
+    "claude-code"
   ]
 }

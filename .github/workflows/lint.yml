@@ -1,0 +1,46 @@
+name: design-docs lint
+
+on:
+  pull_request:
+    paths:
+      - 'docs/**'
+      - 'cli/**'
+      - '.github/workflows/lint.yml'
+  push:
+    branches:
+      - main
+
+jobs:
+  lint:
+    name: Validate docs + commits
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (full history for range lint)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Lint commits in PR range
+        if: github.event_name == 'pull_request'
+        run: |
+          python -m cli.lint --range origin/${{ github.base_ref }}..HEAD
+
+      - name: Lint last commit on push
+        if: github.event_name == 'push'
+        run: |
+          python -m cli.lint --commit HEAD
+
+      - name: Validate ADR consistency (decisions-index dry run)
+        run: |
+          python -m cli.decisions_index --adr-dir docs/adr/ --output /tmp/DECISIONS.md
+          # Fail if there are consistency warnings
+          if grep -q "⚠ Consistency Warnings" /tmp/DECISIONS.md; then
+            echo "::error::ADR supersession links are inconsistent"
+            cat /tmp/DECISIONS.md
+            exit 1
+          fi

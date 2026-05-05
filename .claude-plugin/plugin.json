@@ -1,0 +1,46 @@
+{
+  "name": "design-docs",
+  "description": "Industry-grade documentation discipline for AI-driven engineering. Typed doc taxonomy (Feature LLD, Bug Report, ADR, Postmortem, Runbook, Design Doc), enforced gates (4-gate spec review + Refs: commit gate + bug iteration loop), mandatory mermaid diagrams, and AGENTS.md / llms.txt sync. Use whenever a feature, bug, decision, incident, runbook, or component architecture needs documentation before code.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Hassan Mohiddin",
+    "email": "hassangameryt15@gmail.com"
+  },
+  "homepage": "https://github.com/mohammedhassanmohiddin/design-docs-claude",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mohammedhassanmohiddin/design-docs-claude"
+  },
+  "license": "MIT",
+  "keywords": [
+    "documentation",
+    "design-docs",
+    "adr",
+    "architecture-decision-records",
+    "feature-lld",
+    "bug-report",
+    "postmortem",
+    "runbook",
+    "agents-md",
+    "llms-txt",
+    "mermaid",
+    "spec-driven-development",
+    "doc-driven-development"
+  ],
+  "config": {
+    "mode": "solo",
+    "comment_mode": "Either 'solo' (skip RFC vocab, no review-committee phase) or 'team' (enable RFC vocab + reviewer assignment, recommended at 2+ senior engineers per industry canon).",
+    "doc_paths": {
+      "features": "docs/features",
+      "bugs": "docs/bugs",
+      "adr": "docs/adr",
+      "design": "docs/design",
+      "postmortems": "docs/postmortems",
+      "runbooks": "docs/runbooks",
+      "plans": "docs/plans"
+    },
+    "comment_doc_paths": "Override any path to point at your repo layout. Defaults match the canonical SCALE / industry layout.",
+    "spec_review_skill": "superpowers:requesting-code-review",
+    "comment_spec_review_skill": "Skill name to invoke for Step 4.5 spec review. Set to null to skip. Default points at the superpowers plugin's review skill — change to your project's review skill if different."
+  }
+}

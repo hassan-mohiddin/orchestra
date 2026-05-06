@@ -77,8 +77,13 @@ def test_team_to_solo_idempotent(tmp_repo: Path) -> None:
 
 def test_dry_run_no_writes(tmp_repo: Path) -> None:
     _seed_config(tmp_repo, mode="solo")
+    _write_adr(tmp_repo, 1, with_okr=False)
+    _write_adr(tmp_repo, 2, with_okr=False)
     result = migrate_solo_to_team(tmp_repo, dry_run=True)
     assert not result.no_op
+    assert result.new_mode == "team"
+    # ADR scan still runs even in dry mode
+    assert len(result.adrs_needing_backfill) == 2
     cfg = json.loads((tmp_repo / ".claude" / "orchestra.json").read_text())
     # Mode unchanged because dry_run
     assert cfg["orchestra"]["mode"] == "solo"
@@ -88,4 +93,14 @@ def test_migrate_with_no_config(tmp_repo: Path) -> None:
     # No orchestra.json — config invalid
     result = migrate_solo_to_team(tmp_repo)
     assert result.no_op
-    assert "errors" in result.message or "config" in result.message.lower()
+    assert result.new_mode is None
+    # File never created/modified
+    assert not (tmp_repo / ".claude" / "orchestra.json").exists()
+
+
+def test_scan_rejects_traversal_path(tmp_repo: Path) -> None:
+    """adr_dir_rel must reject absolute paths and `..` traversal."""
+    from cli.migrate import _scan_adrs_for_okr
+    assert _scan_adrs_for_okr(tmp_repo, "/etc") == []
+    assert _scan_adrs_for_okr(tmp_repo, "../../etc") == []
+    assert _scan_adrs_for_okr(tmp_repo, "docs/../../../etc") == []

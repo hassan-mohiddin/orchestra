@@ -18,7 +18,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from cli.config import load_config
-from cli.init import write_v11_config
 
 
 @dataclass
@@ -40,8 +39,15 @@ def _atomic_write_config(root: Path, config: dict) -> Path:
 
 
 def _scan_adrs_for_okr(root: Path, adr_dir_rel: str) -> list[Path]:
-    """Return ADRs whose metadata block lacks an OKR Alignment field."""
-    adr_dir = root / adr_dir_rel
+    """Return ADRs whose metadata block lacks an OKR Alignment field.
+
+    Validates adr_dir_rel: must be relative + no path-traversal. Returns []
+    if config supplied an unsafe path (lint will surface this separately).
+    """
+    rel = Path(adr_dir_rel)
+    if rel.is_absolute() or ".." in rel.parts:
+        return []
+    adr_dir = root / rel
     if not adr_dir.exists():
         return []
     missing: list[Path] = []

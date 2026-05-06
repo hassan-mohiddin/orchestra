@@ -1,0 +1,65 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "orchestra"
+version = "1.1.0.dev0"
+description = "Disciplined AI engineering toolkit for Claude Code. Typed design docs, 4-gate spec review, mandatory mermaid diagrams, AGENTS.md / llms.txt sync."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+authors = [
+    { name = "Hassan Mohiddin", email = "hassangameryt15@gmail.com" },
+]
+keywords = [
+    "design-docs",
+    "adr",
+    "postmortem",
+    "runbook",
+    "agent-orchestration",
+    "doc-driven-development",
+    "spec-driven-development",
+    "mermaid",
+    "claude-code",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Software Development :: Documentation",
+]
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/hassan-mohiddin/orchestra"
+Repository = "https://github.com/hassan-mohiddin/orchestra"
+Issues = "https://github.com/hassan-mohiddin/orchestra/issues"
+
+[tool.setuptools.packages.find]
+include = ["cli*", "eval*"]
+exclude = ["tests*", "examples*", "docs*"]
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "-ra",
+    "--strict-markers",
+    "--strict-config",
+]

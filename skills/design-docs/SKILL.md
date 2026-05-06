@@ -13,9 +13,35 @@ Industry-grade documentation discipline for AI-driven engineering. Produces type
 
 This skill encodes patterns from Michael Nygard (ADR), Google SRE (postmortems), Pragmatic Engineer (RFC vs ADR taxonomy), the AGENTS.md spec (Linux Foundation Agentic AI Foundation), and the llms.txt spec (Jeremy Howard / Answer.AI). The 4-gate spec review pattern is adapted from `rvdbreemen/adr-kit`.
 
-## Plugin config
+## Setup detection (v1.1+)
 
-Read the Orchestra plugin config from `.claude/settings.local.json` or `.claude/settings.json`:
+Before doing anything else, check for `.claude/orchestra.json`. This is the canonical config location per ADR-001.
+
+```
+If .claude/orchestra.json exists:
+  → Read config, proceed with normal skill flow.
+
+If .claude/orchestra.json does NOT exist:
+  → Check for v1.0 config at .claude/settings.local.json (orchestra namespace key).
+    If found: prompt user to migrate (auto-routes to orchestra:design-docs:init).
+    If not found: prompt user to run init.
+
+Auto-prompt (when no config found):
+
+    Orchestra not initialized in this repo. Initialize now?
+    [y] Run init with defaults (recommended)
+    [c] Customize first (mode / paths / doc types / optional add-ons)
+
+  - On [y]: route to orchestra:design-docs:init skill, accept defaults.
+  - On [c]: route to orchestra:design-docs:init skill, full prompt flow.
+  - There is NO skip option. Orchestra is opinionated — use it or uninstall.
+```
+
+This auto-prompt path means a fresh repo install + first design-doc request triggers init automatically.
+
+## Plugin config (when orchestra.json present)
+
+Read the Orchestra plugin config from `.claude/orchestra.json` (primary) or `.claude/orchestra.local.json` (gitignored override):
 
 ```json
 {

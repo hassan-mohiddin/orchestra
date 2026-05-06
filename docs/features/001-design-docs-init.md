@@ -4,7 +4,7 @@
 > **Date:** 2026-05-06
 > **DRI:** Hassan Mohiddin
 > **Type:** Feature LLD
-> **Status:** Draft
+> **Status:** Verified
 
 ## Problem Statement
 
@@ -486,3 +486,4 @@ This LLD lives at `SCALE_APP/orchestra-dev/features/001-design-docs-init.md` (SC
 | 2026-05-06 | Iteration 2 spec review — 4/4 gates pass. 5 minor fixes applied: STANDARDS.md citation precision for deferred doc types (rows 22/24/25); DECISIONS.md gating clarified (always-run, not Bucket 2); fallback warn message reworded ("`npx -y` fetches per-invocation" instead of "install per-repo"); `basic_syntax_check()` signature committed; Python import path note added explaining hyphenated dir + importlib loader. Status: Draft — ready for user approval. |
 | 2026-05-06 | User approved. Reconciliation with `orchestra-dev/design/orchestra-philosophy.md` philosophy doc: dropped "RFC" from formal-vocab whitelist (philosophy suppresses RFC vocabulary across both modes; ADR-only is canonical). Status remains Draft pending commit. |
 | 2026-05-06 | DEVIATION: implementation-plan spec review surfaced two LLD claims that contradicted reality. (1) Eval framework was claimed "existing v1.0 convention" — actually v1.0 had no in-repo eval framework. v1.1 now scaffolds `orchestra/eval/run.py` + scenarios dir as new work. Testing Strategy section corrected. (2) Invariants enforcement: plan invented `cli/invariants.py` as separate module; per LLD/Plan no-overlap pitfall, this design split was not authorized by LLD. Resolution: invariants enforcement folds into `cli/init.py` (single module), no separate invariants file. Plan updated to match. Status remains Draft pending commit. |
+| 2026-05-06 | All 18 tasks implemented (Tasks 0, 0.5, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16). Verification passed: 53 pytest tests green, 5/5 eval scenarios pass. v1.1.0 shipped. Status: Verified. DEVIATION notes: (a) Tasks 3+4+5 implemented as one combined module (cli/init.py) — single commit instead of three. (b) Tasks 10+11+12 committed together (skill files are tightly coupled markdown). (c) cli.init gained CLI entry not originally specified in LLD; necessary for eval scenarios. (d) `_append_gitignore` placement bug fixed mid-impl (function defined after `if __name__` block). Implementation plan changelog has full details. |

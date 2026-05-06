@@ -3,7 +3,7 @@
 > **Doc ID:** ADR-001-orchestra-config-storage
 > **Date:** 2026-05-06
 > **DRI:** Hassan Mohiddin
-> **Status:** Approved
+> **Status:** Implemented
 > **OKR Alignment:** v1.1 ship — orchestra plugin must onboard new users without manual config.
 
 ## Context
@@ -85,3 +85,4 @@ Lint validates against primary; warns when override diverges materially (e.g., d
 |---|---|
 | 2026-05-06 | Initial draft — Status: Draft. |
 | 2026-05-06 | Approved alongside LLD-001. Status → Approved. Will transition to Implemented when v1.1 ships. |
+| 2026-05-06 | v1.1 shipped — config schema lives at `orchestra/schema/orchestra.config.v1.1.json`, parser at `orchestra/cli/config.py`, migration code at `orchestra/cli/init.py`. Status → Implemented. |

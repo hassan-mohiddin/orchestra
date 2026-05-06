@@ -384,7 +384,7 @@ ADRs that will record orchestra's foundational architectural decisions. Linked h
 
 | ADR | Decision | Path | Status |
 |---|---|---|---|
-| ADR-001 | Config storage: `.claude/orchestra.json` (committed) over `.claude/settings.local.json` | `orchestra-dev/adr/ADR-001-orchestra-config-storage.md` | Approved 2026-05-06 |
+| ADR-001 | Config storage: `.claude/orchestra.json` (committed) over `.claude/settings.local.json` | `orchestra-dev/adr/ADR-001-orchestra-config-storage.md` | Implemented 2026-05-06 |
 | ADR-002 | Module layout: flat `cli/<module>` (no `orchestra/` Python package) | TBD | TBD if v1.1 implementation surfaces ambiguity |
 | ADR-003 | Mermaid lint reuses existing `extract_mermaid.py` (no duplication) | TBD | Optional — covered in LLD-001 |
 | ADR-004 | Plugin manifest spec (`orchestra.json` for plugin authors) | TBD | v1.5 work |
@@ -400,3 +400,4 @@ This list grows as orchestra evolves. Each ADR records a forcing decision that f
 |---|---|
 | 2026-05-06 | Initial Design Doc — Status: Current. Synthesizes 2026-05-06 brainstorm session (Q1–Q7) + LLD-001 positioning decisions. Mirrored to `orchestra/docs/design/orchestra-philosophy.md`. |
 | 2026-05-06 | Sync after ADR-001 approved + roadmap doc landed: gantt durations updated for v1.5 (30d → 42d, 6 weeks per roadmap) and v2.0 (45d → 63d, 9 weeks per roadmap). Key Decisions row for ADR-001 marked Approved 2026-05-06. Status remains Current. |
+| 2026-05-06 | v1.1 shipped (LLD-001 → Verified). 53 pytest tests + 5/5 eval scenarios green. Plugin version bumped 1.0.0 → 1.1.0. ADR-001 row updated: Approved → Implemented. Status remains Current. |

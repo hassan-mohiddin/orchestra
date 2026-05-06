@@ -146,3 +146,73 @@ def test_render_doc_timeout(tmp_path: Path) -> None:
 
     assert not result.ok
     assert any("timeout" in err.lower() for _, err in result.failed)
+
+
+# ---------------- v1.3 install-mkdocs / build / publish ----------------
+
+from cli.viewer import (
+    GITIGNORE_SITE_ENTRY,
+    InstallResult,
+    _mkdocs_available,
+    build_site,
+    install_mkdocs,
+    publish_gh_pages,
+)
+
+
+def test_install_mkdocs_fresh_repo(tmp_repo: Path) -> None:
+    result = install_mkdocs(tmp_repo)
+    assert result.ok
+    assert len(result.files_written) == 4
+    assert (tmp_repo / "mkdocs.yml").exists()
+    assert (tmp_repo / "docs" / "index.md").exists()
+    assert (tmp_repo / "requirements-docs.txt").exists()
+    assert (tmp_repo / "mkdocs_hooks.py").exists()
+    assert GITIGNORE_SITE_ENTRY in (tmp_repo / ".gitignore").read_text()
+
+
+def test_install_mkdocs_idempotent(tmp_repo: Path) -> None:
+    install_mkdocs(tmp_repo)
+    second = install_mkdocs(tmp_repo)
+    assert second.ok
+    assert len(second.files_written) == 0
+    assert len(second.files_skipped) == 4
+
+
+def test_install_mkdocs_force_overwrites(tmp_repo: Path) -> None:
+    install_mkdocs(tmp_repo)
+    (tmp_repo / "mkdocs.yml").write_text("# user-edited content\n")
+    result = install_mkdocs(tmp_repo, force=True)
+    assert result.ok
+    assert len(result.files_written) == 4
+    assert "site_name" in (tmp_repo / "mkdocs.yml").read_text()
+
+
+def test_mkdocs_available_true_when_on_path() -> None:
+    with patch("cli.viewer.shutil.which", return_value="/usr/bin/mkdocs"):
+        assert _mkdocs_available() is True
+
+
+def test_mkdocs_available_false_when_absent() -> None:
+    with patch("cli.viewer.shutil.which", return_value=None):
+        assert _mkdocs_available() is False
+
+
+def test_build_site_errors_when_mkdocs_absent(tmp_repo: Path) -> None:
+    with patch("cli.viewer.shutil.which", return_value=None):
+        with pytest.raises(ViewerError):
+            build_site(tmp_repo)
+
+
+def test_publish_gh_pages_refuses_dirty_tree(tmp_repo: Path) -> None:
+    fake_status = MagicMock(stdout=" M somefile.md\n", returncode=0)
+    with patch("cli.viewer.shutil.which", return_value="/usr/bin/mkdocs"), \
+         patch("cli.viewer.subprocess.run", return_value=fake_status):
+        with pytest.raises(ViewerError):
+            publish_gh_pages(tmp_repo)
+
+
+def test_publish_gh_pages_errors_when_mkdocs_absent(tmp_repo: Path) -> None:
+    with patch("cli.viewer.shutil.which", return_value=None):
+        with pytest.raises(ViewerError):
+            publish_gh_pages(tmp_repo)

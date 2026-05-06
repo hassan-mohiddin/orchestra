@@ -250,13 +250,13 @@ gantt
     v1.3 — Orchestra-flavored doc browser   :v13, after v12, 21d
 
     section v1.5 (positioning shift)
-    Plugin scan + registry generation       :v15, after v13, 30d
-    Plugin manifest spec for authors        :v15b, after v13, 30d
-    Conflict resolution UX                  :v15c, after v13, 30d
+    Plugin scan + registry generation       :v15, after v13, 42d
+    Plugin manifest spec for authors        :v15b, after v13, 42d
+    Conflict resolution UX                  :v15c, after v13, 42d
 
     section v2.0 (relaunch)
-    orchestra:workflow skill                :v20, after v15, 45d
-    README rewrite + relaunch               :v20b, after v15, 45d
+    orchestra:workflow skill                :v20, after v15, 63d
+    README rewrite + relaunch               :v20b, after v15, 63d
 ```
 
 **Strategic positioning by version:**
@@ -384,7 +384,7 @@ ADRs that will record orchestra's foundational architectural decisions. Linked h
 
 | ADR | Decision | Path | Status |
 |---|---|---|---|
-| ADR-001 | Config storage: `.claude/orchestra.json` (committed) over `.claude/settings.local.json` | `orchestra-dev/adr/ADR-001-orchestra-config-storage.md` | TBD by Hassan within 1 day of LLD-001 approval |
+| ADR-001 | Config storage: `.claude/orchestra.json` (committed) over `.claude/settings.local.json` | `orchestra-dev/adr/ADR-001-orchestra-config-storage.md` | Approved 2026-05-06 |
 | ADR-002 | Module layout: flat `cli/<module>` (no `orchestra/` Python package) | TBD | TBD if v1.1 implementation surfaces ambiguity |
 | ADR-003 | Mermaid lint reuses existing `extract_mermaid.py` (no duplication) | TBD | Optional — covered in LLD-001 |
 | ADR-004 | Plugin manifest spec (`orchestra.json` for plugin authors) | TBD | v1.5 work |
@@ -399,3 +399,4 @@ This list grows as orchestra evolves. Each ADR records a forcing decision that f
 | Date | Change |
 |---|---|
 | 2026-05-06 | Initial Design Doc — Status: Current. Synthesizes 2026-05-06 brainstorm session (Q1–Q7) + LLD-001 positioning decisions. Mirrored to `orchestra/docs/design/orchestra-philosophy.md`. |
+| 2026-05-06 | Sync after ADR-001 approved + roadmap doc landed: gantt durations updated for v1.5 (30d → 42d, 6 weeks per roadmap) and v2.0 (45d → 63d, 9 weeks per roadmap). Key Decisions row for ADR-001 marked Approved 2026-05-06. Status remains Current. |

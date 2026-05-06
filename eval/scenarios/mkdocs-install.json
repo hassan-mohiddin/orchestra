@@ -1,0 +1,20 @@
+{
+  "name": "mkdocs-install",
+  "description": "install-mkdocs in fresh repo writes 4 files + appends site/ to .gitignore.",
+  "setup": [
+    "git init --quiet --initial-branch=main"
+  ],
+  "exercise": [
+    {
+      "cmd": "OLDPWD=$(pwd) && cd /Users/mohammedhassanmohiddin/Documents/Antigravity/orchestra && /Users/mohammedhassanmohiddin/Documents/Antigravity/SCALE\\ APP/.venv/bin/python -c 'import sys; sys.path.insert(0, \"/Users/mohammedhassanmohiddin/Documents/Antigravity/orchestra\"); from cli.viewer import install_mkdocs; from pathlib import Path; r = install_mkdocs(Path(\"'$OLDPWD'\")); print(\"ok\" if r.ok and len(r.files_written) == 4 else \"fail\")'"
+    }
+  ],
+  "assert": [
+    {"type": "exit_code", "step": 0, "code": 0},
+    {"type": "file_exists", "path": "mkdocs.yml"},
+    {"type": "file_exists", "path": "docs/index.md"},
+    {"type": "file_exists", "path": "requirements-docs.txt"},
+    {"type": "file_exists", "path": "mkdocs_hooks.py"},
+    {"type": "file_contains", "path": ".gitignore", "substring": "site/"}
+  ]
+}

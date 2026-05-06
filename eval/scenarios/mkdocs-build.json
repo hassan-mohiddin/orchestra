@@ -1,0 +1,20 @@
+{
+  "name": "mkdocs-build",
+  "description": "After install-mkdocs, mkdocs.yml is valid YAML and references all expected plugins. Smoke-test only — does NOT invoke mkdocs build (mkdocs not assumed present).",
+  "setup": [
+    "git init --quiet --initial-branch=main",
+    "OLDPWD=$(pwd) && cd /Users/mohammedhassanmohiddin/Documents/Antigravity/orchestra && /Users/mohammedhassanmohiddin/Documents/Antigravity/SCALE\\ APP/.venv/bin/python -c 'import sys; sys.path.insert(0, \"/Users/mohammedhassanmohiddin/Documents/Antigravity/orchestra\"); from cli.viewer import install_mkdocs; from pathlib import Path; install_mkdocs(Path(\"'$OLDPWD'\"))'"
+  ],
+  "exercise": [
+    {
+      "cmd": "grep -q 'mermaid2' mkdocs.yml && grep -q 'tags' mkdocs.yml && grep -q 'mkdocs_hooks.py' mkdocs.yml; echo $?"
+    }
+  ],
+  "assert": [
+    {"type": "exit_code", "step": 0, "code": 0},
+    {"type": "file_contains", "path": "mkdocs.yml", "substring": "site_name: Orchestra Docs"},
+    {"type": "file_contains", "path": "mkdocs.yml", "substring": "mermaid2"},
+    {"type": "file_contains", "path": "mkdocs.yml", "substring": "hooks:"},
+    {"type": "file_contains", "path": "requirements-docs.txt", "substring": "mkdocs-material"}
+  ]
+}

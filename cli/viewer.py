@@ -18,6 +18,14 @@ from pathlib import Path
 
 DEFAULT_OUTPUT_DIR = "docs/.rendered"
 GITIGNORE_RENDERED_ENTRY = "docs/.rendered/"
+GITIGNORE_SITE_ENTRY = "site/"
+
+MKDOCS_INSTALL_FILES = [
+    ("mkdocs.yml", "mkdocs.yml"),
+    ("docs/index.md", "docs-index.md"),
+    ("requirements-docs.txt", "requirements-docs.txt"),
+    ("mkdocs_hooks.py", "mkdocs_hooks.py"),
+]
 
 
 class ViewerError(Exception):
@@ -54,15 +62,31 @@ class RenderResult:
         return not self.failed
 
 
-def _ensure_gitignore_rendered(repo_root: Path) -> bool:
-    """Append docs/.rendered/ to .gitignore if not present. Idempotent."""
+@dataclass
+class InstallResult:
+    files_written: list[Path] = field(default_factory=list)
+    files_skipped: list[Path] = field(default_factory=list)
+    errors: list[str] = field(default_factory=list)
+
+    @property
+    def ok(self) -> bool:
+        return not self.errors
+
+
+def _ensure_gitignore_entry(repo_root: Path, entry: str) -> bool:
+    """Append a path entry to .gitignore if not present. Idempotent."""
     gitignore = repo_root / ".gitignore"
     existing = gitignore.read_text() if gitignore.exists() else ""
-    if GITIGNORE_RENDERED_ENTRY in existing:
+    if entry in existing:
         return False
     sep = "\n" if existing and not existing.endswith("\n") else ""
-    gitignore.write_text(existing + sep + GITIGNORE_RENDERED_ENTRY + "\n")
+    gitignore.write_text(existing + sep + entry + "\n")
     return True
+
+
+def _ensure_gitignore_rendered(repo_root: Path) -> bool:
+    """Append docs/.rendered/ to .gitignore if not present. Idempotent."""
+    return _ensure_gitignore_entry(repo_root, GITIGNORE_RENDERED_ENTRY)
 
 
 def render_doc(doc: Path, output_dir: Path, format: str = "svg",
@@ -102,6 +126,69 @@ def render_doc(doc: Path, output_dir: Path, format: str = "svg",
     return result
 
 
+def install_mkdocs(repo_root: Path, force: bool = False) -> InstallResult:
+    """Write 4 files (mkdocs.yml, docs/index.md, requirements-docs.txt,
+    mkdocs_hooks.py) and append site/ to .gitignore.
+
+    Idempotent: skip-existing default. --force overwrites.
+    """
+    templates_dir = Path(__file__).parent / "templates"
+    result = InstallResult()
+
+    for target_rel, template_name in MKDOCS_INSTALL_FILES:
+        target = repo_root / target_rel
+        template = templates_dir / template_name
+        if not template.exists():
+            result.errors.append(f"template missing: {template}")
+            continue
+        if target.exists() and not force:
+            result.files_skipped.append(target)
+            continue
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(template.read_text())
+        result.files_written.append(target)
+
+    _ensure_gitignore_entry(repo_root, GITIGNORE_SITE_ENTRY)
+
+    return result
+
+
+def _mkdocs_available() -> bool:
+    return shutil.which("mkdocs") is not None
+
+
+def build_site(repo_root: Path, output_dir: Path = Path("site")) -> int:
+    """Wrap `mkdocs build`. Validates mkdocs installed; instructs if not."""
+    if not _mkdocs_available():
+        raise ViewerError(
+            "mkdocs not installed. Run: pip install -r requirements-docs.txt"
+        )
+    return subprocess.call(
+        ["mkdocs", "build", "-d", str(output_dir)],
+        cwd=str(repo_root),
+    )
+
+
+def publish_gh_pages(repo_root: Path) -> int:
+    """Wrap `mkdocs gh-deploy`. Validates clean working tree first."""
+    if not _mkdocs_available():
+        raise ViewerError(
+            "mkdocs not installed. Run: pip install -r requirements-docs.txt"
+        )
+    result = subprocess.run(
+        ["git", "status", "--porcelain"],
+        cwd=str(repo_root),
+        capture_output=True,
+        text=True,
+    )
+    if result.stdout.strip():
+        raise ViewerError("git working tree is dirty. Commit or stash first.")
+    return subprocess.call(
+        ["mkdocs", "gh-deploy", "--force"],
+        cwd=str(repo_root),
+    )
+
+
 def render_all(repo_root: Path, output_dir: Path, format: str = "svg",
                check_npx: bool = True) -> list[RenderResult]:
     """Walk docs/, render every mermaid block found."""
@@ -127,9 +214,39 @@ def main(argv: list[str] | None = None) -> int:
     p_all.add_argument("--format", choices=["png", "svg"], default="svg")
     p_all.add_argument("--output", default=DEFAULT_OUTPUT_DIR)
 
+    p_install = sub.add_parser("install-mkdocs", help="Install mkdocs config + templates")
+    p_install.add_argument("--force", action="store_true",
+                           help="Overwrite existing mkdocs.yml + index.md")
+
+    p_build = sub.add_parser("build", help="Build static doc site via mkdocs")
+    p_build.add_argument("--output", default="site")
+
+    p_publish = sub.add_parser("publish-gh-pages",
+                               help="Publish doc site to gh-pages branch")
+
     args = parser.parse_args(argv)
 
     repo_root = Path.cwd()
+
+    try:
+        if args.cmd == "install-mkdocs":
+            result = install_mkdocs(repo_root, force=args.force)
+            for p in result.files_written:
+                print(f"  + {p.relative_to(repo_root) if p.is_relative_to(repo_root) else p}")
+            for p in result.files_skipped:
+                rel = p.relative_to(repo_root) if p.is_relative_to(repo_root) else p
+                print(f"  = {rel} (exists; use --force to overwrite)")
+            for err in result.errors:
+                print(f"  ! {err}", file=sys.stderr)
+            return 0 if result.ok else 1
+        if args.cmd == "build":
+            return build_site(repo_root, output_dir=Path(args.output))
+        if args.cmd == "publish-gh-pages":
+            return publish_gh_pages(repo_root)
+    except ViewerError as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 1
+
     output_dir = Path(args.output)
     if not output_dir.is_absolute():
         output_dir = repo_root / output_dir

@@ -131,7 +131,7 @@ SCALE was previously a development workspace for orchestra (`orchestra-dev/` mir
 
 SCALE commit `ae87e12` (clean break + init applied). Pushed to `hassang371/spendsmart-dashboard`.
 
-## Pending: v1.4 Cleanup Release (7 BUGS Filed)
+## Pending: v1.4 Cleanup Release (8 BUGS Filed)
 
 All filed at `docs/bugs/BUG-NNN-*.md` Status: Investigating. Target fix v1.4.
 
@@ -144,8 +144,11 @@ All filed at `docs/bugs/BUG-NNN-*.md` Status: Investigating. Target fix v1.4.
 | BUG-005 | Medium | mkdocs.yml nav doesn't auto-detect extra docs/ subdirs |
 | BUG-006 | Low | install_hooks doesn't detect pre-commit.com framework |
 | BUG-007 | Medium | mkdocs.yml YAML python-tag breaks strict check-yaml |
+| BUG-008 | Critical | Gate 3 spec review has no enforcement — humans/agents skip it under load |
 
-Each bug ships with mermaid diagram + concrete fix design + regression test plan. Bug list discovered via real-world `/orchestra:init` audit in SCALE on 2026-05-06.
+BUG-001 to BUG-007 discovered via real-world `/orchestra:init` audit in SCALE on 2026-05-06. BUG-008 surfaced META: skipped Gate 3 twice in same session — user caught both — root cause = discipline by markdown not code (same pattern as BUG-001). Each bug ships with mermaid diagram + concrete fix design + regression test plan.
+
+**v1.4 priority order:** BUG-008 first (enforcement infrastructure), then BUG-001 (companion meta-fix), then bugs 002-007 (concrete defects). Bugs 002-007 will themselves benefit from BUG-008's lint-enforced spec review during v1.4 development.
 
 ## Roadmap (`docs/plans/2026-05-06-orchestra-roadmap.md`)
 
@@ -206,3 +209,4 @@ A fresh session should:
 |---|---|
 | 2026-05-06 | Initial handoff doc. Captures v1.0-v1.3 ship + SCALE decoupling + 7 BUGs filed. Status: Active. |
 | 2026-05-06 | Iteration 1 spec review — 4/4 pass. 1 fix: removed phantom `test_decisions_seeding.py` row from test tree (decisions-seeding tests actually live inside `test_cli_init_bucket2.py`). |
+| 2026-05-06 | Iteration 2 spec review — 4/4 pass. Updated to reflect BUG-008 filing (8 BUGs total, not 7). Added v1.4 priority ordering note. |

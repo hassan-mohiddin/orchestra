@@ -14,8 +14,10 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 
+import json
 import subprocess
 import sys
+from typing import Optional
 
 from cli.config import REQUIRED_DOC_PATHS
 
@@ -224,6 +226,82 @@ def validate_custom_type(ct: dict) -> None:
         raise InvariantViolation(
             f"Custom type {ct.get('name')!r} path {path!r} invalid (no traversal)."
         )
+
+
+# ---------------------------------------------------------------------------
+# v1.0 -> v1.1 migration
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class V10Config:
+    mode: str = "solo"
+    doc_paths: dict = field(default_factory=dict)
+    spec_review_skill: Optional[str] = None
+
+
+def detect_v10_config(root: Path) -> Optional[V10Config]:
+    """Check .claude/settings.local.json for v1.0 orchestra config block.
+
+    Returns V10Config if found, None otherwise.
+    """
+    settings = root / ".claude" / "settings.local.json"
+    if not settings.exists():
+        return None
+    try:
+        data = json.loads(settings.read_text())
+    except json.JSONDecodeError:
+        return None
+    orchestra = data.get("orchestra")
+    if not isinstance(orchestra, dict):
+        return None
+    return V10Config(
+        mode=orchestra.get("mode", "solo"),
+        doc_paths=orchestra.get("doc_paths", {}),
+        spec_review_skill=orchestra.get("spec_review_skill"),
+    )
+
+
+def migrate_v10_to_v11(v10: V10Config) -> dict:
+    """Generate v1.1 config dict from v1.0 fields, filling v1.1-only defaults."""
+    default_paths = {
+        "features": "docs/features",
+        "bugs": "docs/bugs",
+        "adr": "docs/adr",
+        "design": "docs/design",
+        "postmortems": "docs/postmortems",
+        "runbooks": "docs/runbooks",
+        "plans": "docs/plans",
+    }
+    paths = {**default_paths, **(v10.doc_paths or {})}
+
+    return {
+        "version": "1.1",
+        "orchestra": {"mode": v10.mode},
+        "skills": {
+            "design-docs": {
+                "doc_paths": paths,
+                "doc_types": {
+                    "preset": "default-7",
+                    "renames": {},
+                    "custom_types": [],
+                },
+                "spec_review_skill": v10.spec_review_skill,
+                "ci_workflow_installed": False,
+                "agents_md_installed": False,
+                "llms_txt_installed": False,
+            }
+        },
+    }
+
+
+def write_v11_config(root: Path, config: dict) -> Path:
+    """Write config to .claude/orchestra.json. Does not delete v1.0 block."""
+    claude = root / ".claude"
+    claude.mkdir(exist_ok=True)
+    out = claude / "orchestra.json"
+    out.write_text(json.dumps(config, indent=2) + "\n")
+    return out
 
 
 GITIGNORE_ENTRIES = [

@@ -1,5 +1,52 @@
 # Changelog
 
+## v1.1.0 — 2026-05-06
+
+Adds setup infrastructure + skill init flow + mermaid lint integration. v1.0 plugin shipped inert text — v1.1 makes it actually usable in fresh repos.
+
+### New skills
+
+- `orchestra:init` — master init skill (delegates to design-docs:init in v1.1; reserved entry for v1.5+ plugin scan + v2.0 workflow init)
+- `orchestra:design-docs:init` — 3-prompt setup flow (mode / doc-types / optional add-ons)
+- Auto-prompt detection in `orchestra:design-docs` skill — fires `[y]` init / `[c]` customize prompt when `.claude/orchestra.json` is missing
+
+### New CLI
+
+- `python -m cli.init` — programmatic init mirroring skill flow (`--mode`, `--preset`, `--addons`, `--force`)
+- `python -m cli.install_hooks` — installs `.git/hooks/pre-commit` calling `cli.lint --pre-commit`
+- `cli.lint --mermaid` / `--no-mermaid` — mermaid block validation via `npx @mermaid-js/mermaid-cli` (graceful fallback to syntax-only check if npx absent)
+
+### Config
+
+- New canonical config at `.claude/orchestra.json` (committed by default per ADR-001)
+- New override location `.claude/orchestra.local.json` (gitignored)
+- Schema published at `schema/orchestra.config.v1.1.json`
+- v1.0 → v1.1 migration: detects `.claude/settings.local.json` orchestra block, prompts to migrate, preserves v1.0 file (non-destructive)
+
+### Setup scope
+
+- **Bucket 1 (always):** 7 docs/ subdirs + STANDARDS.md + .gitignore append + DECISIONS.md seeding
+- **Bucket 2 (prompted):** `.github/workflows/orchestra-lint.yml`, AGENTS.md, llms.txt
+- Custom doc-types: default-7 / subset-rename (with formal-vocab whitelist) / full-custom (with invariants enforced)
+
+### Eval framework
+
+- New in-repo eval framework at `eval/run.py` (v1.0 had no in-repo evals)
+- 5 scenarios: fresh-init, custom-rename-rejected, rerun-idempotent, mermaid-lint, v10-migration
+
+### Tests
+
+- 39 pytest tests across config, init, standards generator, lint mermaid, install_hooks, migration
+
+### Docs
+
+- README: new "Viewing diagrams" section (Tier 1) — GitHub native, VS Code, JetBrains, mermaid.live, npx mermaid-cli
+
+### Compatibility
+
+- Backward-compatible with v1.0 — existing installs see migration prompt on first design-docs invocation under v1.1
+- `python -m design_docs.lint` invocation remains the same name internally? No — actual module is `cli.lint`. v1.0 docstring drift fixed.
+
 ## v1.0.0 — 2026-05-06
 
 Initial public release. Extracted from SCALE project's internal `design-docs` skill after iteration-1 eval landed at 100% pass on 8 scenarios.

@@ -1,5 +1,46 @@
 # Changelog
 
+## v1.3.0 — 2026-05-06
+
+Adds Tier 3 doc browser via MkDocs Material — orchestra docs become a fully searchable, navigable, GitHub-Pages-publishable site.
+
+### New CLI
+
+- **`python -m cli.viewer install-mkdocs`** — writes 4 files (mkdocs.yml + docs/index.md + requirements-docs.txt + mkdocs_hooks.py) and appends `site/` to .gitignore. Idempotent skip-existing; `--force` overwrites.
+- **`python -m cli.viewer build`** — wraps `mkdocs build`. Validates mkdocs installed.
+- **`python -m cli.viewer publish-gh-pages`** — wraps `mkdocs gh-deploy`. Refuses if working tree dirty.
+
+### MkDocs config (orchestra-flavored)
+
+- Material theme with light/dark toggle
+- mermaid2 plugin (mermaid 10.9.1) for native diagram rendering
+- tags plugin for status-based filtering
+- Navigation pre-grouped by orchestra doc types (Features / Bugs / ADRs / Postmortems / Runbooks / Plans)
+- mkdocs_hooks.py auto-extracts `Status:` from existing metadata blocks → tags (no front-matter retrofit)
+
+### Decision
+
+- **MkDocs over custom Flask/FastAPI server** (resolves roadmap open question). Industry-standard, Material theme polish, GitHub Pages built-in, less code to maintain.
+
+### Tests + eval
+
+- 85 pytest tests (77 v1.2 + 8 v1.3 new)
+- 10/10 eval scenarios pass (8 v1.2 + 2 v1.3: mkdocs-install + mkdocs-build)
+
+### Docs
+
+- README "Viewing diagrams" gets Tier 3 row
+
+### Backward compatibility
+
+- v1.2 `cli.viewer render` / `render-all` unchanged
+- v1.1 hooks + skills unchanged
+- New subcommands extend existing argparse — no breaking changes
+
+### Roadmap reconciliation
+
+- Original v1.3 roadmap row mentioned `cli.viewer serve` (custom server) and DECISIONS.md auto-rebuild on file watch. Both deferred — `mkdocs serve` provides local dev server natively; cross-tool DECISIONS.md watcher requires extra orchestration, deferred to v1.4+.
+
 ## v1.2.0 — 2026-05-06
 
 Adds solo↔team migration CLI, Tier 2 mermaid export, and commit-msg hook for proactive Refs: validation.

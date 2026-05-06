@@ -4,7 +4,7 @@
 > **Date:** 2026-05-06
 > **DRI:** Hassan Mohiddin
 > **Type:** Implementation Plan
-> **Status:** Active
+> **Status:** Implemented
 > **LLD:** `orchestra-dev/features/003-v1.3-doc-browser-mkdocs.md`
 
 ## Header
@@ -62,7 +62,7 @@ orchestra/
 ### Task 3: tests/test_cli_viewer.py extensions
 
 - **Files:** `tests/test_cli_viewer.py` (MODIFIED — append v1.3 tests)
-- **What:** Per LLD-003 § Testing Strategy. Tests written in vertical-slice order: install_mkdocs fresh → idempotent → force → _mkdocs_available true/false → build_site error path → publish_gh_pages dirty-tree refusal.
+- **What:** Per LLD-003 § Testing Strategy. Tests written in vertical-slice order: install_mkdocs fresh → idempotent → force →_mkdocs_available true/false → build_site error path → publish_gh_pages dirty-tree refusal.
 - **Sequencing:** depends on Task 1 + Task 2.
 - **Commit:** `test: cli.viewer mkdocs install / build / publish tests. Refs: docs/features/003-v1.3-doc-browser-mkdocs.md`
 
@@ -146,3 +146,4 @@ Per `.claude/rules/commit-strategy.md`. `<type>` ∈ {feat, fix, refactor, test,
 |---|---|
 | 2026-05-06 | Initial implementation plan drafted alongside LLD-003. Status: Active. |
 | 2026-05-06 | Iteration 1 spec review — 4/4 gates pass. 2 minor fixes applied: (1) pyproject.toml added to File Structure (was modified in Task 6 but missing from tree); (2) Task 3 test enumeration replaced with vertical-slice ordering reference to LLD-003 (was restating design content). Status remains Active. |
+| 2026-05-06 | All 7 tasks implemented. v1.3.0 shipped. 85 pytest + 10/10 eval. Status: Implemented. |

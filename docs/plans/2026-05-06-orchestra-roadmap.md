@@ -181,3 +181,4 @@ Per `.claude/rules/commit-strategy.md`:
 | Date | Change |
 |---|---|
 | 2026-05-06 | Initial roadmap drafted alongside LLD-001 + philosophy Design Doc + ADR-001. Status: Active. |
+| 2026-05-06 | v1.1 shipped 2026-05-06. v1.2 shipped 2026-05-06. v1.3 shipped 2026-05-06. v1.3 DEVIATIONS from original row: (a) `cli.viewer serve` not implemented — `mkdocs serve` provides local dev server natively; (b) DECISIONS.md auto-rebuild on file watch deferred to v1.4+ — cross-tool watcher requires extra orchestration; (c) eval count expanded 1→2 (mkdocs-install + mkdocs-build) for tighter coverage; (d) decision MkDocs (Material) resolves the static-site-generator vs custom-server open question. Status remains Active. |

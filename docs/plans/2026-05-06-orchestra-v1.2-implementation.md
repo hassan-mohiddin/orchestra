@@ -4,7 +4,7 @@
 > **Date:** 2026-05-06
 > **DRI:** Hassan Mohiddin
 > **Type:** Implementation Plan
-> **Status:** Active
+> **Status:** Implemented
 > **LLD:** `orchestra-dev/features/002-v1.2-migration-viewer-commit-msg.md`
 
 ## Header
@@ -157,3 +157,4 @@ Tasks 1, 2, 3 are independent and can be implemented in parallel.
 |---|---|
 | 2026-05-06 | Initial implementation plan drafted alongside LLD-002. Status: Active. |
 | 2026-05-06 | Retroactive 4-gate spec review (initially skipped — Gate 3 violation). Iteration 1: 2/4 gates fail (Completeness — Task 6 structure + Task 1 stale state; Consistency — mild LLD-overlap in Task 1+2 What sections). Fixes applied: (1) Task 1 marked IMPLEMENTED with commit ref; (2) Task 1+2+3 What sections tightened to reference LLD instead of restating; (3) Task 6 gained Sequencing + Tests lines; (4) Task 7 two-commit rationale documented + commit order specified; (5) Timeline updated to reflect Task 1 done; (6) this changelog entry added. Status remains Active. |
+| 2026-05-06 | Iteration 2 spec review: 4/4 gates pass. All 7 tasks implemented. v1.2.0 shipped. Status: Implemented. |

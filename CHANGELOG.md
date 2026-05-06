@@ -1,5 +1,43 @@
 # Changelog
 
+## v1.2.0 — 2026-05-06
+
+Adds solo↔team migration CLI, Tier 2 mermaid export, and commit-msg hook for proactive Refs: validation.
+
+### New CLI
+
+- **`python -m cli.migrate --solo-to-team`** — flips `orchestra.mode` and reports ADRs missing `OKR Alignment` field (lint-mandatory in team mode)
+- **`python -m cli.migrate --team-to-solo`** — reverse migration
+- **`python -m cli.migrate --dry-run`** — preview without writing config
+- **`python -m cli.viewer render <doc>`** — extract mermaid blocks → PNG/SVG in `docs/.rendered/`
+- **`python -m cli.viewer render-all`** — walk `docs/`, render all
+- **`--format png|svg`** + **`--output <dir>`** flags
+- **`python -m cli.install_hooks --commit-msg`** — install commit-msg hook (Refs: at message-author time)
+- **`python -m cli.install_hooks --all`** — install both pre-commit + commit-msg in one call
+
+### New hook
+
+- **commit-msg** — fires when user types commit message. On `fix:`/`feat:` subject without `Refs: docs/...` body line, exit 1 + abort. Complementary to v1.1 pre-commit (file content) hook.
+
+### Atomic writes
+
+- `cli.migrate` writes config via `.tmp` + `os.replace` (POSIX atomic) — no partial corruption on interrupt.
+- Path traversal guards in `_scan_adrs_for_okr` (rejects absolute paths and `..` traversal).
+
+### Tests + eval
+
+- 22 new pytest tests (migrate: 8, viewer: 9, install_hooks v1.2 extension: 7) — total 75 tests across orchestra
+- 3 new eval scenarios: `migrate-solo-to-team`, `mermaid-export`, `commit-msg-hook` — total 8/8 scenarios green
+
+### Docs
+
+- README "Viewing diagrams" gets Tier 2 row for `cli.viewer`
+
+### Compatibility
+
+- Backward-compatible with v1.1
+- `install_hook` v1.1 entry point preserved for callers (now alias for `install_one_hook("pre-commit")`)
+
 ## v1.1.0 — 2026-05-06
 
 Adds setup infrastructure + skill init flow + mermaid lint integration. v1.0 plugin shipped inert text — v1.1 makes it actually usable in fresh repos.

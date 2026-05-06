@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "orchestra"
-version = "1.1.0"
+version = "1.2.0"
 description = "Disciplined AI engineering toolkit for Claude Code. Typed design docs, 4-gate spec review, mandatory mermaid diagrams, AGENTS.md / llms.txt sync."
 readme = "README.md"
 license = { text = "MIT" }

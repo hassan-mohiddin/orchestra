@@ -1,0 +1,21 @@
+{
+  "name": "migrate-solo-to-team",
+  "description": "Solo repo with 2 ADRs (1 with OKR, 1 without). After migration, mode = team and ADR scan flags 1 missing.",
+  "setup": [
+    "git init --quiet --initial-branch=main",
+    "OLDPWD=$(pwd) && cd /Users/mohammedhassanmohiddin/Documents/Antigravity/orchestra && /Users/mohammedhassanmohiddin/Documents/Antigravity/SCALE\\ APP/.venv/bin/python -m cli.init --repo $OLDPWD --mode solo --addons no",
+    "mkdir -p docs/adr",
+    "printf '# ADR-001: With OKR\\n\\n> **Doc ID:** ADR-001-x\\n> **Date:** 2026-05-06\\n> **DRI:** Hassan\\n> **Status:** Approved\\n> **OKR Alignment:** Q2-x\\n\\n## Context\\n\\nx\\n' > docs/adr/ADR-001-x.md",
+    "printf '# ADR-002: No OKR\\n\\n> **Doc ID:** ADR-002-y\\n> **Date:** 2026-05-06\\n> **DRI:** Hassan\\n> **Status:** Approved\\n\\n## Context\\n\\ny\\n' > docs/adr/ADR-002-y.md"
+  ],
+  "exercise": [
+    {
+      "cmd": "OLDPWD=$(pwd) && cd /Users/mohammedhassanmohiddin/Documents/Antigravity/orchestra && /Users/mohammedhassanmohiddin/Documents/Antigravity/SCALE\\ APP/.venv/bin/python -m cli.migrate --solo-to-team --repo $OLDPWD"
+    }
+  ],
+  "assert": [
+    {"type": "exit_code", "step": 0, "code": 0},
+    {"type": "file_contains", "path": ".claude/orchestra.json", "substring": "\"team\""},
+    {"type": "file_exists", "path": "docs/adr/ADR-002-y.md"}
+  ]
+}

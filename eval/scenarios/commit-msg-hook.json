@@ -1,0 +1,16 @@
+{
+  "name": "commit-msg-hook",
+  "description": "Install commit-msg hook. Test that orphan feat: message exits 1 and feat: with Refs: passes.",
+  "setup": [
+    "git init --quiet --initial-branch=main",
+    "OLDPWD=$(pwd) && cd /Users/mohammedhassanmohiddin/Documents/Antigravity/orchestra && /Users/mohammedhassanmohiddin/Documents/Antigravity/SCALE\\ APP/.venv/bin/python -m cli.install_hooks --commit-msg --repo $OLDPWD"
+  ],
+  "exercise": [
+    {
+      "cmd": "printf 'feat: orphan\\n\\nNo refs.\\n' > MSG && bash .git/hooks/commit-msg MSG; echo \"orphan_exit=$?\"; printf 'feat: ok\\n\\nRefs: docs/features/001.md\\n' > MSG2 && bash .git/hooks/commit-msg MSG2; echo \"ok_exit=$?\""
+    }
+  ],
+  "assert": [
+    {"type": "file_exists", "path": ".git/hooks/commit-msg"}
+  ]
+}

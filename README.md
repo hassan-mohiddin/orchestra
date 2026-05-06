@@ -124,6 +124,7 @@ Orchestra docs include mermaid diagrams in markdown code fences. Render them wit
 | **JetBrains IDEs** | Install [Mermaid plugin](https://plugins.jetbrains.com/plugin/20146-mermaid) | Same — preview pane in IntelliJ/PyCharm/etc. |
 | **mermaid.live** | None — paste markdown into [mermaid.live](https://mermaid.live) | Ad-hoc editing, sharing renderable links |
 | **CLI offline** | `npx -y @mermaid-js/mermaid-cli -i doc.md` (no install needed; fetches per-invocation) | Air-gapped environments, batch export to PNG/SVG |
+| **`cli.viewer` (v1.2)** | `python -m cli.viewer render docs/path.md` (or `render-all`) | Orchestra-managed export to `docs/.rendered/`. Auto-appends `docs/.rendered/` to `.gitignore` on first run. `--format png\|svg`, `--output <dir>`. |
 
 Mermaid validation is built into `python -m cli.lint --doc` and `--pre-commit` modes (default-on; opt out via `--no-mermaid`). Lint catches syntax errors at commit time so broken diagrams never land in main.
 

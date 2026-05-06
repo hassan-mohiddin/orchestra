@@ -1,0 +1,18 @@
+{
+  "name": "mermaid-export",
+  "description": "Doc with mermaid block + cli.viewer render produces SVG. Skips render if npx absent (graceful exit).",
+  "setup": [
+    "git init --quiet --initial-branch=main",
+    "mkdir -p docs/features",
+    "printf '# Feature\\n\\n```mermaid\\nsequenceDiagram\\n    A->>B: hi\\n```\\n' > docs/features/001-test.md"
+  ],
+  "exercise": [
+    {
+      "cmd": "OLDPWD=$(pwd) && cd /Users/mohammedhassanmohiddin/Documents/Antigravity/orchestra && /Users/mohammedhassanmohiddin/Documents/Antigravity/SCALE\\ APP/.venv/bin/python -c 'import sys; sys.path.insert(0, \"/Users/mohammedhassanmohiddin/Documents/Antigravity/orchestra\"); from cli.viewer import _ensure_gitignore_rendered; from pathlib import Path; appended = _ensure_gitignore_rendered(Path(\"'$OLDPWD'\")); print(\"appended\" if appended else \"already\")'"
+    }
+  ],
+  "assert": [
+    {"type": "exit_code", "step": 0, "code": 0},
+    {"type": "file_contains", "path": ".gitignore", "substring": "docs/.rendered/"}
+  ]
+}

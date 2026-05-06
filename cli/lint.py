@@ -21,11 +21,35 @@ Exit codes:
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import re
+import shutil
 import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
+
+_warned_no_npx = False
+_extract_mermaid_module = None
+
+
+def _load_extract_mermaid():
+    """Load skills/design-docs/scripts/extract_mermaid.py via importlib path-loading.
+
+    Hyphenated dir + no __init__.py prevents normal import.
+    """
+    global _extract_mermaid_module
+    if _extract_mermaid_module is not None:
+        return _extract_mermaid_module
+    repo_root = Path(__file__).parent.parent
+    em_path = repo_root / "skills" / "design-docs" / "scripts" / "extract_mermaid.py"
+    spec = importlib.util.spec_from_file_location("extract_mermaid", em_path)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"could not load {em_path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    _extract_mermaid_module = module
+    return module
 
 # ---------------------------------------------------------------------------
 # Doc-type lifecycle enums (must match STANDARDS.md)
@@ -171,6 +195,59 @@ def lint_doc(path: Path) -> list[Finding]:
     return findings
 
 
+def lint_mermaid(path: Path) -> list[Finding]:
+    """Validate mermaid blocks in a markdown file.
+
+    Uses npx @mermaid-js/mermaid-cli for full validation if available,
+    falls back to MermaidDiagram.basic_syntax_check() otherwise.
+    """
+    global _warned_no_npx
+    findings: list[Finding] = []
+    if not path.exists():
+        return [Finding("error", str(path), "file does not exist")]
+
+    em = _load_extract_mermaid()
+    diagrams = em.extract_diagrams_from_file(path)
+    if not diagrams:
+        return findings
+
+    npx_available = shutil.which("npx") is not None
+
+    if npx_available:
+        for d in diagrams:
+            try:
+                proc = subprocess.run(
+                    ["npx", "-y", "--quiet", "@mermaid-js/mermaid-cli",
+                     "-i", "/dev/stdin", "-o", "/tmp/orchestra_mermaid_out.svg"],
+                    input=d.content, capture_output=True, text=True, timeout=30,
+                )
+                if proc.returncode != 0:
+                    findings.append(Finding(
+                        "error", f"{path}:{d.line_number}",
+                        f"mermaid parse error: {proc.stderr.strip().splitlines()[-1] if proc.stderr else 'unknown'}"
+                    ))
+            except subprocess.TimeoutExpired:
+                findings.append(Finding(
+                    "error", f"{path}:{d.line_number}",
+                    "mermaid validation timed out (30s)"
+                ))
+    else:
+        if not _warned_no_npx:
+            print("warning: npx not found — mermaid validation degraded. "
+                  "No global install needed; `npx -y @mermaid-js/mermaid-cli` fetches per-invocation.",
+                  file=sys.stderr)
+            _warned_no_npx = True
+        for d in diagrams:
+            errors = d.basic_syntax_check()
+            for err in errors:
+                findings.append(Finding(
+                    "error", f"{path}:{d.line_number}",
+                    f"mermaid syntax: {err}"
+                ))
+
+    return findings
+
+
 # ---------------------------------------------------------------------------
 # Commit validation
 # ---------------------------------------------------------------------------
@@ -269,6 +346,10 @@ def main(argv: list[str] | None = None) -> int:
     g.add_argument("--range", dest="rev_range", help="Lint a commit range, e.g. main..HEAD")
     g.add_argument("--doc", help="Lint a single doc file")
     g.add_argument("--pre-commit", action="store_true", help="Lint staged docs (for pre-commit hook)")
+    parser.add_argument("--mermaid", action="store_true", default=None,
+                        help="Validate mermaid blocks (default: on for --doc and --pre-commit)")
+    parser.add_argument("--no-mermaid", action="store_true",
+                        help="Skip mermaid validation")
     args = parser.parse_args(argv)
 
     try:
@@ -277,14 +358,36 @@ def main(argv: list[str] | None = None) -> int:
         print("error: not inside a git repository", file=sys.stderr)
         return 2
 
+    # Mermaid lint default-on for --doc and --pre-commit; off for --commit / --range
+    if args.no_mermaid:
+        run_mermaid = False
+    elif args.mermaid:
+        run_mermaid = True
+    else:
+        run_mermaid = bool(args.doc or args.pre_commit)
+
     if args.doc:
-        findings = lint_doc(Path(args.doc).resolve())
+        doc_path = Path(args.doc).resolve()
+        findings = lint_doc(doc_path)
+        if run_mermaid:
+            findings.extend(lint_mermaid(doc_path))
     elif args.commit:
         findings = lint_commit(args.commit, root)
     elif args.rev_range:
         findings = lint_commit_range(args.rev_range, root)
     elif args.pre_commit:
         findings = lint_staged(root)
+        if run_mermaid:
+            try:
+                staged = subprocess.check_output(
+                    ["git", "diff", "--cached", "--name-only", "--diff-filter=ACM"],
+                    cwd=root, text=True,
+                ).strip().splitlines()
+                for relpath in staged:
+                    if relpath.endswith(".md"):
+                        findings.extend(lint_mermaid(root / relpath))
+            except subprocess.CalledProcessError:
+                pass
     else:
         parser.print_help()
         return 2

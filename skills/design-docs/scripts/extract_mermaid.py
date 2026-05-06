@@ -55,6 +55,45 @@ class MermaidDiagram:
             return first_line[:max_length] + "..."
         return first_line
 
+    def basic_syntax_check(self) -> List[str]:
+        """Fallback validation when mmdc unavailable.
+
+        Checks: balanced brackets/parens, valid diagram-type declaration on first line.
+        Returns list of error messages (empty if valid).
+        """
+        errors: List[str] = []
+        first_line = self.content.split("\n")[0].strip()
+        valid_types = {
+            "sequenceDiagram", "graph", "flowchart", "classDiagram",
+            "stateDiagram", "stateDiagram-v2", "erDiagram", "journey",
+            "gantt", "pie", "gitGraph", "mindmap", "timeline",
+            "C4Context", "C4Container", "C4Component",
+        }
+        if not any(first_line.startswith(t) for t in valid_types):
+            errors.append(
+                f"diagram does not start with a valid mermaid type "
+                f"(first line: {first_line!r})"
+            )
+
+        # Balanced bracket check
+        for open_c, close_c in [("[", "]"), ("(", ")"), ("{", "}")]:
+            opens = self.content.count(open_c)
+            closes = self.content.count(close_c)
+            if opens != closes:
+                errors.append(
+                    f"unbalanced {open_c}{close_c}: {opens} opens vs {closes} closes"
+                )
+
+        return errors
+
+
+def extract_diagrams_from_file(path: Path) -> List["MermaidDiagram"]:
+    """Module-level helper: extract all mermaid diagrams from a markdown file."""
+    if not path.exists():
+        return []
+    extractor = MermaidExtractor(path)
+    return extractor.diagrams
+
 
 class MermaidExtractor:
     """Extract and process Mermaid diagrams from Markdown files."""

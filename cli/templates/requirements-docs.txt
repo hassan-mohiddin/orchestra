@@ -1,0 +1,8 @@
+# Orchestra v1.3 documentation site dependencies
+# Install: pip install -r requirements-docs.txt
+# Build site: mkdocs build
+# Local dev: mkdocs serve
+
+mkdocs>=1.6.0,<2.0.0
+mkdocs-material>=9.5.0,<10.0.0
+mkdocs-mermaid2-plugin>=1.2.0,<2.0.0

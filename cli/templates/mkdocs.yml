@@ -1,0 +1,66 @@
+site_name: Orchestra Docs
+site_description: Documentation for this orchestra-managed project
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.sections
+    - navigation.expand
+    - navigation.path
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.tabs.link
+    - content.code.copy
+
+plugins:
+  - search
+  - mermaid2:
+      # version key pins mermaid.js library loaded from CDN.
+      # 10.9.1 is latest stable as of 2026-05-06.
+      # Tested with mkdocs-mermaid2-plugin >=1.2.0 + mkdocs-material >=9.5.0.
+      version: 10.9.1
+  - tags
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:mermaid2.fence_mermaid_custom
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables
+  - toc:
+      permalink: true
+  - attr_list
+  - md_in_html
+
+nav:
+  - Home: index.md
+  - Standards: STANDARDS.md
+  - Decisions:
+    - Index: adr/DECISIONS.md
+    - Records: adr/
+  - Features: features/
+  - Bugs: bugs/
+  - Design Docs: design/
+  - Postmortems: postmortems/
+  - Runbooks: runbooks/
+  - Plans: plans/
+
+hooks:
+  - mkdocs_hooks.py

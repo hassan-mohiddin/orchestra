@@ -113,6 +113,20 @@ For every produced doc, the skill walks you through:
 
 ---
 
+## Viewing diagrams
+
+Orchestra docs include mermaid diagrams in markdown code fences. Render them with:
+
+| Tool | Setup | Use case |
+|---|---|---|
+| **GitHub** | None — native render in markdown preview, PRs, issues, README | Reading docs in PR review or browsing repo on github.com |
+| **VS Code** | Install ["Markdown Preview Mermaid Support"](https://marketplace.visualstudio.com/items?itemName=bierner.markdown-mermaid) extension | Local editing + preview side-by-side |
+| **JetBrains IDEs** | Install [Mermaid plugin](https://plugins.jetbrains.com/plugin/20146-mermaid) | Same — preview pane in IntelliJ/PyCharm/etc. |
+| **mermaid.live** | None — paste markdown into [mermaid.live](https://mermaid.live) | Ad-hoc editing, sharing renderable links |
+| **CLI offline** | `npx -y @mermaid-js/mermaid-cli -i doc.md` (no install needed; fetches per-invocation) | Air-gapped environments, batch export to PNG/SVG |
+
+Mermaid validation is built into `python -m cli.lint --doc` and `--pre-commit` modes (default-on; opt out via `--no-mermaid`). Lint catches syntax errors at commit time so broken diagrams never land in main.
+
 ## Configuration
 
 Edit your project's `.claude/settings.local.json` or `.claude/settings.json`:

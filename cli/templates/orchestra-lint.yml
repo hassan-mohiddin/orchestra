@@ -1,0 +1,33 @@
+name: Orchestra Lint
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Set up Node (for mermaid validation)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run orchestra lint on commit range
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            python -m cli.lint --range origin/${{ github.base_ref }}..HEAD
+          else
+            python -m cli.lint --range HEAD~1..HEAD
+          fi

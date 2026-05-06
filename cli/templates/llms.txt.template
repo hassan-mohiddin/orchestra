@@ -1,0 +1,24 @@
+# Project Documentation
+
+> LLM-readable navigation index conformant with the llms.txt spec
+> (Jeremy Howard / Answer.AI — llmstxt.org).
+
+## Standards
+
+- [Documentation Standards](docs/STANDARDS.md): Canonical doc taxonomy, required sections, status lifecycle, naming conventions.
+
+## Decision Records
+
+- [ADR Index](docs/adr/DECISIONS.md): Auto-generated index of all architectural decisions with relationship graph.
+
+## Active Development
+
+- [Feature LLDs](docs/features/): Low-level designs for new features.
+- [Plans](docs/plans/): Implementation plans for in-progress work.
+
+## Reference
+
+- [Design Docs](docs/design/): Living component-level architecture.
+- [Postmortems](docs/postmortems/): Blameless incident reviews.
+- [Runbooks](docs/runbooks/): On-call operational guides.
+- [Bug Reports](docs/bugs/): Investigated defects with iteration logs.

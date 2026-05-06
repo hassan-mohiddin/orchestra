@@ -14,6 +14,9 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 
+import subprocess
+import sys
+
 from cli.config import REQUIRED_DOC_PATHS
 
 GITKEEP = ".gitkeep"
@@ -63,7 +66,76 @@ def scaffold_bucket_1(config: dict, root: Path, force: bool = False) -> Scaffold
         standards_md.write_text(content)
         result.created.append(standards_md)
 
+    # Always-run: seed DECISIONS.md
+    seed_decisions_index(root, result, force)
+
     return result
+
+
+def scaffold_bucket_2(config: dict, root: Path, force: bool = False) -> ScaffoldResult:
+    """Create CI workflow + AGENTS.md + llms.txt."""
+    result = ScaffoldResult()
+    dd = config["skills"]["design-docs"]
+
+    if dd.get("ci_workflow_installed"):
+        ci_path = root / ".github" / "workflows" / "orchestra-lint.yml"
+        ci_path.parent.mkdir(parents=True, exist_ok=True)
+        if ci_path.exists() and not force:
+            result.skipped.append(ci_path)
+        else:
+            ci_path.write_text((TEMPLATES_DIR / "orchestra-lint.yml").read_text())
+            result.created.append(ci_path)
+
+    if dd.get("agents_md_installed"):
+        agents_path = root / "AGENTS.md"
+        if agents_path.exists() and not force:
+            result.skipped.append(agents_path)
+        else:
+            agents_path.write_text((TEMPLATES_DIR / "AGENTS.md.template").read_text())
+            result.created.append(agents_path)
+
+    if dd.get("llms_txt_installed"):
+        llms_path = root / "llms.txt"
+        if llms_path.exists() and not force:
+            result.skipped.append(llms_path)
+        else:
+            llms_path.write_text((TEMPLATES_DIR / "llms.txt.template").read_text())
+            result.created.append(llms_path)
+
+    return result
+
+
+def seed_decisions_index(root: Path, result: ScaffoldResult, force: bool) -> None:
+    """Run cli.decisions_index to seed docs/adr/DECISIONS.md (always-run)."""
+    adr_dir = root / "docs" / "adr"
+    output = adr_dir / "DECISIONS.md"
+
+    if output.exists() and not force:
+        result.skipped.append(output)
+        return
+
+    try:
+        proc = subprocess.run(
+            [sys.executable, "-m", "cli.decisions_index",
+             "--adr-dir", str(adr_dir),
+             "--output", str(output)],
+            capture_output=True, text=True, cwd=str(Path(__file__).parent.parent),
+        )
+        combined = (proc.stdout + proc.stderr).lower()
+        if proc.returncode != 0 and "no adrs found" not in combined:
+            result.errors.append(f"decisions_index failed: {proc.stderr}")
+            return
+    except Exception as e:
+        result.errors.append(f"decisions_index error: {e}")
+        return
+
+    if output.exists():
+        result.created.append(output)
+    else:
+        # No ADRs yet — seed empty index manually
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text("# Decision Records Index\n\n_No ADRs yet. This index regenerates on each commit._\n")
+        result.created.append(output)
 
 
 def generate_standards_md(config: dict) -> str:

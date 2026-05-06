@@ -1,0 +1,96 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Orchestra Config",
+  "description": "Schema for .claude/orchestra.json (orchestra v1.1)",
+  "type": "object",
+  "required": ["version", "orchestra", "skills"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": ["1.1"]
+    },
+    "orchestra": {
+      "type": "object",
+      "required": ["mode"],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["solo", "team"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "skills": {
+      "type": "object",
+      "properties": {
+        "design-docs": {
+          "type": "object",
+          "required": ["doc_paths", "doc_types"],
+          "properties": {
+            "doc_paths": {
+              "type": "object",
+              "required": ["features", "bugs", "adr", "design", "postmortems", "runbooks", "plans"],
+              "properties": {
+                "features": {"type": "string"},
+                "bugs": {"type": "string"},
+                "adr": {"type": "string"},
+                "design": {"type": "string"},
+                "postmortems": {"type": "string"},
+                "runbooks": {"type": "string"},
+                "plans": {"type": "string"}
+              }
+            },
+            "doc_types": {
+              "type": "object",
+              "required": ["preset"],
+              "properties": {
+                "preset": {
+                  "type": "string",
+                  "enum": ["default-7", "subset-rename", "full-custom"]
+                },
+                "renames": {
+                  "type": "object",
+                  "additionalProperties": {"type": "string"}
+                },
+                "custom_types": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": ["name", "path", "naming_pattern", "status_enum", "required_sections"],
+                    "properties": {
+                      "name": {"type": "string"},
+                      "path": {"type": "string", "pattern": "^[a-z][a-z0-9-]*$"},
+                      "naming_pattern": {
+                        "type": "string",
+                        "enum": ["NNN-kebab.md", "YYYY-MM-DD-kebab.md", "kebab.md"]
+                      },
+                      "status_enum": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "minItems": 3
+                      },
+                      "required_sections": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "minItems": 3,
+                        "contains": {"const": "Changelog"}
+                      },
+                      "mermaid_required": {"type": "boolean"},
+                      "mermaid_min_count": {"type": "integer", "minimum": 0}
+                    }
+                  }
+                }
+              }
+            },
+            "spec_review_skill": {
+              "type": ["string", "null"]
+            },
+            "ci_workflow_installed": {"type": "boolean"},
+            "agents_md_installed": {"type": "boolean"},
+            "llms_txt_installed": {"type": "boolean"}
+          }
+        }
+      }
+    }
+  }
+}

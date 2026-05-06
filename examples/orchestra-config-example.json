@@ -1,0 +1,28 @@
+{
+  "version": "1.1",
+  "orchestra": {
+    "mode": "solo"
+  },
+  "skills": {
+    "design-docs": {
+      "doc_paths": {
+        "features": "docs/features",
+        "bugs": "docs/bugs",
+        "adr": "docs/adr",
+        "design": "docs/design",
+        "postmortems": "docs/postmortems",
+        "runbooks": "docs/runbooks",
+        "plans": "docs/plans"
+      },
+      "doc_types": {
+        "preset": "default-7",
+        "renames": {},
+        "custom_types": []
+      },
+      "spec_review_skill": "superpowers:requesting-code-review",
+      "ci_workflow_installed": true,
+      "agents_md_installed": true,
+      "llms_txt_installed": true
+    }
+  }
+}

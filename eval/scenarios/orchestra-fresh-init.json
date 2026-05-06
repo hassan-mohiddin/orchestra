@@ -1,0 +1,22 @@
+{
+  "name": "orchestra-fresh-init",
+  "description": "Empty repo + cli.init invocation creates Bucket 1 + Bucket 2 + config.",
+  "setup": [
+    "git init --quiet --initial-branch=main"
+  ],
+  "exercise": [
+    {
+      "cmd": "ORCHESTRA_PATH=/Users/mohammedhassanmohiddin/Documents/Antigravity/orchestra && cd \"$ORCHESTRA_PATH\" && /Users/mohammedhassanmohiddin/Documents/Antigravity/SCALE\\ APP/.venv/bin/python -m cli.init --repo $OLDPWD --mode solo --preset default-7 --addons yes"
+    }
+  ],
+  "assert": [
+    {"type": "file_exists", "path": "docs/STANDARDS.md"},
+    {"type": "file_exists", "path": "docs/features/.gitkeep"},
+    {"type": "file_exists", "path": "docs/adr/.gitkeep"},
+    {"type": "file_exists", "path": ".claude/orchestra.json"},
+    {"type": "file_exists", "path": "AGENTS.md"},
+    {"type": "file_exists", "path": "llms.txt"},
+    {"type": "file_exists", "path": ".github/workflows/orchestra-lint.yml"},
+    {"type": "file_contains", "path": ".claude/orchestra.json", "substring": "\"version\": \"1.1\""}
+  ]
+}

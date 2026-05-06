@@ -1,0 +1,17 @@
+{
+  "name": "orchestra-mermaid-lint",
+  "description": "Doc with malformed mermaid block → cli.lint --doc flags it.",
+  "setup": [
+    "mkdir -p docs/features",
+    "printf '# Feature: Test\\n\\n> **Doc ID:** 001-test\\n> **Date:** 2026-05-06\\n> **Status:** Draft\\n\\n## Problem Statement\\n\\nTest.\\n\\n## Success Criteria\\n\\n- [ ] x\\n\\n## Scope\\n\\n## Design\\n\\n```mermaid\\nthis is not a valid diagram type\\n```\\n\\n## Edge Cases\\n## Security\\n## Testing\\n## Related Documents\\n## Changelog\\n' > docs/features/001-test.md",
+    "git init --quiet --initial-branch=main"
+  ],
+  "exercise": [
+    {
+      "cmd": "python -m cli.lint --doc docs/features/001-test.md 2>&1 | head -20"
+    }
+  ],
+  "assert": [
+    {"type": "file_exists", "path": "docs/features/001-test.md"}
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "name": "orchestra-rerun-idempotent",
+  "description": "Run init twice — second skips existing files, no errors.",
+  "setup": [
+    "git init --quiet --initial-branch=main"
+  ],
+  "exercise": [
+    {
+      "cmd": "OLDPWD=$(pwd) && cd /Users/mohammedhassanmohiddin/Documents/Antigravity/orchestra && /Users/mohammedhassanmohiddin/Documents/Antigravity/SCALE\\ APP/.venv/bin/python -m cli.init --repo $OLDPWD"
+    },
+    {
+      "cmd": "OLDPWD=$(pwd) && cd /Users/mohammedhassanmohiddin/Documents/Antigravity/orchestra && /Users/mohammedhassanmohiddin/Documents/Antigravity/SCALE\\ APP/.venv/bin/python -m cli.init --repo $OLDPWD"
+    }
+  ],
+  "assert": [
+    {"type": "exit_code", "step": 0, "code": 0},
+    {"type": "exit_code", "step": 1, "code": 0},
+    {"type": "file_exists", "path": "docs/STANDARDS.md"}
+  ]
+}

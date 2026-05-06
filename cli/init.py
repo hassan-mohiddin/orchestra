@@ -304,6 +304,72 @@ def write_v11_config(root: Path, config: dict) -> Path:
     return out
 
 
+# ---------------------------------------------------------------------------
+# CLI entry — programmatic init (mirrors skill flow non-interactively)
+# ---------------------------------------------------------------------------
+
+
+def default_config(mode: str = "solo", preset: str = "default-7",
+                   addons: bool = True) -> dict:
+    return {
+        "version": "1.1",
+        "orchestra": {"mode": mode},
+        "skills": {
+            "design-docs": {
+                "doc_paths": {
+                    k: f"docs/{k}" for k in
+                    ["features", "bugs", "adr", "design", "postmortems", "runbooks", "plans"]
+                },
+                "doc_types": {"preset": preset, "renames": {}, "custom_types": []},
+                "spec_review_skill": "superpowers:requesting-code-review",
+                "ci_workflow_installed": addons,
+                "agents_md_installed": addons,
+                "llms_txt_installed": addons,
+            }
+        },
+    }
+
+
+def run_init(root: Path, mode: str = "solo", preset: str = "default-7",
+             addons: bool = True, force: bool = False) -> ScaffoldResult:
+    """Run full init flow: bucket 1 + bucket 2 + write config."""
+    config = default_config(mode=mode, preset=preset, addons=addons)
+    r1 = scaffold_bucket_1(config, root, force=force)
+    r2 = scaffold_bucket_2(config, root, force=force)
+    write_v11_config(root, config)
+
+    combined = ScaffoldResult()
+    combined.created = r1.created + r2.created
+    combined.skipped = r1.skipped + r2.skipped
+    combined.errors = r1.errors + r2.errors
+    return combined
+
+
+def main(argv: list[str] | None = None) -> int:
+    import argparse
+    parser = argparse.ArgumentParser(prog="orchestra init")
+    parser.add_argument("--mode", choices=["solo", "team"], default="solo")
+    parser.add_argument("--preset", choices=["default-7", "subset-rename", "full-custom"],
+                        default="default-7")
+    parser.add_argument("--addons", choices=["yes", "no"], default="yes")
+    parser.add_argument("--force", action="store_true", help="Overwrite existing files")
+    parser.add_argument("--repo", default=".", help="Repo root (default: cwd)")
+    args = parser.parse_args(argv)
+
+    root = Path(args.repo).resolve()
+    result = run_init(root, mode=args.mode, preset=args.preset,
+                      addons=(args.addons == "yes"), force=args.force)
+
+    print(f"created: {len(result.created)}, skipped: {len(result.skipped)}")
+    for p in result.created:
+        print(f"  + {p.relative_to(root) if p.is_relative_to(root) else p}")
+    if result.errors:
+        for e in result.errors:
+            print(f"  ! {e}", file=sys.stderr)
+        return 1
+    return 0
+
+
 GITIGNORE_ENTRIES = [
     "# orchestra (added by orchestra:init)",
     ".claude/orchestra.local.json",
@@ -329,3 +395,7 @@ def _append_gitignore(root: Path, result: ScaffoldResult, force: bool) -> None:
         result.skipped.remove(gitignore)
     if gitignore not in result.created:
         result.created.append(gitignore)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

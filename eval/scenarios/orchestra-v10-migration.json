@@ -1,0 +1,21 @@
+{
+  "name": "orchestra-v10-migration",
+  "description": "Repo with v1.0 settings.local.json orchestra block → migrate generates orchestra.json without overwriting v1.0.",
+  "setup": [
+    "git init --quiet --initial-branch=main",
+    "mkdir -p .claude",
+    "printf '{\"orchestra\": {\"mode\": \"team\", \"doc_paths\": {\"features\": \"designs/features\"}, \"spec_review_skill\": \"superpowers:requesting-code-review\"}}\\n' > .claude/settings.local.json"
+  ],
+  "exercise": [
+    {
+      "cmd": "/Users/mohammedhassanmohiddin/Documents/Antigravity/SCALE\\ APP/.venv/bin/python -c \"import sys; sys.path.insert(0, '/Users/mohammedhassanmohiddin/Documents/Antigravity/orchestra'); from pathlib import Path; from cli.init import detect_v10_config, migrate_v10_to_v11, write_v11_config; v10 = detect_v10_config(Path('.')); cfg = migrate_v10_to_v11(v10); write_v11_config(Path('.'), cfg); print('migrated')\""
+    }
+  ],
+  "assert": [
+    {"type": "exit_code", "step": 0, "code": 0},
+    {"type": "file_exists", "path": ".claude/orchestra.json"},
+    {"type": "file_exists", "path": ".claude/settings.local.json"},
+    {"type": "file_contains", "path": ".claude/orchestra.json", "substring": "\"team\""},
+    {"type": "file_contains", "path": ".claude/settings.local.json", "substring": "\"team\""}
+  ]
+}

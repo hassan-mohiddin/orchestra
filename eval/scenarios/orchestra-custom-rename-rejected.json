@@ -1,0 +1,13 @@
+{
+  "name": "orchestra-custom-rename-rejected",
+  "description": "subset-rename with informal rename → InvariantViolation. Validates pytest-equivalent at CLI level.",
+  "setup": [],
+  "exercise": [
+    {
+      "cmd": "/Users/mohammedhassanmohiddin/Documents/Antigravity/SCALE\\ APP/.venv/bin/python -c 'import sys; sys.path.insert(0, \"/Users/mohammedhassanmohiddin/Documents/Antigravity/orchestra\"); from cli.init import generate_standards_md, InvariantViolation, default_config; cfg = default_config(preset=\"subset-rename\"); cfg[\"skills\"][\"design-docs\"][\"doc_types\"][\"renames\"] = {\"Feature LLD\": \"doc\"}; \nfailed = False\ntry:\n    generate_standards_md(cfg)\nexcept InvariantViolation:\n    failed = True\nsys.exit(0 if failed else 1)'"
+    }
+  ],
+  "assert": [
+    {"type": "exit_code", "step": 0, "code": 0}
+  ]
+}

@@ -40,10 +40,10 @@ orchestra/
 
 ## Tasks
 
-### Task 1: cli/migrate.py + tests
+### Task 1: cli/migrate.py + tests **(IMPLEMENTED 2026-05-06 — orchestra commit `1f20dc6`)**
 
 - **Files:** `cli/migrate.py` (NEW), `tests/test_cli_migrate.py` (NEW)
-- **What:** `migrate_solo_to_team()`, `migrate_team_to_solo()`, `--dry-run`, CLI entry. Atomic write via `.tmp` + rename. Scan ADRs, report missing OKR Alignment.
+- **What:** Implement per LLD-002 § "`cli/migrate.py` — pseudocode" and § Security Considerations (atomic write via `.tmp` + `os.replace`). Reference, do not restate design.
 - **Tests:**
   - `test_solo_to_team_flips_mode`
   - `test_solo_to_team_idempotent` (already team → no-op)
@@ -56,7 +56,7 @@ orchestra/
 ### Task 2: cli/viewer.py + tests
 
 - **Files:** `cli/viewer.py` (NEW), `tests/test_cli_viewer.py` (NEW)
-- **What:** `render_doc()`, `render_all()`, format flag (png/svg), output dir flag. Reuse `_load_extract_mermaid()` pattern from `cli/lint.py`. Self-check `docs/.rendered/` in `.gitignore` on first run.
+- **What:** Implement per LLD-002 § "`cli/viewer.py` — pseudocode". Reuses `_load_extract_mermaid()` pattern from `cli/lint.py:36-52`.
 - **Tests:**
   - `test_render_doc_extracts_blocks` (mocked subprocess — assert npx called with right args)
   - `test_render_no_blocks_no_op` (file with no mermaid → empty result, exit 0)
@@ -69,7 +69,7 @@ orchestra/
 ### Task 3: install_hooks.py extension + commit-msg hook + tests
 
 - **Files:** `cli/install_hooks.py` (MODIFIED), `cli/templates/commit-msg.sh` (NEW), `tests/test_cli_install_hooks.py` (extend)
-- **What:** Add `--commit-msg` flag, `--all` flag (installs both pre-commit + commit-msg). commit-msg.sh script per LLD-002 design. Same idempotent diff-prompt pattern as v1.1 pre-commit.
+- **What:** Implement per LLD-002 § "`commit-msg` hook — script content" and § API Changes table rows for `--commit-msg` / `--all` flags. Reuses `cli/install_hooks.py:36-58` idempotent diff-prompt pattern from v1.1.
 - **Tests:**
   - `test_install_commit_msg_in_fresh_repo` (hook file written + executable)
   - `test_install_commit_msg_skip_in_non_git_repo`
@@ -102,19 +102,25 @@ orchestra/
   - `.claude-plugin/plugin.json` (1.1.0 → 1.2.0)
   - `pyproject.toml` (1.1.0 → 1.2.0)
   - `CHANGELOG.md` (v1.2.0 entry)
+- **Sequencing:** depends on Task 5 (README ready); blocks Task 7
+- **Tests:** version strings match across 3 files; manual diff (no test code)
 - **Commit:** `chore: bump version to 1.2.0`
 
-### Task 7: LLD-002 status sync + ship (Gate 5 + Gate 6)
+### Task 7: LLD-002 status sync + ship (Gate 5)
+
+Two sequenced commits per repo (rationale: doc-status update lands BEFORE the release-tag commit so the tagged commit reflects accurate doc state).
 
 - **Files:**
   - `orchestra-dev/features/002-...md` (Status: Draft → Verified)
   - `orchestra-dev/design/orchestra-philosophy.md` (Changelog entry: v1.2 shipped)
   - `orchestra-dev/plans/2026-05-06-orchestra-v1.2-implementation.md` (Status: Active → Implemented)
-- **What:** Per Gate 5, record status update + deviations. Sync via mirror script. Push both repos. Tag `v1.2.0` + GitHub release.
+- **Sequencing:** depends on Task 6
 - **Tests:**
   - `python -m pytest tests/` all green
   - `python -m eval.run --all` 8/8
-- **Commit:** `chore: tag v1.2.0 release` + `docs: lld-002 verified, plan v1.2 implemented` (one per repo)
+- **Commits (two, in order):**
+  1. `docs: lld-002 verified, plan v1.2 implemented` (sync mirror first)
+  2. `chore: tag v1.2.0 release` + `git tag v1.2.0` + `gh release create v1.2.0`
 
 ## Dependency Graph
 
@@ -138,15 +144,16 @@ Tasks 1, 2, 3 are independent and can be implemented in parallel.
 
 ## Estimated Timeline
 
-- Task 1 (migrate): 1 day
+- ~~Task 1 (migrate): 1 day~~ → DONE 2026-05-06 (one session)
 - Task 2 (viewer): 1 day
 - Task 3 (commit-msg): 0.5 day
 - Tasks 4-7 (evals + docs + ship): 1 day
 
-**Total:** ~3.5 days. Target ship: 2026-06-03 (per roadmap).
+**Total remaining:** ~2.5 days. Target ship: 2026-06-03 (per roadmap; on track).
 
 ## Changelog
 
 | Date | Change |
 |---|---|
 | 2026-05-06 | Initial implementation plan drafted alongside LLD-002. Status: Active. |
+| 2026-05-06 | Retroactive 4-gate spec review (initially skipped — Gate 3 violation). Iteration 1: 2/4 gates fail (Completeness — Task 6 structure + Task 1 stale state; Consistency — mild LLD-overlap in Task 1+2 What sections). Fixes applied: (1) Task 1 marked IMPLEMENTED with commit ref; (2) Task 1+2+3 What sections tightened to reference LLD instead of restating; (3) Task 6 gained Sequencing + Tests lines; (4) Task 7 two-commit rationale documented + commit order specified; (5) Timeline updated to reflect Task 1 done; (6) this changelog entry added. Status remains Active. |

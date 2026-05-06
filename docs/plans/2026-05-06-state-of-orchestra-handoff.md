@@ -70,7 +70,6 @@ orchestra/
 │   ├── test_config.py
 │   ├── test_cli_init_bucket1.py
 │   ├── test_cli_init_bucket2.py
-│   ├── test_decisions_seeding.py
 │   ├── test_standards_generator.py
 │   ├── test_cli_lint_mermaid.py
 │   ├── test_cli_install_hooks.py
@@ -78,6 +77,7 @@ orchestra/
 │   ├── test_cli_viewer.py
 │   ├── test_migration_v10_to_v11.py
 │   └── test_sanity.py            (deletable in v1.4)
+│   (decisions-seeding tests live inside test_cli_init_bucket2.py)
 ├── schema/orchestra.config.v1.1.json
 ├── skills/
 │   ├── init/SKILL.md             (v1.1)
@@ -205,3 +205,4 @@ A fresh session should:
 | Date | Change |
 |---|---|
 | 2026-05-06 | Initial handoff doc. Captures v1.0-v1.3 ship + SCALE decoupling + 7 BUGs filed. Status: Active. |
+| 2026-05-06 | Iteration 1 spec review — 4/4 pass. 1 fix: removed phantom `test_decisions_seeding.py` row from test tree (decisions-seeding tests actually live inside `test_cli_init_bucket2.py`). |

@@ -147,3 +147,4 @@ Manual smoke: after v1.4 ships, future Claude sessions should hit the lint error
 | Date | Change |
 |---|---|
 | 2026-05-06 | Filed during 2026-05-06 session 2 after Gate 3 was skipped TWICE (v1.2 plan + this doc's parent handoff). User identified the pattern, requested root cause + bug filing. Status: Investigating. Severity: Critical (compounds with BUG-001 to make discipline-by-markdown the deepest plugin defect class). Target fix: v1.4. |
+| 2026-05-06 | Iteration 1 spec review — 4/4 gates pass. Meta-test passed: BUG-008 itself reviewed before commit, demonstrating the discipline it documents. |

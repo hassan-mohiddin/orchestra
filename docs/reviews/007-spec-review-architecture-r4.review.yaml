@@ -1,0 +1,116 @@
+schema_version: '1.0'
+doc_subject:
+  path: docs/features/007-spec-review-architecture.md
+  content_hash: sha256:5cb4a41794b5e0a8d7de9831bf04ecc02d3361079f6431927ac55ce3d2be0569
+  iteration: 4
+reviewer:
+  identifier: subagent:general-purpose+spec-review-v1
+  invoked_at: '2026-05-10T12:00:00Z'
+  context_isolation: fresh_subagent
+gates:
+  completeness:
+    verdict: conditional_pass
+    findings:
+    - severity: Important
+      location: "Header \xA7 metadata"
+      problem: Doc metadata declares Status Implemented and Iteration 3, but the review
+        prompt explicitly states this is iteration 4 (the dogfood pass after canon-frozen).
+        Metadata is stale relative to the current review round.
+    - severity: Important
+      location: "Success Criteria \xA7 Acceptance items"
+      problem: A1 and A12 are flagged as manual verification post-merge with no associated
+        automated test, yet remain unchecked checkboxes alongside testable items.
+        No documented process for checking them off.
+    - severity: Minor
+      location: "Design \xA7 cli.spec_review module"
+      problem: Code references os.getpid, os.replace, os.fsync, open at module scope
+        but the import block only imports argparse hashlib json re subprocess sys
+        datetime pathlib yaml jsonschema. Missing import os.
+    justification: stub justification placeholder for empty-findings gate
+  evidence:
+    verdict: conditional_pass
+    findings:
+    - severity: Important
+      location: "Problem Statement \xA7 defect 3"
+      problem: Claim r4 review caught fabricated arXiv 2603.07670 citation in r3 is
+        asserted without a file:line citation. Reader cannot verify the fabricated-citation
+        claim.
+    - severity: Important
+      location: "Related Documents \xA7 references"
+      problem: arXiv 2512.01786 is cited but 2512.xxxxx is a future-dated identifier.
+        Citation date should be confirmed and briefly characterized in-body.
+    - severity: Minor
+      location: "Design \xA7 Bias mitigations"
+      problem: Mitigation 3 length bias token cap 4000 cites no benchmark or research
+        showing 4000 is the appropriate cap. Number is asserted without justification.
+    justification: stub justification placeholder
+  clarity:
+    verdict: conditional_pass
+    findings:
+    - severity: Important
+      location: "Design \xA7 cli.spec_review module"
+      problem: dispatch_subagent reads YAML from stdin in production but main calls
+        it inside a retry loop. On retry stdin has already been consumed and a second
+        sys.stdin.read returns empty. Retry semantics for stdin-bound dispatch are
+        undefined and contradict A5.
+    - severity: Important
+      location: "Design \xA7 Multi-judge invocation flow"
+      problem: Step 2 says judge-1 attestation written to docs/reviews/NNN-rN.review.yaml
+        but the path-derivation example for 007-spec-review-architecture is not stated
+        anywhere. Readers reviewing this LLD with the new tool cannot predict the
+        exact output filename.
+    - severity: Minor
+      location: "Glossary \xA7 iteration"
+      problem: Glossary says max 3 iterations but Bootstrap-paradox section says max
+        3 with bootstrap permitting up to 5. Two thresholds stated as convention without
+        canonical reference.
+    justification: stub justification placeholder
+  consistency:
+    verdict: fail
+    findings:
+    - severity: Critical
+      location: "Header \xA7 metadata vs Changelog \xA7 final entry"
+      problem: Header declares Status Implemented and Iteration 3 but the review-prompt
+        asserts iteration 4. Doc Iteration field was never bumped to 4 for this review
+        round in violation of A11. Running the new spec-review skill on this doc would
+        FAIL with iteration_mismatch.
+    - severity: Important
+      location: "Success Criteria \xA7 A14 vs Changelog \xA7 final entry"
+      problem: A14 says baseline 107 to 135 with 28 new tests minimum. Final Changelog
+        says 36 new pytest tests across 11 test files. Testing matrix enumerates 33
+        rows. Numbers in A14 matrix self-count and Changelog do not agree.
+    - severity: Important
+      location: "Design \xA7 cli.spec_review module \xA7 main"
+      problem: MAX_RETRIES = 1 with for-loop range(2) but error message says failed
+        schema after MAX_RETRIES plus 1 attempts. A5 wording does not state total-attempts
+        count explicitly. Reader using only A5 cannot determine whether retry budget
+        includes the original attempt.
+    - severity: Important
+      location: "Design \xA7 cli.spec_review module vs Edge Cases \xA7 Doc moved to\
+        \ archive"
+      problem: Edge Cases says doc moved to archive captures pre-move path. But stale_state
+        check re-reads canonical_path.read_bytes at write time. If doc has been moved/deleted
+        between dispatch and write this raises FileNotFoundError NOT caught by the
+        try/except around canonicalize_doc_path. Crashes Python rather than producing
+        clean error.
+    justification: stub justification placeholder
+overall_verdict: fail
+required_followup:
+- Bump Header Iteration field to 4 before running new spec-review skill against this
+  doc.
+- 'Reconcile test count: A14 says 28 minimum matrix shows 33 rows Changelog says 36.'
+- Add import os to the cli.spec_review module snippet.
+- Define stdin retry semantics for dispatch_subagent.
+- Wrap write-time canonical_path.read_bytes in try/except to handle doc-moved-to-archive.
+- Provide file:line citation for the fabricated arXiv 2603.07670 citation claim or
+  remove.
+- Document the predicted attestation filename for this LLD itself.
+- Reconcile max-iteration threshold 3 vs 5 between Glossary and Bootstrap-paradox
+  section.
+notes: 'Doc substantively complete but accumulated drift: stale Iteration field, test-count
+  disagreement across A14/matrix/changelog, missing import os, undefined stdin-retry
+  semantic. Architecture coherent. Critical consistency finding (Iteration stale)
+  would cause skill to reject this LLD on first dogfood invocation. Verdict driven
+  to fail by Consistency gate; all other gates conditional_pass.
+
+  '

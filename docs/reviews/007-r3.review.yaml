@@ -1,0 +1,59 @@
+schema_version: "1.0"
+doc_subject:
+  path: docs/features/007-spec-review-architecture.md
+  content_hash: sha256:b1a560b83db0419a373be90cfce9b1ed417ecc917f84572aef76ed84684192d5
+  iteration: 3
+reviewer:
+  identifier: "codex:adversarial-review+gpt-5-codex"
+  invoked_at: 2026-05-10T00:00:00Z
+  context_isolation: fresh_subagent
+gates:
+  completeness:
+    verdict: pass
+    findings: []
+    justification: "All required sections present + filled. 23 acceptance items (A1-A23). 25 enumerated tests with 1:1 mapping. Glossary expanded. 3 codex review rounds documented in Changelog. No empty placeholders."
+  evidence:
+    verdict: pass
+    findings: []
+    justification: "All citations URL-verified. Pre-dispatch P1 audit removed unverifiable refs in r1. Codex finding citations include doc line ranges. No fabricated references."
+  clarity:
+    verdict: pass
+    findings: []
+    justification: "F1-F7 fixes explicitly labeled by codex-round + finding-id in Security § and Design §. Glossary covers all key terms. Bootstrap-paradox section clearly explains BEFORE/AFTER merge state. Honest narrowing of token-cap claim documented."
+  consistency:
+    verdict: conditional_pass
+    findings:
+      - severity: High
+        location: "Design § cli.spec_review main() doc-read sequence"
+        problem: "F6 stale-state protection bypassable via TOCTOU: doc is read multiple times (read_bytes for hash, parse_iteration via separate read_text, render_prompt via another read_text, write-time re-hash). Concurrent edit between reads can swap content and restore original bytes before final hash check, passing stale-state check while subagent reviewed different bytes."
+      - severity: High
+        location: "Design § cli.spec_review main() compute_attestation_path call"
+        problem: "Attestation write path not anchored to repo_root. compute_attestation_path returns relative docs/reviews/ path; caller writes directly. If invocation cwd ≠ repo_root, existence check + write target wrong directory tree."
+      - severity: Medium
+        location: "Acceptance A8 + Security § token-cap claim"
+        problem: "Dispatch security controls (token cap, subagent_type) said 'enforced in code' but implementation has dispatch at agent layer only; cli.spec_review reads YAML from stdin without enforcing kwargs. Silent drift path between claimed and actual enforcement."
+overall_verdict: conditional_pass
+required_followup:
+  - "v1.6.x — Iteration field vs filename -rN suffix semantic disambiguation. Currently single LLD-007 file with Iteration:3 violates LLD-006-r4 strict reading (would require -r3 filename). Pragmatic in-place revision adopted; convention needs explicit clause: in-draft iterations bump field without renaming; supersession event triggers rename."
+  - "v1.6.x — Runtime token-cap enforcement. Move dispatch into Python with executable max_tokens=4000 assertion + explicit subagent_type check, OR enforce stdin size/timeout limits in cli.spec_review with operational safeguards."
+  - "v1.6.x — Runtime Task-kwargs verification (post-dogfood D4). Add executable assertion (integration test or smoke check) that Task tool invocation actually carries subagent_type='general-purpose' + correct prompt content."
+  - "v1.6.x — Stdin-bound size limit. cli.spec_review currently reads sys.stdin.read() unbounded. Add max-bytes guard (e.g. 64KB) to bound DoS surface even with token-cap unenforced."
+notes: |
+  Codex round 3 adversarial review (gpt-5-codex). Verdict: needs-attention.
+  3 NEW findings (F8 TOCTOU, F9 path-anchoring, F10 honesty-on-token-cap).
+  No overlap with R1 or R2. Findings count: 4 → 3 → 3. Severity profile
+  stable: 0 Critical past R1; 2 High + 1 Medium per round.
+
+  All 10 codex findings (F1-F10) addressed inline in Draft full-edit. F8 fixed
+  via single immutable doc_bytes snapshot used for hash + iteration + prompt
+  (single read at dispatch + single re-read at write-time stale check).
+  F9 fixed via repo_root anchoring of out_path before existence check + write.
+  F10 fixed via honest narrowing of A8 + Security token-cap claim.
+
+  Per LLD-006-r4 max-3-iterations convention, round 3 = iteration boundary.
+  Round 4 surfaces interview-gate. Per convention r4 of LLD-006 also reached
+  conditional_pass with 4 v1.6 followups; same precedent applied here:
+  conditional_pass canon for r1, 4 v1.6.x followups tracked above.
+
+  LLD architecture (multi-judge / manual chair / slash command / Task dispatch)
+  intact across all 3 rounds. Implementation phase next.

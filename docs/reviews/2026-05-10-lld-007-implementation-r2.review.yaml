@@ -1,0 +1,51 @@
+schema_version: "1.0"
+doc_subject:
+  path: docs/plans/2026-05-10-lld-007-implementation.md
+  content_hash: sha256:9ab5c25d910a50112176b76bd82ead04e6a0032e432b577cab80169c10e74909
+  iteration: 2
+reviewer:
+  identifier: "codex:adversarial-review+gpt-5-codex"
+  invoked_at: 2026-05-10T00:00:00Z
+  context_isolation: fresh_subagent
+gates:
+  completeness:
+    verdict: pass
+    findings: []
+    justification: "All sections still present after PF1-PF5 inline fixes. New required-tests array in Task 7. New BLOCKING-criteria block in Task 8. 30 explicit slices S1-S30 in Task 3."
+  evidence:
+    verdict: pass
+    findings: []
+    justification: "Plan now anchored to specific test IDs and file paths from LLD-007 testing matrix. No fabricated references. Cross-references match LLD-007 sections."
+  clarity:
+    verdict: pass
+    findings: []
+    justification: "PF1-PF5 fixes documented inline with codex-finding labels. Each Task gain mapped to fix ID (PF1, PF2, etc). Honest framing of scope expansion."
+  consistency:
+    verdict: fail
+    findings:
+      - severity: High
+        location: "Task 8 failure handling (lines 196-220)"
+        problem: "Task 8 declared BLOCKING and required for ship completion, but failure handling for Task-kwargs mismatch (A3/A8 fail) says to mark v1.6 as 'conditional ship — works but runtime control gap; track for v1.6.x patch'. That's a fail-open release policy on a trust-boundary control (subagent type + token-cap dispatch). If runtime dispatch drifts, release can still proceed with known control gaps. Contradicts BLOCKING claim."
+      - severity: High
+        location: "T13c contract drift (LLD-007 line 685 vs plan S30)"
+        problem: "Implementation plan defines S30/T13c as a structural prose check in SKILL.md ('SKILL.md prose contains max_tokens: 4000'), while LLD-007 architecture testing matrix still defines T13c as a runtime-style Task-kwarg assertion (`tests/test_spec_review_bias.py::test_token_cap_passed_to_subagent` Mock Task; verify max_tokens=4000 kwarg). Mismatch makes acceptance boundary ambiguous; can hide missing runtime validation behind passing structural tests."
+      - severity: Medium
+        location: "Task 7 A14 verification gate (lines 182-185)"
+        problem: "A14 verification gate is count-only and can pass without proving intended new tests actually run. Gate enforces total collected tests ≥132 via regex. Doesn't prove T1-T24 are present and executed; can pass with unrelated suite growth or with expected tests skipped/deselected. Weakens PF4 ownership fix because evidence can be numerically true but semantically false."
+overall_verdict: fail
+required_followup:
+  - "PF6 (High): remove 'conditional ship' escape hatch in Task 8; A3/A8 runtime mismatch must be release-blocking with mandatory revert"
+  - "PF7 (High): unify T13c definition between plan + LLD-007 architecture testing matrix; pick one (structural prose check OR runtime mock-Task assertion)"
+  - "PF8 (Medium): strengthen Task 7 with explicit required test-ID coverage check (not just total count); assert T1-T24 collected + non-skipped"
+notes: |
+  Codex round 2 adversarial review of v1.6 implementation plan (gpt-5-codex).
+  Verdict: needs-attention. 3 NEW findings, no overlap with PF1-PF5 — distinct
+  release-policy and ownership-gating gaps. Real progress.
+
+  All 3 findings (PF6-PF8) addressed inline. See plan changelog.
+
+  Retroactive attestation captured before the spec-review skill is built.
+  Plan attestation pattern (this file + r1) demonstrates the user-requested
+  convention: every spec review gets its own attestation doc, regardless of
+  doc type (plans included). Schema regex updated in LLD-007 to allow
+  docs/plans/ as valid doc_subject.path.

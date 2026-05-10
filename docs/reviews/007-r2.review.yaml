@@ -1,0 +1,47 @@
+schema_version: "1.0"
+doc_subject:
+  path: docs/features/007-spec-review-architecture.md
+  content_hash: sha256:retroactive_r2_no_snapshot_captured
+  iteration: 2
+reviewer:
+  identifier: "codex:adversarial-review+gpt-5-codex"
+  invoked_at: 2026-05-10T00:00:00Z
+  context_isolation: fresh_subagent
+gates:
+  completeness:
+    verdict: pass
+    findings: []
+    justification: "Sections still present and filled after F1-F4 inline fixes. New acceptance items A16-A19 added with 1:1 test mapping (T17a/b/c, T18, T19a/b, T20). New helper functions canonicalize_doc_path + compute_overall_verdict fully specified."
+  evidence:
+    verdict: pass
+    findings: []
+    justification: "All external citations from r1 retained and verifiable. New code stubs use cited stdlib functions (Path.resolve, hashlib.sha256). No fabricated references introduced."
+  clarity:
+    verdict: pass
+    findings: []
+    justification: "F1-F4 fixes documented in Security § + Design § with explicit codex-r1 finding labels. Glossary disambiguations from r1 retained. Honest framing maintained."
+  consistency:
+    verdict: fail
+    findings:
+      - severity: High
+        location: "Design § cli.spec_review canonicalize_doc_path"
+        problem: "F1 fail-closed guarantee not actually fail-closed — caller catches only ValueError. resolve(strict=True) raises FileNotFoundError or OSError on missing/inaccessible/broken-symlink paths; those bypass the documented path_traversal_blocked handling and crash the command instead of deterministic exit 2."
+      - severity: High
+        location: "Design § cli.spec_review main() hash handling (lines 398-403)"
+        problem: "Hash mismatch silently rewritten — `attestation['doc_subject']['content_hash'] = expected_hash` accepts any subagent-computed hash and replaces it. If doc bytes change between prompt-render and write, attestation captures verdict-on-old-content + hash-on-new-content. Stale-state integrity failure, not mechanical normalization."
+      - severity: Medium
+        location: "Acceptance A3 + Test T2"
+        problem: "A3 acceptance contract claims Task dispatch kwargs/context isolation should be verified, but T2 was reframed to a structural prose check on SKILL.md text. Combined with stdin-based dispatch seam, no executable verification of fresh-subagent isolation. A3 overclaims relative to what's testable."
+overall_verdict: fail
+required_followup:
+  - "F5 (High): catch (ValueError, FileNotFoundError, OSError) in canonicalize caller; map to single path_traversal_blocked exit code"
+  - "F6 (High): make hash mismatch BLOCKING; pre-dispatch hash captured before subagent invocation; verify at write time; mismatch → stale_state exit 1"
+  - "F7 (Medium): narrow A3 acceptance text to match T2 structural prose check; document runtime Task-kwargs verification as manual dogfood (D4)"
+notes: |
+  Codex round 2 adversarial review (gpt-5-codex). Verdict: needs-attention.
+  3 NEW findings, no overlap with R1's F1-F4 — distinct error-handling/race/
+  test-coverage gaps. Real progress, not plateau.
+
+  Retroactive attestation. Doc content at this iteration = original Draft +
+  F1-F4 inline fixes. No snapshot preserved. Findings F5-F7 addressed inline
+  per same Draft full-edit allowance.

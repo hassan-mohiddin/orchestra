@@ -1,0 +1,56 @@
+schema_version: "1.0"
+doc_subject:
+  path: docs/features/007-spec-review-architecture.md
+  content_hash: sha256:retroactive_r1_no_snapshot_captured
+  iteration: 1
+reviewer:
+  identifier: "codex:adversarial-review+gpt-5-codex"
+  invoked_at: 2026-05-10T00:00:00Z
+  context_isolation: fresh_subagent
+gates:
+  completeness:
+    verdict: pass
+    findings: []
+    justification: "All 11 required sections present and filled. Glossary, Problem Statement, Success Criteria with 15 acceptance items, Scope (in/out), Design with subsections, Edge Cases, Security, Testing with 16 enumerated tests, Related Documents, Changelog. No empty placeholders."
+  evidence:
+    verdict: pass
+    findings: []
+    justification: "Every external reference includes URL: arXiv 2410.21819, 2512.01786, 2506.13639 all resolvable; Cursor builder/validator URL present; python-frontmatter and jsonschema PyPI links present; Nygard ADR pattern URL. Pre-dispatch P1 self-audit dropped unverifiable Diffray + arXiv 2411.03079 citation."
+  clarity:
+    verdict: conditional_pass
+    findings:
+      - severity: Medium
+        location: "Design § cli.spec_review module"
+        problem: "Attestation identity can be internally inconsistent — schema only pattern-checks doc_subject.path; runtime rewrites hash but does not enforce path equality with the requested input. Subagent could pass schema with a path naming a different doc than the one actually hashed."
+  consistency:
+    verdict: fail
+    findings:
+      - severity: Critical
+        location: "Design § cli.spec_review module + Security §"
+        problem: "Path traversal mitigation claimed but not enforced in code. Sidecar Python only checks exists(); no canonicalization, no docs/ tree containment, no symlink-escape rejection. A caller could pass /etc/passwd, docs/../../etc/passwd, or symlinked doc paths and have file content forwarded into the subagent prompt."
+      - severity: High
+        location: "Design § cli.spec_review module (overall_verdict handling)"
+        problem: "Overall verdict can contradict gate verdicts and still return success. Schema constrains overall_verdict only via enum; runtime trusts subagent-supplied value as-is. A biased judge can output gate=fail + overall_verdict=pass and the process exits 0 (would treat as success)."
+      - severity: High
+        location: "JSON-schema § + Prompt template § anti-sycophancy"
+        problem: "Zero-finding justifications described as mandatory in prompt anti-sycophancy clause but not enforced in JSON-schema. Schema allows findings=[] with no justification. Anti-sycophancy bypass."
+overall_verdict: fail
+required_followup:
+  - "F1 (Critical): add canonicalize_doc_path() with fail-closed resolve+under-docs/ check"
+  - "F2 (High): compute overall_verdict in code from gate worst-case; hard-fail on subagent mismatch"
+  - "F3 (High): JSON-schema if/then conditional — findings=[] requires justification (min 10 chars)"
+  - "F4 (Medium): hard-fail on doc_subject.path mismatch with canonical input (consistent with iteration-mismatch)"
+notes: |
+  Codex round 1 adversarial review (gpt-5-codex). Different model than author
+  (Opus) — bypasses self-preference bias. Verdict from codex: needs-attention.
+  4 findings: 1 Critical (path traversal), 2 High (verdict spoofing, anti-sycophancy
+  bypass), 1 Medium (path identity drift).
+
+  Retroactive attestation — captured during dogfood after codex output, NOT via
+  /orchestra:spec-review skill (skill not yet built; LLD-007 IS the skill spec).
+  content_hash placeholder because no snapshot of pre-fix doc bytes preserved.
+  Full codex output captured in conversation transcript.
+
+  Findings F1-F4 addressed inline in Draft (full-edit permitted per LLD-006-r4
+  rejection-finalization-edit semantics for pre-canon-frozen docs). See r2 + r3
+  attestations for subsequent reviews.

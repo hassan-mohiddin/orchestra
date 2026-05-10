@@ -1,0 +1,56 @@
+schema_version: "1.0"
+doc_subject:
+  path: docs/plans/2026-05-10-lld-007-implementation.md
+  content_hash: sha256:b074e8b2068f8f836c5c536685105cebb2e33e613e792df5fc2dde22d985ef77
+  iteration: 3
+reviewer:
+  identifier: "codex:adversarial-review+gpt-5-codex"
+  invoked_at: 2026-05-10T00:00:00Z
+  context_isolation: fresh_subagent
+gates:
+  completeness:
+    verdict: pass
+    findings: []
+    justification: "All sections present. PF1-PF8 fixes documented inline with finding labels. New A24/A25 acceptance items + S31/S32/S31b slices. Plan now ~430 lines, all original sections retained."
+  evidence:
+    verdict: pass
+    findings: []
+    justification: "Plan references LLD-007 sections + acceptance items + test IDs explicitly. No fabricated citations. Time estimates revised per scope expansion."
+  clarity:
+    verdict: pass
+    findings: []
+    justification: "PF1-PF8 fixes labeled inline. Required-tests array explicit. Task 8 criteria reformatted for runtime vs prose distinction (PF11). Atomic-write design pseudocode in LLD."
+  consistency:
+    verdict: fail
+    findings:
+      - severity: High
+        location: "Task 7 verification gate skipped-tests assertion (lines 229-240, post-PF8)"
+        problem: "A14 'no skipped tests' gate not actually enforced. Task 7 says skipped required tests are blocked, but gate only runs pytest and assumes exit 0 means no skips. In pytest, skipped tests still return exit 0; required tests can be skipped while gate passes."
+      - severity: High
+        location: "A24 atomic-write acceptance (S31, lines 124-125)"
+        problem: "A24 atomic-write acceptance only tests pre-write failure (schema-fail-twice → no file). Doesn't exercise write-path failures (interrupted write, ENOSPC, I/O exception) where partial files can occur if writes are non-atomic."
+      - severity: Medium
+        location: "Task 8 criterion 4 token-cap check (lines 256-263)"
+        problem: "A8 runtime token-cap not verified at runtime. Task 8 criterion 4 checks dispatch instructions mention `max_tokens: 4000`, not that actual Task invocation carried max_tokens=4000. Can pass while runtime kwargs drift, despite criteria 3-4 being trust-boundary controls with mandatory revert."
+overall_verdict: fail
+required_followup:
+  - "PF9 (High): replace skip check with machine-enforced assertion on required node IDs via JSON/JUnit output; fail if any required test skipped"
+  - "PF10 (High): redefine A24 atomic-write around write-path atomicity (temp file + fsync + atomic replace + cleanup) + add fault-injection test for partial-write prevention"
+  - "PF11 (Medium): Task 8 criterion 4 must inspect real Task invocation payload (max_tokens runtime kwarg), not SKILL.md prose; treat missing/different runtime kwargs as hard failure with mandatory revert"
+notes: |
+  Codex round 3 adversarial review of v1.6 implementation plan (gpt-5-codex).
+  Verdict: needs-attention. 3 NEW findings, no overlap with PF1-PF8.
+  Severity profile stable: 0 Critical, 2 High, 1 Medium per round across r1/r2/r3.
+
+  All 3 findings (PF9-PF11) addressed inline. PF10 also propagated to LLD-007
+  (atomic-write design now in cli.spec_review module spec; T25 split into T25 + T25b
+  fault-injection variant).
+
+  Per LLD-006-r4 max-3-iterations convention, round 3 = iteration boundary.
+  Plan accepted as conditional_pass canon-equivalent. Implementation can proceed.
+  Remaining residual issues addressed in v1.6.x followups if observed in
+  practice.
+
+  Plan attestation pattern (this file + r1 + r2) demonstrates user-requested
+  convention: every spec review gets its own attestation, regardless of doc
+  type. Plans are now valid attestation targets per LLD-007 schema regex update.

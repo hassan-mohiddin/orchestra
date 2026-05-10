@@ -1,0 +1,57 @@
+schema_version: "1.0"
+doc_subject:
+  path: docs/plans/2026-05-10-lld-007-implementation.md
+  content_hash: sha256:retroactive_r1_no_snapshot_captured
+  iteration: 1
+reviewer:
+  identifier: "codex:adversarial-review+gpt-5-codex"
+  invoked_at: 2026-05-10T00:00:00Z
+  context_isolation: fresh_subagent
+gates:
+  completeness:
+    verdict: pass
+    findings: []
+    justification: "All plan sections present: header, goal, file structure, 8 tasks, dependencies graph, sequencing rule, time estimates, v1.6.x followups, changelog. Each task has files / what / acceptance / sequencing / commit fields. No empty placeholders."
+  evidence:
+    verdict: pass
+    findings: []
+    justification: "Plan references LLD-007 sections by name. No fabricated citations. Time estimates plausible per LLD-006-r4 v1.5.0 implementation pace (~2h actual)."
+  clarity:
+    verdict: conditional_pass
+    findings:
+      - severity: Low
+        location: "Task 6 § Status flip rationale"
+        problem: "Task 6 cites imprecise governance rationale for Draft → Implemented transition. Plan says 'narrow change permitted on canon-frozen-bound docs; pre-canon-frozen Draft → canon-frozen transition allowed via full-edit per LLD-006-r4 rejection-finalization-edit semantics — this is the symmetric forward case'. LLD-006-r4 does not define a 'symmetric' rejection-finalization-edit; it defines narrow-change limits only for prior canon-frozen docs. Transition may be allowed but stated rationale is non-authoritative and can be misapplied later."
+  consistency:
+    verdict: fail
+    findings:
+      - severity: High
+        location: "Task 7 verification gate (lines 149-150)"
+        problem: "Verification gate can false-pass failing test/eval runs. Task 7 gates shipment using `pytest|tail` and `eval.run|tail`. In normal shell semantics, pipeline status comes from `tail`, so failures in pytest/eval can be masked while the step appears green. Fail-open verification on trust-boundary controls."
+      - severity: High
+        location: "Task 3 + Task 4 sequencing (lines 102-191)"
+        problem: "Task order contradicts declared vertical-slice TDD approach. Plan declares one-failing-test → minimal implementation → green iteration, but explicitly sequences Task 4 (tests) AFTER Task 3 (full cli.spec_review.py implementation) and allows most test groups in arbitrary order. That's implementation-first/horizontal flow, not TDD vertical. Delays detection of regression-prone security behaviors."
+      - severity: Medium
+        location: "Plan file structure § (lines 34-59)"
+        problem: "Planned file structure does not fully match LLD-007 sidecar structure. LLD-007 § cli.spec_review module references `cli/templates/attestation-template.yaml` as a fixture for tests, but this artifact is not owned by any task or listed in plan file structure. Spec/plan drift; can break fixture expectations."
+      - severity: Medium
+        location: "Acceptance ownership (lines 67-171)"
+        problem: "Acceptance-to-task ownership incomplete and weakly gated. A14 (pytest baseline ≥132) not explicitly owned in task acceptance mappings. Manual runtime dispatch verification referenced by A3/A8 not concretely defined as a blocking check in Task 8. Critical ship criteria left implicit and easy to miss."
+overall_verdict: fail
+required_followup:
+  - "PF1 (High): make verification gate fail-closed (`set -o pipefail` or remove `| tail`)"
+  - "PF2 (High): restructure Task 3+4 into explicit RED→GREEN slices in dependency order"
+  - "PF3 (Medium): add cli/templates/attestation-template.yaml to file structure + owning task"
+  - "PF4 (Medium): assign explicit task ownership for A14 + concrete Task 8 blocking criteria for runtime dispatch verification"
+  - "PF5 (Low): rewrite Task 6 Draft→Implemented rationale using authoritative LLD-006-r4 language (Draft is NOT canon-frozen → narrow-change rules don't apply)"
+notes: |
+  Codex round 1 adversarial review of v1.6 implementation plan (gpt-5-codex).
+  Verdict: needs-attention. 5 findings: 0 Critical, 2 High, 2 Medium, 1 Low.
+  Cross-checked against LLD-007 architectural references.
+
+  Retroactive attestation. Captured during dogfood after codex output, NOT via
+  /orchestra:spec-review skill (skill not yet built — that's the LLD-007 ship).
+  Full codex output captured in conversation transcript.
+
+  All 5 findings (PF1-PF5) addressed inline in subsequent revision. See r2
+  attestation for round 2 review of fixes.

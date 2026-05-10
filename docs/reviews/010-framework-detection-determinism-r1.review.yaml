@@ -1,0 +1,158 @@
+schema_version: '1.0'
+doc_subject:
+  path: docs/features/010-framework-detection-determinism.md
+  content_hash: sha256:a76f2e16c4f3284acc198ce929f3e5d94004ac7ba52fb9eced61692321af8b32
+  iteration: 1
+reviewer:
+  identifier: subagent:general-purpose+spec-review-v1
+  invoked_at: '2026-05-11T00:00:00Z'
+  context_isolation: fresh_subagent
+gates:
+  completeness:
+    verdict: conditional_pass
+    findings:
+    - severity: Important
+      location: "Success Criteria \xA7 A4 verify-hooks-active"
+      problem: A4 fingerprint uses head -n5. pre-commit framework header may exceed
+        5 lines depending on version (some pre-commit emit marker at line 6+). Legitimate
+        framework-mode install could fail A4 -> A7 hard-fail -> user sees remediation
+        telling them to do exactly what they already did, breaking trust. Widen check
+        to head -n20 OR check fingerprint anywhere in file. Document version floor.
+    - severity: Minor
+      location: "Success Criteria \xA7 A13 integration test T13"
+      problem: 'T13 names ''stage a canon-inplace violation'' but does not specify
+        how violation is constructed. Fixture spec missing. Add: docs/features/test-canon-froz.md
+        committed at HEAD with Status: Implemented + Iteration: 1; test modifies non-whitelist
+        Acceptance section; stages; commits with no Addresses: line. Expected: commit-msg
+        hook rejects via LLD-009 L2-finalize.'
+  evidence:
+    verdict: fail
+    findings:
+    - severity: Critical
+      location: "Glossary \xA7 pass_filenames"
+      problem: 'Glossary states pass_filenames true => framework passes msg-file;
+        false => no positional arg. WRONG per pre-commit.com docs: ''commit-msg hooks
+        will be passed a single filename ... regardless of pass_filenames setting''.
+        msg-file is passed regardless of pass_filenames. pass_filenames controls OTHER
+        (matched) filenames flow, not the special commit-msg arg. Rewrite Glossary
+        entry; re-derive A1 default with corrected semantics.'
+    - severity: Critical
+      location: "Problem Statement \xA7 defect 2 + A1 + line 30 + line 113-115"
+      problem: Defect 2 (Snippet pass_filenames wrong for commit-msg stage. Naive
+        snippet sets pass_filenames false ... framework does NOT pass msg-file path)
+        is incorrect per pre-commit framework contract. The LLD entire pass_filenames
+        true mandate (A1 + snippet line 138 + IMPORTANT comment lines 112-115) built
+        on inverted premise. If codex r2 high 1 actually claimed this, codex claim
+        wrong and should be re-litigated NOT propagated forward. Verify directly via
+        integration test before locking design.
+    - severity: Important
+      location: "Design \xA7 install_via_framework_apply lines 243-245"
+      problem: 'fsync pseudocode bugged: os.fsync(open(tmp).fileno()) opens NEW read
+        fd, fsyncs it (which on POSIX flushes nothing since write happened via different
+        fd that was closed by write_text), and leaks fd. Standard durable-write pattern
+        requires fsyncing SAME fd write went through. Replace with: with open(tmp,
+        ''w'') as f: f.write(...); f.flush(); os.fsync(f.fileno()); os.replace(tmp,
+        cfg_path). Add dirfsync after os.replace for full POSIX rename atomicity.'
+    - severity: Important
+      location: "Design \xA7 Framework detection + tailoring lines 209-218"
+      problem: _emit_tailored_snippet body is ... (stub) where actual stripping logic
+        should live. 'strip lines between marker comments' hand-waved. Snippet has
+        no marker comments delimiting directive block. T3a unimplementable. Either
+        define explicit BEGIN/END markers in snippet file + document strip mechanism
+        OR drop 'shorter snippet' tailoring entirely and always emit full snippet.
+        Latter simpler.
+    - severity: Important
+      location: "Edge Cases \xA7 2 vs 11"
+      problem: 'Edge case 2 says --apply with partial config ''would create duplicate
+        orchestra-lint id'' and mitigation is ''check for orchestra-lint id presence;
+        if present alone: emit error suggesting manual merge''. But A3 detection at
+        line 198 only returns True if BOTH ids present (subset check). So --apply
+        with partial config CURRENTLY falls through ''orchestra not configured'' branch
+        and appends new local block, producing the duplicate. Mitigation describes
+        desired behavior but no acceptance item / test e...'
+    - severity: Important
+      location: "Success Criteria \xA7 A8 + Related Documents lines 62 + 360 + 365"
+      problem: 'A8 reconciliation says precommit-yaml-patch.txt ''stays in cli/templates/''
+        while LLD-010 ships new file in skills/commit/templates/precommit-framework-snippet.yaml.
+        Asymmetric layout (template files split between two directories with no shared
+        rationale documented). Add canonical placement rule: ''Framework-integration
+        artifacts (consumed by cli.install_hooks framework-detection path) live under
+        skills/commit/templates/. Init-time framework-orthogonal patches (consumed
+        by cli.init or user-man...'
+    - severity: Minor
+      location: "Success Criteria \xA7 A3 line 45 + A6 line 56"
+      problem: 'A6 says framework detection integrated into existing cli.install_hooks
+        (NOT new entrypoint) but A3 + A4 + A5 all describe new flags (--apply, --verify,
+        --force-raw) and new behaviors materially changing existing CLI shape. Calling
+        this ''not new entrypoint'' accurate but misleading - CLI surface area roughly
+        doubled. Rephrase A6: ''Framework detection extends existing entrypoint with
+        new flags and conditional code paths; no new top-level CLI tool added''.'
+  clarity:
+    verdict: conditional_pass
+    findings:
+    - severity: Minor
+      location: "Design \xA7 Mermaid diagram lines 144-166"
+      problem: 'Diagram labels orchestra-frame (''auto-merge: append local repo entry'')
+        but does not show the orchestra-ids-detected branch where one id is present
+        without the other (partial config edge case from Edge Cases 2). Diagram understates
+        decision space. Add ''partial config'' branch leading to exit non-zero with
+        manual-merge guidance per recommended A3b. Or update diagram caption to note
+        ''partial config branch not shown - see Edge Cases 2 / proposed A3b''.'
+    - severity: Minor
+      location: "Changelog \xA7 line 372"
+      problem: Single Changelog row covers r1 filing; mentions '5 Q&A locked' but
+        questions/answers not enumerated in LLD body (only A3-A7 reference 'QN grill
+        answer' by number). Reader cannot trace grilling-session reasoning. Either
+        inline 'Grilling session decisions' subsection summarizing each Q with locked
+        answer OR link to grilling-session scratch note (if one exists in docs/investigations/).
+        Otherwise Q-references in A-items unresolvable.
+  consistency:
+    verdict: conditional_pass
+    findings:
+    - severity: Minor
+      location: "Scope \xA7 Out of Scope lines 87-97"
+      problem: Auto-uninstall deferral noted. 'Manual procedure documented' but no
+        pointer to where (runbook, README, etc.). Reader has no path to find manual
+        procedure post-ship. Add reference to D2 (CONTRIBUTING.md) covering both install
+        and uninstall framework procedures; or file follow-up doc with explicit path
+        before LLD-010 ship.
+    - severity: Minor
+      location: "Success Criteria \xA7 A11 + LLD-009 A16"
+      problem: 'A11 says pytest target post-LLD-010 = 219 (197 LLD-009 + 22 LLD-010).
+        LLD-009 A16 says 197 (161 LLD-008 + 36). Math depends on LLD-008/009 actually
+        landing in sequence with stated test counts. T8 conflates assertions. T1+T2
+        also overlap T8. Tighten T8 description: T8a/T8b/T8c sub-tests. Update total
+        accordingly. Either accept LLD-008/009 dependency in writing OR guard against
+        ordering with interim-baseline fallback.'
+overall_verdict: fail
+required_followup:
+- 'VERIFY pass_filenames behavior: empirically test pre-commit framework with pass_filenames:
+  false on commit-msg hook to confirm whether $1 is populated. If confirmed: retract
+  defect 2, fix Glossary, set pass_filenames per author taste with brief justification,
+  redraft A1+A12.'
+- 'Fix fsync pseudocode: with-block + f.flush() + os.fsync(f.fileno()) + dirfsync
+  after os.replace.'
+- 'Resolve _emit_tailored_snippet stub: define BEGIN/END markers in template OR drop
+  tailoring + always emit full snippet. Latter simpler.'
+- 'Add A3b for partial-config rejection: orchestra-lint XOR orchestra-commit-msg present
+  -> partial_config error. Add T3e test.'
+- Document A8 placement rule (skills/commit/templates/ for framework-integration artifacts;
+  cli/templates/ for init-time artifacts). Update T8 to assert both files at canonical
+  paths + rule reflected in docstring/README.
+- Widen A4 fingerprint check OR make case-insensitive OR check anywhere in file. Document
+  version floor.
+- 'Specify T13 fixture: canon-frozen markdown + HEAD state + violation construction.'
+notes: 'LLD-010 architectural shape sound (separate snippet file, framework-detection
+  with tailoring, --apply opt-in, --verify entrypoint, hard-fail). HOWEVER load-bearing
+  technical claim driving entire LLD - that pass_filenames: false on commit-msg hook
+  causes framework to withhold msg-file path - is INVERTED relative to authoritative
+  pre-commit.com docs. commit-msg hooks ALWAYS receive msg-file regardless of pass_filenames.
+  Invalidates Problem Statement defect 2, Glossary entry, A1 central rationale, snippet
+  IMPORTANT comment, codex r2 high 1 attribution. Several secondary defects: pseudocode
+  fsync bug, atomic-write re-opens tmp discarding write buffer, A3 ''shorter snippet''
+  implementation undefined (only ... stub), A8 reconciliation does not address LLD-008
+  A3 inventory asymmetry split rationale absent, edge case for two repo: local blocks
+  may break duplicate-id detection (A3 only scans for both ids subset; partial-config
+  edge 2 contradicts itself on whether --apply errors or just emits manual-merge guidance).
+  Recommend pause before iteration 2: verify pass_filenames behavior with actual pre-commit
+  repro (5 min) before redrafting.'

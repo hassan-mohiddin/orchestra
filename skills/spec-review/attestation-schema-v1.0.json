@@ -1,0 +1,74 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "orchestra Spec Review Attestation v1.0",
+  "type": "object",
+  "required": ["schema_version", "doc_subject", "reviewer", "gates", "overall_verdict"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "doc_subject": {
+      "type": "object",
+      "required": ["path", "content_hash", "iteration"],
+      "additionalProperties": false,
+      "properties": {
+        "path": {"type": "string", "pattern": "^docs/(features|bugs|adr|design|postmortems|runbooks|plans|archive/[a-z]+)/.+\\.md$"},
+        "content_hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        "iteration": {"type": "integer", "minimum": 1}
+      }
+    },
+    "reviewer": {
+      "type": "object",
+      "required": ["identifier", "invoked_at", "context_isolation"],
+      "additionalProperties": false,
+      "properties": {
+        "identifier": {"type": "string"},
+        "invoked_at": {"type": "string", "format": "date-time"},
+        "context_isolation": {"const": "fresh_subagent"}
+      }
+    },
+    "gates": {
+      "type": "object",
+      "required": ["completeness", "evidence", "clarity", "consistency"],
+      "additionalProperties": false,
+      "properties": {
+        "completeness": {"$ref": "#/definitions/gate"},
+        "evidence": {"$ref": "#/definitions/gate"},
+        "clarity": {"$ref": "#/definitions/gate"},
+        "consistency": {"$ref": "#/definitions/gate"}
+      }
+    },
+    "overall_verdict": {"enum": ["pass", "conditional_pass", "fail"]},
+    "required_followup": {"type": "array", "items": {"type": "string"}},
+    "notes": {"type": "string"}
+  },
+  "definitions": {
+    "gate": {
+      "type": "object",
+      "required": ["verdict", "findings"],
+      "additionalProperties": false,
+      "properties": {
+        "verdict": {"enum": ["pass", "conditional_pass", "fail"]},
+        "findings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["severity", "location", "problem"],
+            "additionalProperties": false,
+            "properties": {
+              "severity": {"enum": ["Critical", "Important", "Minor"]},
+              "location": {"type": "string", "pattern": "^(.+\\s+§\\s+.+|line\\s+\\d+)$"},
+              "problem": {"type": "string", "minLength": 1, "maxLength": 500}
+            }
+          }
+        },
+        "justification": {"type": "string", "minLength": 10}
+      },
+      "if": {
+        "properties": {"findings": {"maxItems": 0}}
+      },
+      "then": {
+        "required": ["verdict", "findings", "justification"]
+      }
+    }
+  }
+}

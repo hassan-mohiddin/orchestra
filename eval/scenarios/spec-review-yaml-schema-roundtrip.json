@@ -1,0 +1,20 @@
+{
+  "name": "spec-review-yaml-schema-roundtrip",
+  "description": "v1.6 LLD-007 — pipe canned valid YAML attestation to cli.spec_review; verify exit 0, attestation written under docs/reviews/, schema-valid, hash recomputed, path canonical.",
+  "setup": [
+    "git init --quiet --initial-branch=main",
+    "mkdir -p docs/features",
+    "printf '# Feature: example\\n\\n> **Iteration:** 1\\n\\n## Body\\n\\nHello.\\n' > docs/features/099-example.md"
+  ],
+  "exercise": [
+    {
+      "cmd": "DOC_HASH=$(/Users/mohammedhassanmohiddin/Documents/Antigravity/SCALE\\ APP/.venv/bin/python -c 'import hashlib,sys;print(hashlib.sha256(open(sys.argv[1],\"rb\").read()).hexdigest())' docs/features/099-example.md); printf 'schema_version: \"1.0\"\\ndoc_subject:\\n  path: docs/features/099-example.md\\n  content_hash: sha256:%s\\n  iteration: 1\\nreviewer:\\n  identifier: \"subagent:general-purpose+spec-review-v1\"\\n  invoked_at: \"2026-05-10T00:00:00Z\"\\n  context_isolation: fresh_subagent\\ngates:\\n  completeness: {verdict: pass, findings: [], justification: \"all sections present\"}\\n  evidence: {verdict: pass, findings: [], justification: \"all claims cited\"}\\n  clarity: {verdict: pass, findings: [], justification: \"fresh reader can act\"}\\n  consistency: {verdict: pass, findings: [], justification: \"no contradictions\"}\\noverall_verdict: pass\\n' \"$DOC_HASH\" | PYTHONPATH=/Users/mohammedhassanmohiddin/Documents/Antigravity/orchestra /Users/mohammedhassanmohiddin/Documents/Antigravity/SCALE\\ APP/.venv/bin/python -m cli.spec_review docs/features/099-example.md > spec.out 2> spec.err; echo $? > spec.exit"
+    }
+  ],
+  "assert": [
+    {"type": "file_contains", "path": "spec.exit", "substring": "0"},
+    {"type": "file_exists", "path": "docs/reviews/099-example-r1.review.yaml"},
+    {"type": "file_contains", "path": "docs/reviews/099-example-r1.review.yaml", "substring": "schema_version: '1.0'"},
+    {"type": "file_contains", "path": "docs/reviews/099-example-r1.review.yaml", "substring": "overall_verdict: pass"}
+  ]
+}

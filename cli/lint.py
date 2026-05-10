@@ -85,9 +85,10 @@ WHITELIST_FRONTMATTER_FIELDS: set[str] = {"Status", "Iteration", "Superseded by"
 # v1.5 LLD-006-r4 — attestation path-mutation guard (two-locations rule)
 ALLOWED_ATTESTATION_PATH_PREFIXES: tuple[str, ...] = (
     "docs/features/", "docs/bugs/", "docs/adr/", "docs/design/",
-    "docs/postmortems/", "docs/runbooks/",
+    "docs/postmortems/", "docs/runbooks/", "docs/plans/",
     "docs/archive/features/", "docs/archive/bugs/", "docs/archive/adr/",
     "docs/archive/design/", "docs/archive/postmortems/", "docs/archive/runbooks/",
+    "docs/archive/plans/",
 )
 
 # v1.5 LLD-006-r4 — filename pattern recognition

@@ -1,7 +1,7 @@
 {
   "name": "orchestra",
   "description": "Disciplined AI engineering toolkit for Claude Code. Typed design docs (Feature LLD, Bug Report, ADR, Postmortem, Runbook, Design Doc), 4-gate spec review, mandatory mermaid diagrams, AGENTS.md / llms.txt sync. First skill of the Orchestra umbrella; future skills cover workflow, registry, tasks.",
-  "version": "1.5.1",
+  "version": "1.6.0",
   "author": {
     "name": "Hassan Mohiddin",
     "email": "hassangameryt15@gmail.com"

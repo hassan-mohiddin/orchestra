@@ -1,5 +1,53 @@
 # Changelog
 
+## v1.6.0 — 2026-05-10
+
+LLD-007 spec-review architecture shipped. Multi-judge with manual chair —
+orchestra ships exactly one judge (`orchestra:spec-review`); user manually
+invokes additional judges (codex adversarial-review, cavecrew-reviewer, etc.)
+and decides verdict.
+
+### Added
+
+- `orchestra:spec-review` skill (judge-1 default) — fresh-context subagent
+  dispatch via Task tool, 7-element adversarial prompt, schema-validated YAML
+  attestations at `docs/reviews/<doc-id>-rN.review.yaml`
+- `/orchestra:spec-review <doc-path>` slash command
+- `cli.spec_review` Python sidecar — schema validation, path canonicalization,
+  hash binding, verdict authoritative-compute, stale-state byte-compare,
+  atomic-write (temp+fsync+os.replace)
+- Attestation schema v1.0 (JSON-schema) — 4 gates (Completeness / Evidence /
+  Clarity / Consistency), severity enum {Critical, Important, Minor},
+  empty-findings + justification conditional rule, location-regex enforcement
+- 36 new pytest tests (107 → 143)
+- 1 new eval scenario `spec-review-yaml-schema-roundtrip` (11 → 12)
+- `cli.lint` ALLOWED_ATTESTATION_PATH_PREFIXES extended for `docs/plans/` +
+  `docs/archive/plans/` (plans are now valid spec-review targets)
+
+### Bias mitigations
+
+1. Position bias — prompt instructs ordering by location, not severity
+2. Self-preference — `--force` required for same-iteration overwrite
+3. Length bias — `max_tokens: 4000` Task kwarg per SKILL.md
+4. Same-model bias (documented) — STANDARDS recommends running
+   `/codex:adversarial-review` as judge-2 for different-model coverage
+
+### Hardening (codex round 1-3 + plan codex round 1-3)
+
+- F1 path traversal blocked (canonicalize_doc_path fail-closed)
+- F2 verdict spoofing blocked (compute_overall_verdict authoritative)
+- F3 anti-sycophancy bypass blocked (schema if/then justification rule)
+- F4 path identity binding (post-schema canonical-path check)
+- F5 canonicalize fail-closed for resolve errors
+- F6 stale-state hash gate (byte-compare, not just hash)
+- F8 single-snapshot semantics (TOCTOU-free)
+- F9 repo-root anchoring (cwd-independent)
+- A24/PF10 atomic-write contract (temp+fsync+os.replace)
+
+### Dependencies
+
+- Added: `jsonschema>=4`
+
 ## v1.5.1 — 2026-05-10
 
 Interview Gate philosophy added — first half of the "backward-flow workflow"

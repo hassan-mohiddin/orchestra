@@ -39,6 +39,7 @@ The Orchestra umbrella will absorb additional skills over time. Planned:
 | Skill | Purpose | Status |
 |-------|---------|--------|
 | `orchestra:design-docs` | Typed docs + 4-gate review (this release) | ✅ v1.0 |
+| `orchestra:spec-review` | Multi-judge spec review (judge-1 default) — `/orchestra:spec-review <doc-path>` | ✅ v1.6 |
 | `orchestra:workflow` | Master workflow file with situation-language routing | 🟡 v1.1 |
 | `orchestra:skills-registry` | Situation → skill binding table + override rules | 🟡 v1.1 |
 | `orchestra:tasks` | Task-tracking discipline + cross-agent state | 🟡 v1.2 |

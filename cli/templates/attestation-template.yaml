@@ -1,0 +1,27 @@
+schema_version: "1.0"
+doc_subject:
+  path: docs/features/000-placeholder.md
+  content_hash: sha256:0000000000000000000000000000000000000000000000000000000000000000
+  iteration: 1
+reviewer:
+  identifier: "subagent:general-purpose+spec-review-v1"
+  invoked_at: 2026-05-10T00:00:00Z
+  context_isolation: fresh_subagent
+gates:
+  completeness:
+    verdict: pass
+    findings: []
+    justification: "Template fixture — replace with real review output."
+  evidence:
+    verdict: pass
+    findings: []
+    justification: "Template fixture — replace with real review output."
+  clarity:
+    verdict: pass
+    findings: []
+    justification: "Template fixture — replace with real review output."
+  consistency:
+    verdict: pass
+    findings: []
+    justification: "Template fixture — replace with real review output."
+overall_verdict: pass

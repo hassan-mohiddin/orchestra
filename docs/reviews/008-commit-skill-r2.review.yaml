@@ -1,0 +1,164 @@
+schema_version: '1.0'
+doc_subject:
+  path: docs/features/008-commit-skill.md
+  content_hash: sha256:a80d40bc8b72b2ac28795ae59cf0ba2357de976c702211ce36730359bbe97ffe
+  iteration: 2
+reviewer:
+  identifier: subagent:general-purpose+spec-review-v1
+  invoked_at: '2026-05-11T00:00:00Z'
+  context_isolation: fresh_subagent
+gates:
+  completeness:
+    verdict: conditional_pass
+    findings:
+    - severity: Important
+      location: "Success Criteria \xA7 A5"
+      problem: 'A5 specifies snippet wires orchestra-commit-msg running ''python -m
+        cli.lint --commit-msg-finalize $1'', but YAML snippet in Design has ''entry:
+        python -m cli.lint --commit-msg-finalize'' with ''args: []'' and ''pass_filenames:
+        false''. With pass_filenames: false and empty args, no positional arg is supplied.
+        The parenthetical claim that framework supplies $1 automatically is incorrect
+        for this YAML shape; A5 contract vs YAML snippet vs framework semantics contradict.'
+    - severity: Important
+      location: "Success Criteria \xA7 A10"
+      problem: "A10 says '15 distinct test IDs counted' but matrix in Testing \xA7\
+        \ enumerates 22 IDs (T1+T2+T3+T4a-d (4)+T5a-e (5)+T6a-h (8)+T7+T8). The number\
+        \ 15 does not appear in any reasonable counting; appears to be stale artifact\
+        \ from r1. '15' vs '21 distinct test functions' vs matrix-actual 22 IDs cannot\
+        \ be reconciled."
+    - severity: Minor
+      location: "Success Criteria \xA7 A2"
+      problem: "A2 enumerates 9 expected files (1 SKILL.md + 3 templates + 5 references).\
+        \ Test T1 says 'exactly 9 expected files' but skill dirs (templates/, references/)\
+        \ are subdirs \u2014 file count vs path-glob assertion ambiguity."
+    - severity: Minor
+      location: "Success Criteria \xA7 A11"
+      problem: "A11 references companion plan 'docs/plans/2026-05-10-test-quality-audit.md'\
+        \ but A11 is now downgraded to D6. A11 points to D6 which points back to A11\
+        \ \u2014 circular reference; reader cannot determine if filing the audit doc\
+        \ is required before LLD-008 ship or not."
+  evidence:
+    verdict: conditional_pass
+    findings:
+    - severity: Important
+      location: "Glossary \xA7 canon-frozen status set"
+      problem: Cites 'cli/lint.py:71-73 CANON_FROZEN_STATUSES'. Line range not independently
+        spot-checked in this attestation. REFS_ELIGIBLE_PREFIXES at cli/lint.py:77-80
+        cited multiple times without per-cite verification of line ranges as of iteration
+        2.
+    - severity: Important
+      location: "Design \xA7 cli.lint.is_narrow_change tiered extension"
+      problem: "States helpers 'are NEW functions in cli/lint.py adjacent to is_narrow_change\
+        \ (target file:line: cli/lint.py:~430+, after existing tiered logic)'. The\
+        \ phrase 'after existing tiered logic' is contradictory \u2014 LLD elsewhere\
+        \ states existing logic is strict-binary (no tiered logic exists). r2 supplies\
+        \ '~430+' which is approximate, not concrete file:line."
+    - severity: Important
+      location: "Design \xA7 cli.lint.is_narrow_change function signature"
+      problem: Signature shown is 'def is_narrow_change(prior_text, new_text, commit_msg=None)
+        -> tuple[bool, str]' but body references 'repo_root' (in '_verify_finding_in_attestation(repo_root,
+        ...)'). repo_root not in signature; not declared module-level. Implementer
+        cannot reproduce contract.
+    - severity: Minor
+      location: "Success Criteria \xA7 A9"
+      problem: A9 reconciles baseline as '107 v1.5.1 + 37 LLD-007 + 6 BUG-009 = 150'
+        but cites handoff doc + CHANGELOG without file:line. Component counts (107,
+        37, 6) are claims requiring per-file evidence beyond doc-cites.
+  clarity:
+    verdict: conditional_pass
+    findings:
+    - severity: Important
+      location: "Design \xA7 Hook flow mechanical"
+      problem: "Diagram shows commit-msg hook 'also runs Refs:-line check on fix:/feat:'\
+        \ as part of --commit-msg-finalize, but A7 hook flow says commit-msg runs\
+        \ 'cli.lint --commit-msg-finalize <msg-file>' and Scope \xA7 3 says commit-msg\
+        \ runs L2-finalize + Refs:-line check. Unclear whether Refs:-line check is\
+        \ folded into --commit-msg-finalize entrypoint or stays separate stage in\
+        \ commit-msg.sh. commit-msg.sh contents not specified."
+    - severity: Important
+      location: "Design \xA7 Skill invocation flow step 4"
+      problem: Step 4 says skill OPTIONALLY runs 'cli.lint --doc <path>' inline. But
+        cli.lint --doc is not documented in this LLD; no entrypoint named --doc is
+        established. Either new flag introduced silently or flag name incorrect. Affects
+        SKILL.md prose authoring.
+    - severity: Important
+      location: "Edge Cases \xA7 13"
+      problem: Says pre-commit OVERWRITES pending file at start; commit-msg always
+        cleans up at exit. Mitigation does NOT explain what --commit-msg-finalize
+        does on FIRST invocation when pending file is from PRIOR aborted commit +
+        current commit has NO canon-inplace. Cleanup-on-exit logic conflated with
+        detection logic.
+    - severity: Important
+      location: "Design \xA7 Migration Pre-skill-ship state"
+      problem: "Lists canon-frozen-guard.md (165 lines) but enumerates 6 SCALE-side\
+        \ rule files in Problem Statement \xA7 layer 4. Migration \xA7 lists only\
+        \ 4 files explicitly (canon-frozen, commit-strategy, doc-gate, then bundles\
+        \ 3 unchanged files). r2 changelog claims 'Migration \xA7 file-count reconciled'\
+        \ but reconciliation is between deletion-count vs edit-count, NOT between\
+        \ Problem Statement layer 4's 6 files vs Migration coverage."
+    - severity: Minor
+      location: "Glossary \xA7 L2-detect / L2-finalize"
+      problem: L2-detect definition uses term 'pending violation' which a reader may
+        interpret as 'a violation pending acceptance' rather than 'a candidate violation
+        pending finalize-time decision'. Minor ambiguity.
+  consistency:
+    verdict: conditional_pass
+    findings:
+    - severity: Important
+      location: "Success Criteria \xA7 A5 vs Design \xA7 framework-detection YAML\
+        \ snippet"
+      problem: 'A5 says snippet wires orchestra-commit-msg with ''$1''. YAML snippet
+        has ''entry: python -m cli.lint --commit-msg-finalize'' with args: [] and
+        pass_filenames: false. At commit-msg stage with pass_filenames: false, no
+        positional arg is added. Contract between A5 spec and Design YAML is contradictory;
+        T4d will fail as documented.'
+    - severity: Important
+      location: "Edge Cases \xA7 9 vs Design \xA7 references governance"
+      problem: "Edge Case 9 says 'NOT subject to cli.lint L1/L2'. Design \xA7 references/\
+        \ governance says each ref file has Status field for skill-internal tracking.\
+        \ Status enum for skill-internal tracking not specified. Whether plugin-update-channel\
+        \ review is mandatory or advisory not stated."
+    - severity: Important
+      location: "Success Criteria \xA7 A14 vs canon-frozen-status set"
+      problem: A14 describes appending Changelog entry to BUG-011 doc as reconciliation.
+        BUG-011 Status currently 'Investigating' which is NOT in canon-frozen-status
+        set per Glossary. So full edit permitted; narrow-change discipline does not
+        apply. A14 procedure described is more cautious than required (reads as if
+        narrow-change rules apply when they don't).
+    - severity: Important
+      location: "Testing \xA7 matrix vs A10 count"
+      problem: "Testing \xA7 matrix enumerates 22 distinct test IDs (T1, T2, T3, T4a,\
+        \ T4b, T4c, T4d, T5a, T5b, T5c, T5d, T5e, T6a, T6b, T6c, T6d, T6e, T6f, T6g,\
+        \ T6h, T7, T8). A10 says '15 distinct test IDs counted' but next breath says\
+        \ '21 distinct test functions'. 15 does not appear in reasonable counting\
+        \ of the matrix. Stale artifact from r1; not reconciled in r2 changelog point\
+        \ (i)."
+    - severity: Minor
+      location: "Related Documents \xA7 cli/lint.py line cites"
+      problem: Cites cli/lint.py:71-73, :77-80, :397-427, :36-52 and cli/install_hooks.py:48-75
+        reproduced from r1. r2 adds new claim 'cli.lint:~430+' for new helpers (explicitly
+        approximate) without evidence those line ranges are still current post BUG-009
+        retroactive-L2 (v1.6.2 +6 tests).
+overall_verdict: conditional_pass
+required_followup:
+- 'Reconcile A5 YAML snippet contract with pre-commit framework commit-msg stage semantics:
+  pass_filenames: true OR args with explicit positional path OR document mechanism
+  for $1'
+- "Reconcile A10 test count: 15 vs 21 vs 22 \u2014 pick consistent number set"
+- Specify cli.lint --doc entrypoint OR remove reference if not yet planned
+- Replace ~430+ approximation in is_narrow_change insertion point with concrete file:line
+- Specify commit-msg.sh shell wrapper contents (single lint invocation vs separate
+  Refs:-line check)
+- Define Status enum for skill-internal references/ tracking
+- Clarify whether reconciliation Changelog append on BUG-011 is canon-frozen-discipline
+  or full-edit (Investigating not canon-frozen)
+notes: 'r2 makes substantial progress on r1 findings: Glossary enumerates canon-frozen
+  status set; A5/A6/A7 redesigned per codex high findings; A8 enumerates migration;
+  baseline 150 reconciled; deferred BUG count corrected. However A5/A7 architectural
+  redesign introduced new contradictions between A5 spec, YAML snippet shape, and
+  pre-commit framework semantics that will cause T4d to fail. A10 test count carries
+  stale ''15 distinct test IDs'' figure. Several pseudo-code blocks reference parameters
+  without complete signatures. None are Critical (architectural shape sound; discipline-layer
+  + mechanical-backstop split correct). conditional_pass because at least one finding
+  (A5 YAML semantics) WILL produce non-functional impl if not addressed. Status: Draft
+  permits full edit; addressable inline before iteration 3.'

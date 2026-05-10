@@ -1,5 +1,74 @@
 # Changelog
 
+## v1.6.2 — 2026-05-10
+
+Enforcement gaps closed + backlog cleanup. Closes 5 of 11 tracked BUGs
+(009, 010 — High; 003, 007 — High/Medium; 008 — Critical). Five
+deferred to v1.7+ with documented fix paths (BUG-001/002/004/005/006);
+BUG-011 design captured for v1.7+ implementation.
+
+### Code
+
+- `cli/lint.py` `lint_commit()` extended with L2 retroactive canon-inplace
+  check (BUG-009). `revert:` and `Revert ` subject prefixes exempted.
+- `cli/templates/pre-commit.sh` env-portability fix: `$PYTHON` env override
+  → `python3` → `python` fallback chain (BUG-010 secondary).
+- `cli/viewer.py` `install_mkdocs()` MKDOCS_INSTALL_FILES extended to 5
+  (adds `docs/tags.md`); emits post-install warning when
+  `.pre-commit-config.yaml` is detected (BUG-003 + BUG-007).
+- `cli/templates/mkdocs.yml` tags plugin gains `tags_file: tags.md` directive
+  + `nav: Tags: tags.md` entry (BUG-003).
+
+### New files
+
+- `cli/templates/tags.md` — Material tags-listing placeholder
+- `cli/templates/precommit-yaml-patch.txt` — `--unsafe` patch snippet for
+  consumers using strict `check-yaml` (BUG-007)
+- `tests/test_lint_commit_l2.py` — 6 new tests for retroactive L2 check
+
+### Hooks
+
+- orchestra repo `.git/hooks/pre-commit` self-installed (BUG-010). Hook
+  runs `python -m cli.lint --pre-commit` (L1+L2+L3+L4) before each commit.
+
+### Docs
+
+- `CONTRIBUTING.md` § Pre-commit hook section: install instruction +
+  rationale + bypass discouragement
+- `README.md` Tier 3 section: `--unsafe` note for pre-commit consumers
+- 4 new BUG docs filed (009, 010, 011) + 4 attestations (BUG-009/010/011
+  + POSTMORTEM-session-process-drift)
+- POSTMORTEM-2026-05-10-canon-inplace-violation.md (incident this session)
+- POSTMORTEM-2026-05-10-session-process-drift.md (consolidates 3+ same-pattern
+  incidents — v1.4 cargo-cult + canon-inplace + repeated Interview-Gate skips)
+- RUNBOOK-canon-inplace-violation-recovery.md (9-step recovery procedure)
+- 8 backlog BUGs each gained Iteration Log entry (Fix Applied for 003/007/008;
+  v1.7+ deferral for 001/002/004/005/006)
+- LLD-007 supersession `-r5.md` (Iteration: 5; Status: Implemented; supersedes
+  archived `docs/archive/features/007-spec-review-architecture.md`)
+
+### SCALE-side
+
+- `.claude/rules/canon-frozen-guard.md` — agent-side discipline rule
+  (companion to LLD-006-r4 § narrow change; SCALE-side until orchestra
+  workflow skill v2.0+ ships template integration)
+
+### Plugin metadata
+
+- Version 1.6.1 → 1.6.2
+
+### Known v1.7+ followups
+
+- BUG-001/002/004/005/006 full implementations
+- BUG-011 supersession-tier code (currently design-only)
+- Mermaid parse errors in BUG-006/007/008 mermaid blocks (pre-existing
+  from 2026-05-06; blocks full pre-commit lint when those files are touched)
+- Auto-install pre-commit hook on `cli.init` bootstrap (BUG-010 Part 3)
+- Spec-review prompt-template enum clarification (finding-severity vs
+  doc-header-severity drift caused 4 false-positives in this session's
+  spec-reviews)
+- POSTMORTEM-session-process-drift Action Items remaining
+
 ## v1.6.1 — 2026-05-10
 
 Dogfood patches shipped via LLD-006-r4 supersession workflow. r4 dogfood

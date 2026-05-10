@@ -1,0 +1,108 @@
+schema_version: "1.0"
+doc_subject:
+  path: docs/archive/features/006-archive-and-supersession-conventions.md
+  content_hash: sha256:34dff925ee62e144e1dc0cda29fc82a207f172fe12c1c939eca0988409914fb1
+  iteration: 1
+reviewer:
+  identifier: "subagent:general-purpose"
+  invoked_at: 2026-05-07T19:30:00Z
+  context_isolation: fresh_subagent
+gates:
+  completeness:
+    verdict: fail
+    findings:
+      - severity: Important
+        location: "Success Criteria § Acceptance items"
+        problem: "'Plugin version bumped 1.4.0 → 1.5.0 (1.4 was rolled back)' — same versioning rationale flagged in r2 review (finding C3) recurs verbatim."
+      - severity: Important
+        location: "Success Criteria § Acceptance items"
+        problem: "Test count math drifts: criteria states '2 new tests' but Testing § enumerates 9 tests."
+      - severity: Important
+        location: "Success Criteria § Acceptance items"
+        problem: "'cli/lint.py rejects in-place edit ... at commit-msg hook time' — Design uses HEAD (`git show HEAD:<path>`), not commit-msg hook timing; ambiguous."
+      - severity: Minor
+        location: "Success Criteria § Acceptance items"
+        problem: "'1 new eval scenario' — orchestra eval framework path/loader not cited."
+      - severity: Important
+        location: "Glossary"
+        problem: "Body uses 'reviewed canon', 'narrow change', 'canon-frozen', 'allowed-narrow' — none defined."
+      - severity: Important
+        location: "Scope § Out of Scope vs Migration"
+        problem: "Out-of-Scope says canon docs untouched; Migration says philosophy doc Changelog will be appended. Philosophy IS a Design Doc (canon). Contradiction."
+  evidence:
+    verdict: fail
+    findings:
+      - severity: Important
+        location: "Related Documents"
+        problem: "'ADR pattern (joelparkerhenderson/architecture-decision-record GitHub)' and 'Roll-forward (Redgate, Atlas)' — bare references, no URL, no quote. Same suspect-citation pattern r2 was penalised for."
+      - severity: Important
+        location: "Problem Statement § defect 2"
+        problem: "Four citations (Redgate, Atlas, Temporal saga, ADR) stacked as authority; no quote, link, or page. Hand-wavy authority-stacking."
+      - severity: Important
+        location: "Testing § Pytest baseline"
+        problem: "'85 passed in 6.60s' shown but no command artifact (CI link, log path) bound. r2 review explicitly required this."
+      - severity: Minor
+        location: "Design § Doc-id-burn policy"
+        problem: "'storage is cheap, history valuable' asserted without reference."
+  clarity:
+    verdict: fail
+    findings:
+      - severity: Important
+        location: "Design § Supersession workflow / Acceptance items"
+        problem: "Filename convention inconsistent: glossary + supersession workflow imply `-rN` suffix; acceptance criteria show original 005 without `-r1`. First-iteration naming ambiguous."
+      - severity: Important
+        location: "Design § Supersession workflow Step 3a"
+        problem: "Two alternatives presented without choosing one ('initial commit ... OR repo-relative resolution'). Hand-wave."
+      - severity: Important
+        location: "Design § Lint changes — Check L2"
+        problem: "`is_narrow_change()` hand-waved: 'parse both texts, diff section-by-section'. How sections are parsed in mixed prose+tables+code is unspecified."
+      - severity: Important
+        location: "Design § Migration of existing rejected docs"
+        problem: "'Update review YAMLs to reference new paths' — but attestation is hash-bound. No lint check protects against silent path rewrite."
+      - severity: Minor
+        location: "Design § File layout tree"
+        problem: "Tree doesn't include archive/reviews/ or archive/investigations/ — handled in prose, but tree-scan reader may miss."
+  consistency:
+    verdict: fail
+    findings:
+      - severity: Critical
+        location: "Acceptance vs Migration prescription"
+        problem: "Migration moves BOTH r1 + r2 to archive. But r2's frontmatter says 'Supersedes: r1' (claims to supersede) + Status: Rejected. The lifecycle 'r2 supersedes r1 → r2 also rejected' is not addressed: should r1 retain `Superseded by:` pointing to a Rejected doc? The prescribed conventions break on the dogfood case."
+      - severity: Important
+        location: "Design § Doc-id-burn vs Migration"
+        problem: "'005 + 006 are burned/used' conflates 'used (canon, this doc)' with 'burned (terminal Rejected)'. Self-naming contradicts definition of burn."
+      - severity: Important
+        location: "Design § Lint Check L2 vs Glossary vs STANDARDS"
+        problem: "Three different definitions of 'canon-frozen' Status set across one doc: lint code (5 statuses), STANDARDS update (5 statuses), Design body Critical rule (4 statuses)."
+      - severity: Important
+        location: "STANDARDS.md update § Refs Line Restriction"
+        problem: "STANDARDS update says 'Refs: lines on fix: / feat: commits' but Acceptance bullet says 'any Refs: line' — disagree on enforcement scope."
+      - severity: Important
+        location: "Related Documents path drift"
+        problem: "Lists `docs/archive/features/005-...` but at time of writing the file is still at `docs/features/005-...`. Will trip lint Check L1 (Refs to docs/archive/) if anyone tries to verify."
+overall_verdict: fail
+required_followup:
+  - "Resolve the dogfood lifecycle inconsistency: r2 has `Supersedes: r1` frontmatter but is itself Rejected. Document the rule for Rejected-supersession-of-Rejected."
+  - "Reconcile the three definitions of 'canon-frozen' Status set across Glossary, Lint Check L2 code, and STANDARDS.md update; pick one and propagate."
+  - "Decide and commit (don't OR) the supersession-step-3a path-resolution mechanism."
+  - "Specify is_narrow_change() at testable precision (markdown AST? heading-level diff? frontmatter only?)."
+  - "Reconcile filename convention: is the first iteration of a canon doc `NNN-foo.md` (no suffix) or `NNN-foo-r1.md`?"
+  - "Reconcile Refs-line restriction scope: applies to fix:/feat: only or all commits?"
+  - "Reconcile test count: 2 vs 9 — state which is binding floor."
+  - "Reconcile version bump rationale: 1.4 → 1.5 with 1.4 rolled back."
+  - "Add lint check or convention forbidding attestation YAML mutation, OR document an attested-rewrite procedure."
+  - "Bind cited authorities (joelparkerhenderson, Redgate, Atlas, Temporal saga) with URLs or quotes."
+  - "Bind pytest 85-baseline assertion to a verification artifact."
+  - "Resolve Out-of-Scope clause vs philosophy-doc Changelog append: is Changelog append a 'narrow change' allowed in-place, or does it require supersession?"
+notes: |
+  LLD-006 is markedly tighter than r1/r2: smaller scope, glossary present, dogfood
+  migration explicit, philosophy roadmap-update kept out of scope cleanly. Several
+  r2 review followups are addressed (e.g. clearer scope fence, glossary added, no
+  Pillar reuse). However the same evidence-citation laxity, the same pytest baseline
+  bare-assertion, and the same version-bump rationale recur. New consistency defects
+  emerge from the dogfood case — the LLD's own r2 (this LLD's predecessor) has
+  Supersedes: r1 yet is Rejected, and the LLD doesn't cover that lifecycle. Three
+  different definitions of 'canon-frozen' across one doc is a Gate 4 critical-tier
+  inconsistency. The is_narrow_change predicate is too vague to test against the
+  L2 acceptance criterion. Followup is mostly cleanup-shaped but the dogfood
+  lifecycle gap is rewrite-shaped for one section.

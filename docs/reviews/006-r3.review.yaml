@@ -1,0 +1,79 @@
+schema_version: "1.0"
+doc_subject:
+  path: docs/archive/features/006-archive-and-supersession-conventions-r3.md
+  content_hash: sha256:289bb8897556c38a509e63be2ffd51561f5cab5c1abe3feca84f4472b4d67b5f
+  iteration: 3
+reviewer:
+  identifier: "subagent:general-purpose"
+  invoked_at: 2026-05-07T20:45:00Z
+  context_isolation: fresh_subagent
+gates:
+  completeness:
+    verdict: fail
+    findings:
+      - severity: Important
+        location: "Success Criteria § A11 + Migration § AFTER merge comment"
+        problem: "A11 says r1 + r2 will be Superseded with frontmatter updated per supersession workflow. But r1 + r2 are currently Status: Draft (never reached canon-frozen). Migration § AFTER merge inline comment invents a 'narrow-change extends to Draft on supersession finalize' exception in a bash comment that is NOT in Glossary, NOT in any acceptance item, NOT lint-tested. Load-bearing rule encoded in code comment."
+      - severity: Important
+        location: "Success Criteria § A11 vs Rejected-supersession rule"
+        problem: "Migration text writes 'r1's Superseded by: r2-or-r3-path' — OR is unresolved ambiguity. r2 review explicitly required no Alternatives. r3 reintroduces OR in migration block."
+      - severity: Important
+        location: "Edge Cases + Acceptance items"
+        problem: "Rule 'To add Reason, supersede' documented but no lint test (T2-T5 cover body and Status fields; none cover frontmatter additions outside whitelist)."
+      - severity: Minor
+        location: "Success Criteria § A14 + T10 description"
+        problem: "T10 description packs three sub-cases into a single test row. If parametrized, the floor of '≥10 tests' is countably blurred."
+  evidence:
+    verdict: pass
+    findings: []
+    justification: "URLs retained from r2 (Nygard, Atlas, Temporal). New citation added: python-frontmatter library (pypi). Pytest baseline command + output preserved inline."
+  clarity:
+    verdict: fail
+    findings:
+      - severity: Important
+        location: "Glossary § canon doc"
+        problem: "Definition conflates two orthogonal axes: location (top-level vs archive) and Refs:-eligibility (canon-frozen vs not). Should introduce two terms (canon-located vs Refs:-eligible) rather than stretch one term."
+      - severity: Important
+        location: "Design § Migration § AFTER merge bash block"
+        problem: "Bash block migrates files but 'Step a: narrow-change frontmatter update' is described in a comment, not as executable command. Post-merge state for r1's Superseded by: field unspecified ('r2-or-r3-path'). Reader cannot reproduce migration deterministically."
+      - severity: Minor
+        location: "Lint Check L1 plans dir handling"
+        problem: "'Refs to plans not common; left to discretion' is not a lint rule. Either accept Refs to plans (specify) or reject (specify)."
+  consistency:
+    verdict: fail
+    findings:
+      - severity: Critical
+        location: "Glossary § canon doc vs Refs:-eligible doc vs Lint Check L1"
+        problem: "Lint L1 path-prefix gate ALLOWS docs/plans/. But Glossary canon-frozen-statuses do NOT include plan-typical statuses. So Refs: to a plan will pass path check, fail Status check, causing lint ERROR on every Refs to a plan. Contradicts Edge Cases 'left to discretion' and creates strict-reject behavior despite stated discretion."
+      - severity: Critical
+        location: "Lint Check L4 § m_super branch + Self-check"
+        problem: "L4 glob f'{id}-{base_name}-r*.md' INCLUDES the file currently being added (r3 itself) at lint time. existing_rs = [2, 3], max_r = 3, new_r = 3. Check: '3 <= 3' → REJECTS. The lint as written rejects the very commit that introduces r3. Self-check claim 'New r=3 > 2 → PASSES' is mathematically wrong — forgets to exclude the file currently being added from the glob."
+      - severity: Important
+        location: "Glossary narrow change vs STANDARDS § Rejection of Draft / Proposed"
+        problem: "STANDARDS says 'full edit allowed since narrow-change rules apply only to canon-frozen docs'. 'Full edit' is not a defined term elsewhere. Three labels for two concepts."
+      - severity: Important
+        location: "Success Criteria § A11 — Supersedes/Superseded-by chain after migration"
+        problem: "After r1 + r2 move to archive, r2's Supersedes: still points at 'docs/features/006-archive-...' but path no longer exists. Lint Decision § rejects 'broken links'. Doc never specifies whether Supersedes: is rewritten on migration or whether lint resolves via filename pattern across canon+archive. Without spec, broken-link rejection would fire on r2 post-migration."
+overall_verdict: fail
+required_followup:
+  - "Fix Lint Check L4 self-check: glob must exclude the file currently being added; or claim is mathematically false."
+  - "Resolve Refs: handling for docs/plans/ — either remove from ALLOWED_PREFIXES or define plan status taxonomy. 'Left to discretion' is not a lint rule."
+  - "Specify whether Supersedes:/Superseded by: paths are rewritten on archive migration or whether lint resolves them across canon+archive by filename pattern. Decision rejects 'broken links' but migration breaks the literal path."
+  - "Pick ONE outcome for the LLD-006 r1/r2 dogfood — Superseded or Rejected-supersession. Remove 'r2-or-r3-path' OR."
+  - "Add lint test that rejects in-place addition of non-whitelisted frontmatter fields (e.g. Reason:) to a canon-frozen doc."
+  - "Disambiguate canon doc by location vs Refs:-eligibility — introduce two terms or restrict 'canon' to canon-frozen-located-at-top-level."
+  - "Resolve Iteration-field behavior for r1/r2 during migration: whitelisted but does it change?"
+  - "Specify post-rename behavior of Refs: pointing to a doc that has since moved to archive."
+  - "Promote 'narrow-change extends to Draft on supersession finalize' from bash comment into Glossary as a named exception, or remove and treat r1/r2 as Rejected-supersession."
+notes: |
+  r3 fixes more than it introduces but is still not shippable. Verified r2 findings:
+  (1) doc-id-burn vs supersession — RESOLVED via first-iteration vs supersession-iteration
+  split. (2) Single supersession-path-resolution — partially; Migration § reintroduces
+  'r2-or-r3-path' OR. (3) L3 test in floor — RESOLVED (T10). (4) L3 implementation
+  two-locations — RESOLVED. (5) is_narrow_change() testably specified — RESOLVED via
+  python-frontmatter cite + extract algorithm. (6) whitelist single-source — RESOLVED.
+  (7) Reason: clarified — RESOLVED in prose, but no lint test. (8) Refs non-canon
+  non-archive semantics — partially; plans dir ambiguity. (9) version-bump one
+  sentence — RESOLVED. (10) before/after labels — RESOLVED. Net new defects: L4
+  self-check mathematically wrong; load-bearing rule encoded in bash comment;
+  ambiguous r1/r2 dogfood outcome.

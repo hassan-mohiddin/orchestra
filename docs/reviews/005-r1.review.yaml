@@ -1,0 +1,76 @@
+schema_version: "1.0"
+doc_subject:
+  path: docs/archive/features/005-v1.5-enforcement-core.md
+  content_hash: sha256:54dd7f979c4a46856183fccb7c743951dd649609eeb307669c29dcc277230352
+  iteration: 1
+reviewer:
+  identifier: "subagent:general-purpose"
+  invoked_at: 2026-05-07T16:59:38Z
+  context_isolation: fresh_subagent
+gates:
+  completeness:
+    verdict: fail
+    findings:
+      - "Success Criteria — '88 pytest baseline' contradicts BUG-008 / philosophy changelog which records the live baseline as 85 tests + 10 evals (v1.3). The doc never reconciles where 88 comes from. Numerically untestable as written."
+      - "Success Criteria — 'CLAUDE.md identity-only ≤500 tokens' has no defined measurement method (which tokenizer? cl100k? Anthropic's? does it include frontmatter?). Untestable."
+      - "Pillar 4 (Lesson Capture) describes a 6-step procedure but never defines lesson schema fields' allowed enums precisely beyond `violation_type`. 'related_rule_update' field has no schema. Edge case for missing fields not specified."
+      - "Pillar 2 — '7 Gate-5 mechanical drift checks' table lists G5.1–G5.7 but Success Criteria says '7 mechanical drift checks (paths resolve, Status consistent, etc.)' with no enumeration of which are net-new vs already-existing — G5.6 and G5.7 are flagged 'already exists' inside the table, so only 5 are new. Scope claim and content disagree."
+      - "Scope/Out of Scope omits skills-registry auto-population in the In-Scope list but the brainstorm Round-3/Final pillar list (Pillar 2 in brainstorm = 'Skills registry auto-population') was lifted into v1.5 scope as 'pillar 2' — LLD-005 silently dropped that pillar and renumbered, with no DEVIATION entry justifying scope reduction."
+      - "Edge Cases section is mostly fail-mode handling rather than design edge cases — missing: what happens when subagent disagrees with author on Gate 3 verdict (no escalation flow); behaviour when content_hash mismatches because doc was edited between attestation write and lint check; concurrent commits attempting to attest same iteration."
+      - "Migration mechanics: '`.orchestra-backup/` doesn't exist (or `--force`)' — `--force` flag never declared in CLI surface elsewhere. Pre-flight contract incomplete."
+      - "Hook config example shows `disabled_hooks: []` at top level AND `enabled: true` per-hook — two opt-out mechanisms with no statement of precedence."
+  evidence:
+    verdict: fail
+    findings:
+      - "Citation 'Mu et al. 2024; arXiv 2407.08440' — arXiv 2407.08440 is referenced but no title/authors verified in doc; brainstorm cites this but neither file gives full bibliographic info or links. Reference is an opaque ID."
+      - "Citation 'DEV 2024; arXiv 2603.07670' for cascading hallucination — arXiv numbering format `2603.xxxxx` would correspond to March 2026 (arXiv uses YYMM); citing as '2024' is internally inconsistent and the ID is suspect/possibly fabricated."
+      - "Claim: 'cooldown 300s' for UserPromptSubmit hook is asserted as a sensible default with no benchmark or rationale. Brainstorm Round 2 mentions ~2400 baseline tokens and cooldown necessity but never derives 300s specifically."
+      - "Claim: 'L1-upgrade signal: gate-violation rate >0.5 per 4-hour session' — threshold has no derivation. Round-3 brainstorm states the same threshold without justification; LLD inherits unverified."
+      - "Claim: 'Stale lessons (>30 days unsigned)' — 30-day TTL has no source or rationale."
+      - "Claim 'OPA / Conftest' lineage in Problem Statement — cited as authority for compliance theater but Ken Muse 'Security Theater' is actually the source of that term per Round-4 brainstorm; OPA/Conftest are policy-as-code, not theater literature. Citation conflation."
+      - "Round-3 brainstorm settled Q10 as 'Wrap superpowers:requesting-code-review' for spec-review skill. LLD-005 says reviewer is 'Claude Code Agent tool (general-purpose)' — drops the wrapping decision with no justification."
+      - "External references list (Related Documents) mixes 'Karpathy llm-wiki gist' and 'Anthropic Effective context engineering' without URLs/DOIs — unverifiable as written."
+  clarity:
+    verdict: fail
+    findings:
+      - "Success Criteria has 14 bullets mixing measurable acceptance items with sweeping design declarations ('Philosophy update: REMOVE X; REPLACE with Y'). A philosophy text replacement is not a success criterion — it is a deliverable. Categories conflated."
+      - "5-pillar framing is asserted but the pillars are not orthogonal: Pillar 1 (Memory) and Pillar 2 (Gate Redesign) both depend on the same hook stack — design body never delineates ownership. Reads bolted-together rather than cohesive."
+      - "Term 'canon' is used (in 'reviewed canon types', 'canon docs', 'canon-pulled context') without definition. STANDARDS.md and BUG-008 don't use this term — fresh reader cannot map it."
+      - "Phase transition table lists 'Self-prompted at any decision point' as a transition with mechanism 'agent invokes itself' — circular and unactionable. How does the agent know it's at a 'decision point'?"
+      - "Migration tool described as 'opt-in' but Success Criteria require '`orchestra:upgrade` skill + `cli.upgrade --to-v1.5 --trim-rules`' — relationship between skill and CLI invocation (does skill shell out? duplicate logic?) is not specified."
+      - "Bootstrap review section says LLD-005 is reviewed before merge by subagent receiving 'this LLD file + brainstorm scratch + hand-crafted 4-gate review prompt' — 'hand-crafted' is hand-wavy; no template path given."
+      - "Attestation YAML schema example puts `content_hash: sha256:abcd1234...` with placeholder ellipsis — fresh reader cannot tell whether ellipsis is literal or illustrative, and full hash length is unspecified anywhere."
+  consistency:
+    verdict: fail
+    findings:
+      - "File layout shows `.claude/orchestra/schema/review.schema.yaml` but Attestation YAML section never references this schema path; tests reference 'tests/test_attestation_schema.py' but never bind to that file path. Three sections, three views of where the schema lives."
+      - "Success Criteria says 'Hook stack: orchestra-first order; plugin-manifest install' — but Design § Hook stack composition says 'orchestra hooks ship via plugin manifest (auto-install on plugin enable)'. 'plugin-manifest install' in the success criterion is ambiguous — orchestra IS a plugin, so this is self-referential and contradicts the user-facing 'opt-in only' migration tone."
+      - "Brainstorm Round-3 final scope explicitly listed Pillar 2 as 'Skills registry auto-population' (delivers v1.5 positioning promise per philosophy doc roadmap). LLD-005 reassigns Pillar 2 to 'Gate Redesign' and exiles registry to 'Out of Scope (LLD-006)' — direct contradiction with cited brainstorm without DEVIATION note."
+      - "Philosophy doc roadmap (gantt) ties v1.5 specifically to 'Plugin scan + registry generation' as the 'positioning shift'. LLD-005 ships v1.5 without registry, defying the philosophy doc's explicit positioning claim. Either philosophy doc must be updated or LLD scope realigned."
+      - "BUG-008 fix description (Phase 1) is 'cli.lint enforces in-Changelog marker'. LLD-005 says 'lint checks attestation conformance, NOT in-doc marker'. LLD-005 supersedes BUG-008's Phase 1 fix but does not say so explicitly — an unresolved supersession."
+      - "BUG-001 recommended Path B (CLI interactive) for fix; LLD-005 introduces `orchestra:checkpoint` skill (markdown-driven again) as Gate 0 mechanism — re-creating the same anti-pattern BUG-001 identified, without addressing it."
+      - "LLD claims orchestra is 'orchestrator not wrapper' (per brainstorm + philosophy doc) yet Success Criteria says orchestra ships hooks 'via plugin manifest (auto-install)' and ships a 'default reviewer prompt template' — moves orchestra back toward wrapper territory. Tension not acknowledged."
+      - "Test list says '≥10 new tests' but the test file table enumerates 6 test files of unspecified test counts. Cannot verify ≥10 from the table."
+      - "Iteration count: changelog says 'Initial draft' / 'iteration 1' but doc Status is 'Draft' without an iteration field — Pillar 5 supersession scheme requires explicit revision numbers (LLD-NNN-rN) yet the doc itself isn't tagged r1."
+overall_verdict: fail
+required_followup:
+  - "Reconcile Pillar 2 scope: either restore Skills Registry auto-population (per brainstorm + philosophy doc) OR add explicit DEVIATION entry justifying its move to LLD-006 and update philosophy doc roadmap accordingly."
+  - "Fix or remove suspect citations (arXiv 2603.07670, arXiv 2407.08440 unverified; OPA/Conftest mis-attribution for compliance-theater term)."
+  - "Make Success Criteria measurable: define tokenizer for ≤500/≤300/≤80 token budgets; reconcile 88 vs 85 pytest baseline; replace declarative philosophy bullets with verifiable deliverables."
+  - "Resolve the BUG-001 anti-pattern recurrence: Gate 0 via skill markdown is the same failure mode BUG-001 identified — either justify in-doc or move to CLI/hook mechanism."
+  - "Acknowledge BUG-008 supersession: LLD-005 changes the BUG-008 Phase 1 enforcement mechanism (in-doc marker → external attestation); add explicit cross-reference and update BUG-008 status."
+  - "Add escalation flow for subagent-vs-author Gate 3 disagreement; define content_hash mismatch behaviour."
+  - "Specify orchestra:upgrade skill vs cli.upgrade CLI relationship (delegation, duplication, contract)."
+  - "Define 'canon' term once in the doc (or link to STANDARDS.md addition); replace ambiguous 'self-prompted at any decision point' transition with concrete trigger."
+  - "Tag the doc as r1 explicitly to dogfood the supersession scheme it introduces."
+notes: |
+  Doc is structurally serious and research-anchored, but multiple gates fail. Most consequential
+  failures: (1) Pillar 2 scope substitution silently contradicts the brainstorm + philosophy doc
+  it claims to derive from; (2) Gate 0 via skill markdown re-introduces the BUG-001 anti-pattern
+  the LLD purports to obsolete; (3) success criteria mix philosophy declarations with measurable
+  acceptance items, making sign-off ambiguous; (4) two arXiv IDs are unverifiable as cited.
+  These are structural, not taste-level. Conditional pass is not appropriate — the Pillar 2
+  scope shift and BUG-001 recurrence both need explicit user re-decision, not a follow-up
+  cleanup. Strengths: gate redesign rationale is sound; attestation YAML schema is a meaningful
+  artifact; supersession primitive is well-specified. Recommend revision (LLD-005-r2) addressing
+  required_followup before bootstrap-review attestation is generated.

@@ -1,0 +1,80 @@
+schema_version: "1.0"
+doc_subject:
+  path: docs/archive/features/006-archive-and-supersession-conventions-r2.md
+  content_hash: sha256:5669a44fb5de324173002f115f2fb660940b60ba89e95fa2ac9ce7cb98e24e4d
+  iteration: 2
+reviewer:
+  identifier: "subagent:general-purpose"
+  invoked_at: 2026-05-07T18:13:31Z
+  context_isolation: fresh_subagent
+gates:
+  completeness:
+    verdict: fail
+    findings:
+      - severity: Critical
+        location: "Success Criteria § Acceptance items + Testing § New unit tests"
+        problem: "Acceptance bullet 'cli/lint.py enforces attestation doc_subject.path resolves...' is in-scope, but Testing § explicitly defers test_attestation_path_mutation_guard to LLD-007. An acceptance item with no test = untestable success criterion."
+      - severity: Important
+        location: "Success Criteria § Acceptance items"
+        problem: "Version bump bullet self-contradicts: states '1.3.0 → 1.5.0' AND '1.4.0 was never released' AND '1.4 follows the same burn logic as burnt doc-ids — never reused'. 'Never released' and 'burned' are different states."
+      - severity: Important
+        location: "Edge Cases § Philosophy doc Changelog"
+        problem: "Reconciliation says Changelog append IS narrow change. But Glossary narrow-change whitelist for frontmatter is {Status, Iteration, Superseded by}; Reason: field used in Rejection workflow is NOT whitelisted. Rejection of a previously-canon-frozen doc cannot add Reason without supersession."
+  evidence:
+    verdict: pass
+    findings: []
+    justification: "URLs now bound for Nygard ADR (cognitect.com + joelparkerhenderson collection), Atlas blog, Temporal blog. Pytest baseline command + output captured inline. r1 evidence findings concretely addressed."
+  clarity:
+    verdict: fail
+    findings:
+      - severity: Important
+        location: "Design § Decision: Supersession path resolution mechanism"
+        problem: "Doc claims 'committed mechanism', but bullets immediately introduce 'Alternatively, lint may follow the supersession chain transitively'. r1 required_followup #3 said 'don't OR'; r2 still ORs."
+      - severity: Important
+        location: "Design § Lint changes — is_narrow_change()"
+        problem: "Predicate body delegates hard parts ('split_frontmatter, extract_changelog_table_rows, strip_changelog_table — details in implementation'). Markdown table localization is ambiguous (multiple Changelog headings? table inside fenced code? trailing newline?)."
+      - severity: Important
+        location: "Design § Lint Check L3 implementation"
+        problem: "Acceptance + prose say path must resolve to 'current canon path or docs/archive/<type>/'. Code only checks `full.exists()` — accepts any existing file (e.g. docs/investigations/...). Implementation diverges from spec."
+      - severity: Important
+        location: "Glossary § canon doc"
+        problem: "canon-statuses includes Draft + Proposed. Refs Line Restriction (Lint L1) blocks only docs/archive/, so Refs to a Draft canon-doc passes lint. Either Draft should not be canon for Refs, or Refs restriction must enumerate accepted statuses."
+  consistency:
+    verdict: fail
+    findings:
+      - severity: Critical
+        location: "Design § Doc-id-burn policy vs Migration of LLD-006 itself"
+        problem: "lint_doc_id_burn requires new doc-id strictly > max(canon ∪ archive). At the moment LLD-006-r2 is committed, LLD-006-r1 already lives at docs/features/ with id=6; max=6, expected_min=7, but r2's id is 6 → lint REJECTS the very file that defines the convention. Doc-id-burn primitive directly conflicts with supersession primitive. Dogfood case is unshippable as specified."
+      - severity: Important
+        location: "Glossary narrow-change whitelist vs STANDARDS template § Supersession Workflow"
+        problem: "Glossary frontmatter whitelist = {Status, Iteration, Superseded by}. STANDARDS template lists 'Changelog row append / Status field / Superseded by:' — omits Iteration. Two definitions in one doc."
+      - severity: Important
+        location: "Acceptance Items vs File layout tree vs Related Documents"
+        problem: "Three temporal frames mixed without consistent before/after labeling: Acceptance lists 005 r1 at current 'docs/features/' for migration; File layout shows post-merge archive state; Related Documents says 'will be at docs/archive/'. Reader cannot tell which state is current vs aspirational."
+      - severity: Important
+        location: "STANDARDS template § Refs: Line Restriction"
+        problem: "'Refs lines on any commit type must point to canon docs only. Refs into docs/archive/ are rejected'. But 'canon docs only' ≠ 'not in archive' — docs/investigations/, docs/reviews/, etc also fail 'canon' but only docs/archive/ is blocked by Lint Check L1."
+overall_verdict: fail
+required_followup:
+  - "Resolve doc-id-burn vs supersession conflict: supersession revisions (NNN-name-rN.md where M>1) must be exempt from strict-greater-than rule when prior NNN-name file exists in canon-or-archive. Redefine burn to apply to first-iteration files (no -rN suffix) only, OR operate on (id, base-name) pairs."
+  - "Pick ONE supersession-path-resolution mechanism; remove 'Alternatively' bullet."
+  - "Either add L3 attestation-path test to this LLD's 9-test floor, or remove the L3 acceptance item from this LLD."
+  - "Fix Lint Check L3 implementation to enforce documented two-allowed-locations rule."
+  - "Specify is_narrow_change() helpers at testable precision OR cite parser library."
+  - "Reconcile narrow-change frontmatter whitelist between Glossary and STANDARDS template body."
+  - "Add Reason: field to narrow-change whitelist, OR clarify Rejection of previously-canon-frozen requires supersession."
+  - "Resolve Refs-line semantics for non-canon non-archive paths. Either expand Lint L1 positively, or downgrade STANDARDS prose."
+  - "Tighten version-bump rationale to one sentence."
+  - "Adopt explicit before/after labels for temporal-frame ambiguity."
+notes: |
+  r2 makes real progress on r1 evidence findings (citations bound; pytest baseline
+  captured; rejected-supersession rule defined). Evidence gate now PASSES — first
+  gate-pass across all reviews. However a NEW Critical defect emerges: doc-id-burn
+  as specified rejects supersession revisions sharing the same doc-id, precisely
+  the dogfood case (006-r2 supersedes 006-r1 sharing id=6). This is not r1 regression;
+  it is a new flaw introduced by adding doc-id-burn machinery without harmonising
+  it with the -rN suffix convention. Two r1 followups are textually re-stated
+  rather than resolved: supersession-path 'OR' still appears, is_narrow_change
+  testability moved one layer deeper (spec to helper-implementation). L3 added as
+  acceptance gate but lacks test. Net: r2 closer to mergeable than r1 but not
+  shippable; doc-id-burn vs supersession conflict is rewrite-shaped for §Doc-id-burn.

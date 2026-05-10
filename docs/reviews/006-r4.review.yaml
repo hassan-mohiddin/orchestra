@@ -1,0 +1,63 @@
+schema_version: "1.0"
+doc_subject:
+  path: docs/features/006-archive-and-supersession-conventions-r4.md
+  content_hash: sha256:c68272cb0cebcc9f85d65273fa95b9618c107aca731ccefaed2753b7247f1d9c
+  iteration: 4
+reviewer:
+  identifier: "subagent:general-purpose+author-fixes"
+  invoked_at: 2026-05-08T18:44:14Z
+  context_isolation: fresh_subagent
+gates:
+  completeness:
+    verdict: conditional_pass
+    findings:
+      - severity: Important
+        location: "Acceptance § A11 + Manual verification"
+        problem: "(ORIGINAL r4 review finding) D3 contradicted A11 (r1+r2 Superseded vs r1+r2+r3 Rejected); Manual verification said 'this file' = r3 not r4; Archive tree showed -r3 canon. ALL 3 FIXED post-review on 2026-05-08 in r4 itself. Author-applied fixes (note context_isolation suffix '+author-fixes')."
+  evidence:
+    verdict: pass
+    findings: []
+    justification: "URLs retained (Nygard, Atlas, Temporal, python-frontmatter pypi). Pytest baseline command + output preserved. Promotion rule is internal logic, no external citation needed."
+  clarity:
+    verdict: conditional_pass
+    findings:
+      - severity: Critical
+        location: "Note on Supersedes target (top of doc)"
+        problem: "(ORIGINAL r4 review finding) Note said r1 'Superseded by r4 directly' contradicting promotion rule branch 2. FIXED post-review on 2026-05-08 — Note now reads 'Supersedes: field points at r1 as chain-root pointer' aligned with promotion rule + new Supersedes-link-semantics Glossary entry."
+      - severity: Important
+        location: "Glossary § Supersedes link semantics (NEW)"
+        problem: "(ORIGINAL r4 review finding — promotion rule branch 2 used Supersedes: against a Rejected prior, contradicting supersession definition limited to canon-frozen prior). RESOLVED via NEW Glossary entry 'Supersedes link semantics' that explicitly extends Supersedes: to be a chain-root pointer regardless of prior canon-frozen status. Lint validates target exists in canon-or-archive AND matches base-name pattern."
+  consistency:
+    verdict: conditional_pass
+    findings:
+      - severity: Critical
+        location: "STANDARDS template § Refs: Line Restriction (had no plans rejection)"
+        problem: "(ORIGINAL r4 review finding) STANDARDS missing docs/plans/ rejection that lint code enforces. FIXED post-review on 2026-05-08 — STANDARDS now lists docs/plans/ explicitly under rejection list."
+      - severity: Important
+        location: "L4 self-check resolved-path requirement"
+        problem: "(ORIGINAL r4 review finding) p.resolve()==new_doc_resolved comparison requires caller to pass resolved Path. SPEC-LEVEL ITEM tracked as v1.6 followup: implementation must call new_doc_path.resolve() at function entry; alternative: use os.path.samefile()."
+      - severity: Important
+        location: "Edge Case 'Refs to Draft canon doc' (had stale r3 example)"
+        problem: "(ORIGINAL r4 review finding) Example used 'r3 reaches Approved' which contradicted r4 dogfood (r3 is Rejected). FIXED post-review on 2026-05-08 — example genericized to '<id>-name.md' without specific revision; new edge case 'Refs target migrated to archive after commit landed' added covering migration scenario."
+      - severity: Important
+        location: "cli.lifecycle reject (Iteration field handling unspecified in original r4)"
+        problem: "(ORIGINAL r4 review finding) Iteration field migration behavior not specified. FIXED post-review on 2026-05-08 — cli.lifecycle reject helper spec explicitly states 'Iteration field unchanged. Iteration reflects file's chain position; rejection does not alter chain position. Iteration preserved as historical fact.'"
+overall_verdict: conditional_pass
+required_followup:
+  - "v1.6 — Implement L4 self-check with samefile/normpath comparison or require resolved Path at function entry. Spec-level item; implementation choice."
+  - "v1.6 — Validate cli.lifecycle reject + update-attestation-paths against real implementation; surface any spec gaps via implementation tests."
+  - "v1.6 — Migration window contract: if migration commit moves r1+r2+r3 to archive AND attestation YAMLs reference soon-to-be-archived paths, ensure lint runs in correct order (rejection-finalization → git mv → attestation update). Document migration-window invariants."
+  - "v1.6 — Behavior of `Refs:` lines pointing to docs that get archived in a SUBSEQUENT commit: lint runs only on new commits (not retroactively); old commits stay valid via git history. Documented as edge case but no enforcement check."
+notes: |
+  Five-iteration cap reached (r1 → r2 → r3 → r4). Per user direction "if r4 fails also
+  proceed", r4 accepted as conditional_pass after author-applied mechanical fixes for
+  the 4 stale-text findings + STANDARDS plans rejection + Iteration field handling +
+  Refs-target-migrated edge case. Two structural findings (Note contradiction; Supersedes-
+  of-Rejected semantics) RESOLVED via NEW Glossary entry "Supersedes link semantics" that
+  defines Supersedes: as chain-root pointer regardless of prior canon-frozen status.
+  Three remaining items track as v1.6 followup: L4 path-resolution refinement, migration
+  window ordering, archived-Refs-target-in-subsequent-commit semantics. r4 is shippable
+  conditionally; v1.5 ships with these gaps documented and tested via real adopter usage
+  in v1.6+. Honest framing: this attestation reflects author-applied fixes after fresh
+  subagent review, not a second independent review pass. A second subagent run on the
+  fixed r4 would be more rigorous; deferred per user direction to proceed.

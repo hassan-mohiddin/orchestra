@@ -1,0 +1,76 @@
+schema_version: "1.0"
+doc_subject:
+  path: docs/archive/features/005-v1.5-enforcement-core-r2.md
+  content_hash: sha256:272c708f365759b095bba83fe5eac5afc23744d212ad36624a00a46763cd8673
+  iteration: 2
+reviewer:
+  identifier: "subagent:general-purpose"
+  invoked_at: 2026-05-07T18:42:00Z
+  context_isolation: fresh_subagent
+gates:
+  completeness:
+    verdict: fail
+    findings:
+      - "Success Criteria — '85 pytest baseline confirmed via `python -m pytest tests/` 2026-05-07' is asserted as confirmation but no command output, log, or attestation file is cited inline; r1 followup #3 demanded reconciliation of the 85 vs 88 number, r2 simply switched to 85 without showing the verification artifact."
+      - "Pillar 4 lesson schema still incomplete: `violation_type` enum is defined (gate_skipped|rule_violated|silent_decision|other) but `prevention`, `trigger`, and `related_rule_update` have no schema constraints, max-length, or null-handling rules — r1 finding on lesson schema only partially addressed (structural)."
+      - "Success Criterion 'Plugin version bumped 1.4.0 → 1.5.0 (1.4 was rolled back; 1.5 is next ship after 1.3 + this work)' contradicts the Pillar's stated baseline that '85 pytest = v1.3 baseline'; if 1.4 was rolled back, why is the current ship labelled 1.5 not 1.4? Versioning rationale is hand-wavy."
+      - "Test count math drifts mid-doc: success criterion says '≥10 new tests = ≥95 total' but Testing § enumerates 35 new = 120 total. The gap of 25 extra tests (35 vs 10) is unexplained — either the success criterion is a floor (state it) or the test plan over-promises."
+      - "Glossary defines 'canon', 'attestation', 'canon doc edit detector', 'iteration' but doc body uses 'mutable', 'scratch', 'phase transition', 'high-stakes', 'silent decision' as load-bearing terms with no glossary entries (structural)."
+      - "Edge case 'Concurrent attestations' resolves via 'last-writer-wins on the file' — that is a data-loss outcome silently accepted; no policy on whether the lost attestation is recoverable from metrics.jsonl, no test in Testing § covers it."
+      - "Bootstrap review section says reviewer prompt is 'to be templatized as `.claude/orchestra/reviewer-prompt.md` post-merge' — this is a TBD masquerading as a deliverable; r1 flagged 'hand-crafted' as hand-wavy and r2 retains the same hand-wave under a different label."
+      - "r1 followup #4 ('Resolve BUG-001 anti-pattern recurrence: Gate 0 via skill markdown is the same failure mode') — r2 claims fix via PreToolUse hook injecting checkpoint trigger, but the agent's response to that injection is still 'invoke `orchestra:checkpoint` skill' (a markdown skill). The hook is now the trigger but the action is still markdown-driven — partial fix, not full resolution."
+  evidence:
+    verdict: fail
+    findings:
+      - "Suspect citations: arXiv 2407.08440 (cited in r1, dropped in r2) — VERIFIED dropped from r2 body. arXiv 2603.07670 (cited in r1, dropped in r2) — VERIFIED dropped. POSITIVE — these followups concretely addressed."
+      - "New citation 'arXiv 2411.10541, 2024' for 'format choice causes 10–40% performance variance' — added in r2; not flagged by r1 but the 10-40% number is asserted in two places (Problem Statement + File Format Choice Round-5 table) without verification of paper title or scope-of-claim. Adds new unverified citation while removing two old ones."
+      - "Citation 'Chroma \"Context Rot\" 2025' — used twice; no URL, no authors, no DOI. r1 didn't flag it but it remains unverifiable."
+      - "Cooldown 300s rationale: r2 added 'caps re-injection at 12/hour, balancing recency-bias gain against compounding bloat' — that is post-hoc reasoning, not benchmark; no measurement that 12/hour is the right balance. r1 finding partially addressed (rationale present, evidence absent)."
+      - "30-day TTL for stale lessons: r2 added 'matches typical sprint retrospective cadence (Atlassian Kanban guidance); not strictly evidence-based, accepted heuristic' — explicitly admits no evidence; r1 finding addressed via honest disclaimer rather than evidence (acceptable)."
+      - "L0→L1 thresholds (gate-violation rate >0.5/4hr, corpus_count >200, handoff_failures >1/week): r2 calls them 'heuristic seed values'; r1 finding addressed via disclaimer not derivation (acceptable but weak)."
+      - "improvingagents.com 'YAML 62.1% > markdown 54.3% on GPT-5 frontier' cited in File Format § as authority — claim is asymmetric: the same source's brand-name 'GPT-5 Nano' (per brainstorm Round 5) becomes 'GPT-5 frontier' in r2. Citation drift between brainstorm and LLD."
+      - "Round-3 brainstorm Q10 settled spec-review skill as 'wrap superpowers:requesting-code-review'. r2's Configurable Reviewer Dispatch overrides this with default 'subagent:general-purpose' — same gap r1 flagged. r2 acknowledges via configurable dispatch but provides no rationale why default flips from brainstorm-resolved Q10 to a different default. r1 finding partially addressed."
+  clarity:
+    verdict: fail
+    findings:
+      - "5-pillar framing remains bolted-together: Pillar 1 (Memory) and Pillar 2 (Gate) both depend on the hook stack defined in Design § Hook stack composition; r1 flagged orthogonality, r2 doesn't address it (structural)."
+      - "Phase transition table for Gate 0 lists 4 triggers but the second row ('About to Edit/Write to apps/ etc') says 'subagent returns gap list before agent proceeds' — what does 'high-stakes' mean operationally, and how does the hook decide which paths are 'high-stakes' vs 'normal'? Vocabulary used without definition."
+      - "Configurable Reviewer Dispatch table lists 'Different-model fresh-context (default)' as 'Best single-judge' with 'YES (subagent:codex-rescue or user override)', but the orchestra.json default is 'subagent:general-purpose' (same-model). The doc both asserts different-model is best AND ships same-model as default without resolving the tension."
+      - "Pillar 5 step 4 frontmatter shows 'Iteration: 2' but Iteration field semantics elsewhere in doc are inconsistent: Glossary says iteration is r1/r2/..., Pillar 5 frontmatter shows numeric '2', attestation schema shows 'iteration: 2' (numeric). The mapping from filename suffix `-r2` to numeric `2` is implicit (taste-level)."
+      - "BUG-008 Supersession Acknowledgment section says 'BUG-008 Status update required as part of v1.5 ship' — but does not commit a specific atomic edit (the new BUG-008 changelog wording is shown in prose, not as a fixture or PR-ready diff). 'Required' without binding mechanism is hand-wavy."
+      - "Bootstrap review section still says reviewer prompt is 'hand-crafted 4-gate review prompt (template at: prompt body in subagent dispatch — to be templatized as `.claude/orchestra/reviewer-prompt.md` post-merge)' — same r1 finding ('hand-crafted is hand-wavy') is reproduced inside r2 with the templatization deferred (taste-level)."
+  consistency:
+    verdict: fail
+    findings:
+      - "DEVIATION § says 'v1.5 LLD-006 (separate ship within v1.5 release)' but Out of Scope § says 'Skills registry auto-population (LLD-006 — same v1.5 release, separate LLD)' — both consistent with each other but contradict philosophy doc roadmap (gantt) which assigns 'Plugin scan + registry generation' to v1.5 as the single positioning shift, not split into 1.5a/1.5b. r1 flagged this; r2's response is to claim philosophy roadmap 'requires update' (not done in this LLD; deferred). The contradiction is acknowledged but not resolved."
+      - "Pillar 5 step 7 says 'r2 promoted to canon (Status: Approved or higher); r1 marked Status: Superseded with footer' — but doc's own r1 (the predecessor) has Status: Superseded with `Superseded by:` link; the Pillar specifies a 'footer' specifically, while the actual r1 frontmatter uses a frontmatter field. Doc inconsistent with its own dogfood example."
+      - "Hook config example: in r2, hooks.user_prompt_submit.inject_active_doc_context.cooldown_seconds=300 — but Pillar 1 (Memory Architecture) says 'per-hook cooldown 300s by default' for UserPromptSubmit AND the cooldown rationale text says 'Cooldown 300s default rationale...caps re-injection at 12/hour'. 12/hour math: 3600/300=12, consistent. But max_per_session: 12 is set as a SECOND throttle — relationship between cooldown and max_per_session is undefined."
+      - "Configurable Reviewer Dispatch shows orchestra.json YAML keys (`spec_review.default_reviewer`) but Hook stack composition shows different YAML key style (`hooks.pre_tool_use.edit_canon_doc`). The orchestra.json schema is implicitly two different shapes."
+      - "Test plan claims 'tests/test_configurable_reviewer.py' (3 tests) but Pillar 2 says Gate 3 'runs in fresh-context subagent (Claude Code Agent tool)'; if reviewer is dispatched configurably (per-Configurable-Reviewer-Dispatch), is the 'fresh-context subagent' assertion still hard-coded into Gate 3 acceptance? The two requirements may conflict (configurable vs mandatory)."
+      - "BUG-001 anti-pattern: r2 claims 'agent compliance is no longer the trust anchor; the hook is' — but the hook's action is to inject text instructing the agent to invoke a skill. The agent must still comply with the injected instruction. The trust anchor moved from auto-loaded markdown to JIT-injected markdown — same trust class. r1 finding #6 is structurally not resolved (structural)."
+      - "Orchestra positioning (orchestrator not wrapper): r2 ships orchestra-owned hook stack, orchestra-owned reviewer prompt template, orchestra-owned attestation schema, orchestra-owned migration CLI, orchestra-owned 5 skills. r1 flagged this drift; r2 doesn't address it; the wrapper-vs-orchestrator tension remains unacknowledged."
+overall_verdict: fail
+required_followup:
+  - "Concretely resolve BUG-001 recurrence: agent's response to PreToolUse hook injection is still markdown-skill invocation — either justify why JIT-markdown is structurally different from auto-loaded-markdown, or move enforcement to a non-markdown channel (CLI block, tool-level guard)."
+  - "Update philosophy doc roadmap atomically with this LLD (split v1.5 row into 1.5a/1.5b) — don't defer; an unresolved contradiction with cited authority blocks Gate 4 consistency."
+  - "Provide pytest baseline verification artifact (paste pytest output, link CI run, or attestation file) — bare assertion of '85 confirmed' is not evidence."
+  - "Reconcile test count: success criterion ≥10 new vs Testing § 35 new — state which is binding floor."
+  - "Define operationally: 'high-stakes', 'phase transition', 'silent decision' (used as load-bearing terms; no glossary entries)."
+  - "Resolve Configurable Reviewer Dispatch tension: if different-model is 'best', justify why default ships same-model; or remove the strength ranking."
+  - "Templatize the bootstrap reviewer prompt before merge (don't defer to post-merge); r1 already flagged 'hand-crafted' as hand-wavy."
+  - "Verify or drop arXiv 2411.10541 and Chroma 'Context Rot' 2025 citations (titles/authors/URLs); same standard applied to dropped r1 citations should apply to new r2 citations."
+  - "Concurrent-attestation edge case: data loss via 'last-writer-wins' needs either a recovery path or a test."
+  - "Acknowledge orchestra-positioning drift: r2 grew orchestra's owned surface (hooks, schema, prompts, 5 skills); either restate orchestra as wrapper-allowed or add an explicit note on where orchestrator boundary now sits."
+notes: |
+  r2 makes meaningful progress on r1 findings: Glossary added, format-choice section
+  added, suspect arXiv IDs dropped, DEVIATION explicit, BUG-008 supersession acknowledged,
+  configurable reviewer dispatch added, content_hash + subagent-disagreement edge cases
+  added. These are concrete improvements. However r2 introduces new evidence gaps
+  (arXiv 2411.10541, Chroma 2025 unverified), reproduces hand-wavy bootstrap-prompt
+  language verbatim, and the central BUG-001 recurrence is patched at trigger layer
+  (hook fires) but not at action layer (skill markdown still mediates). The
+  orchestrator-vs-wrapper drift is now larger, not smaller. Pillar 2 scope DEVIATION is
+  declared in r2 but the philosophy-doc roadmap update it depends on is deferred —
+  cited authority remains contradictory until resolved. fail rather than conditional_pass:
+  multiple structural issues remain across 3 of 4 gates; followup is rewrite-shaped, not
+  cleanup-shaped.

@@ -5,7 +5,7 @@
 > **DRI:** Hassan Mohiddin
 > **Type:** Feature LLD
 > **Status:** Implemented
-> **Iteration:** 4
+> **Iteration:** 5
 
 ## Bootstrap Note
 
@@ -347,6 +347,20 @@ SUBAGENT_OUTPUT_TOKEN_CAP = 4000          # bias mitigation (length cap)
 VERDICT_RANK = {"pass": 0, "conditional_pass": 1, "fail": 2}
 
 
+class _NoTimestampLoader(yaml.SafeLoader):
+    """SafeLoader without implicit timestamp resolution (v1.6.0 design).
+
+    Keeps `invoked_at: 2026-05-10T00:00:00Z` as string for schema validation.
+    json-schema `format: date-time` checks string format, not datetime objects.
+    """
+
+
+_NoTimestampLoader.yaml_implicit_resolvers = {
+    k: [(tag, regexp) for tag, regexp in v if tag != "tag:yaml.org,2002:timestamp"]
+    for k, v in yaml.SafeLoader.yaml_implicit_resolvers.items()
+}
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="orchestra:spec-review")
     parser.add_argument("doc_path", help="Repo-relative path to doc to review")
@@ -385,19 +399,26 @@ def main(argv: list[str] | None = None) -> int:
     schema = json.loads(SCHEMA_PATH.read_text())
     prompt = render_prompt_from_text(doc_text, schema)
 
-    for attempt in range(MAX_RETRIES + 1):
-        yaml_text = dispatch_subagent(prompt)  # uses Task tool under the hood
-        try:
-            attestation = yaml.safe_load(yaml_text)
-            jsonschema.validate(attestation, schema)
-        except (yaml.YAMLError, jsonschema.ValidationError) as e:
-            if attempt < MAX_RETRIES:
-                print(f"attempt {attempt + 1}: schema-fail, retrying. error: {e}", file=sys.stderr)
-                continue
-            print(f"error: subagent output failed schema after {MAX_RETRIES + 1} attempts: {e}",
-                  file=sys.stderr)
-            return 1
-        break
+    # v1.6.1: single attempt — stdin-bound dispatch makes in-Python retry
+    # meaningless (second sys.stdin.read() returns empty). User re-invokes
+    # /orchestra:spec-review for fresh subagent dispatch on schema-fail.
+    yaml_text = dispatch_subagent(prompt)  # uses Task tool under the hood
+    try:
+        # Custom loader: SafeLoader minus implicit timestamp resolver. Keeps
+        # `invoked_at: 2026-...Z` as string for json-schema `format: date-time`
+        # validation. PyYAML default coerces ISO timestamps to datetime objects
+        # which fail string-typed schema rules.
+        attestation = yaml.load(yaml_text, Loader=_NoTimestampLoader)
+        jsonschema.validate(attestation, schema)
+    except (yaml.YAMLError, jsonschema.ValidationError, TypeError) as e:
+        # TypeError: jsonschema raises this when given non-dict input
+        # (e.g., bare string when subagent returned plain text)
+        print(
+            f"error: schema_validation_failed: {e}. "
+            f"Re-invoke /orchestra:spec-review for fresh dispatch.",
+            file=sys.stderr,
+        )
+        return 1
 
     # Author iteration check (existing)
     if attestation["doc_subject"]["iteration"] != iteration:
@@ -415,11 +436,18 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     # F6 + F8: stale-state hash check against single snapshot (codex-r2 F6 + codex-r3 F8).
-    # The verdict was generated against `doc_bytes` snapshot; verify the file
-    # hasn't been replaced between dispatch and write. We re-read the file
-    # and compare byte-for-byte against the snapshot — not just hashes — to
-    # eliminate any chance of hash-collision-based bypass on concurrent edits.
-    write_time_bytes = canonical_path.read_bytes()
+    # v1.6.1: try/except around read_bytes covers doc_disappeared case
+    # (file moved/deleted between dispatch and write). Without this guard,
+    # FileNotFoundError crashes Python.
+    try:
+        write_time_bytes = canonical_path.read_bytes()
+    except (FileNotFoundError, OSError) as e:
+        print(
+            f"error: doc_disappeared: doc removed/inaccessible between dispatch "
+            f"and write. {e}. Re-run spec-review.",
+            file=sys.stderr,
+        )
+        return 1
     if write_time_bytes != doc_bytes:
         print(f"error: stale_state: doc bytes changed between dispatch and write. "
               f"Pre-dispatch hash {pre_dispatch_hash}. Re-run spec-review.",
@@ -650,13 +678,13 @@ After v1.6 ships, all future LLDs use `/orchestra:spec-review` instead.
 
 ## Edge Cases
 
-- **Subagent returns empty output** — caught by yaml.safe_load returning None → treated as schema-fail → retry
-- **Subagent returns prose then YAML** — yaml.safe_load may parse the prose-prefix portion → schema validation rejects (missing required fields) → retry. v1.7+ may add yaml-document-extraction (find first `schema_version:` line).
+- **Subagent returns empty output** — caught by yaml.load returning None → schema validation rejects (None is not a dict; jsonschema raises TypeError) → exit 1 with `schema_validation_failed`. User re-invokes `/orchestra:spec-review` for fresh dispatch (v1.6.1: no in-Python retry; stdin-bound dispatch makes retry meaningless).
+- **Subagent returns prose then YAML** — yaml.load may parse the prose-prefix portion → schema validation rejects (missing required fields) → exit 1 with `schema_validation_failed`. User re-invokes for fresh dispatch. v1.7+ may add yaml-document-extraction (find first `schema_version:` line) to recover gracefully.
 - **Subagent claims `pass` with zero findings on all gates** — schema requires `justification` field per gate when findings list is empty. No justification → schema-fail.
 - **Doc has no Iteration field** — parse_iteration defaults to 1.
 - **Doc filename has -rN suffix (supersession-iteration)** — attestation path strips suffix; iteration field comes from doc metadata, not filename. E.g., `docs/features/006-foo-r4.md` with `Iteration: 4` → `docs/reviews/006-foo-r4.review.yaml`.
 - **Existing attestation exists, no --force** — skill exits 1 with explicit error. Re-running on same iteration is intentional friction (prevents accidental overwrite).
-- **Doc moved to archive between dispatch and write** — file path captured at dispatch time; attestation `doc_subject.path` reflects pre-move location. Subsequent migration via `cli.lifecycle update-attestation-paths` (LLD-006-r4) handles rewrite.
+- **Doc moved to archive between dispatch and write** — v1.6.1 (finding #9): write-time `read_bytes` is wrapped in try/except; FileNotFoundError/OSError → exit 1 with `doc_disappeared` error. User re-runs spec-review against the new path (post-archive). For docs intentionally archived during a different attestation invocation, the prior attestation's `doc_subject.path` still reflects pre-move location and is rewritten via `cli.lifecycle update-attestation-paths` (LLD-006-r4).
 - **Subagent generates fabricated finding (#1 production issue per Diffray)** — v1.6 mitigation: schema-enforced `location` field syntax. v1.6.x followup: auto-verify location string resolves to real position in doc.
 - **Two judges disagree (one pass, one fail)** — orchestra ships no aggregation. User reads both outputs and decides. Default policy: any fail → doc fails. User can override.
 - **Slash command invoked outside git repo** — skill checks via `git rev-parse --show-toplevel`; exits 2 with "not in git repo" if missing.
@@ -768,3 +796,4 @@ Total new: 28 tests (T13 split a/b/c; T17 split a/b/c; T19 split a/b; T21 split 
 | 2026-05-10 | T13c row in Testing § matrix updated to match plan PF7 fix (drift between LLD + plan caught in plan codex round-2). T13c was specified as runtime mock-Task-kwargs assertion but A8 was narrowed in r3 to honest "SKILL.md prose specifies max_tokens 4000" (runtime kwarg verification deferred to manual dogfood D4). T13c now reads: `test_skill_md_specifies_max_tokens_4000` — opens SKILL.md, asserts prose contains `max_tokens: 4000`. Consistent with A8 + S30 slice in plan. No new findings; mechanical drift fix. Status: Draft. |
 | 2026-05-10 | v1.6.0 SHIPPED. Implementation per plan `docs/plans/2026-05-10-lld-007-implementation.md`: skills/spec-review/ scaffold (SKILL.md + prompt-template.md + attestation-schema-v1.0.json + references/4-gate-rubric.md), commands/spec-review.md slash shim, cli/spec_review.py sidecar (canonicalize_doc_path / parse_iteration_from_text / compute_attestation_path / render_prompt_from_text / compute_overall_verdict / dispatch_subagent / _atomic_write / main), cli/templates/attestation-template.yaml, 36 new pytest tests across 11 test files (107→143, target ≥135 — exceeded), 1 new eval scenario `spec-review-yaml-schema-roundtrip` (11→12, all 12 PASS). cli.lint ALLOWED_ATTESTATION_PATH_PREFIXES extended to allow docs/plans/ + docs/archive/plans/ (A25). pyproject.toml + plugin.json bumped 1.5.1 → 1.6.0; jsonschema>=4 added as dep. Status: Draft → Implemented (full edit unrestricted on Draft per LLD-006-r4 narrow-change rules). Verified flips post-Task-8 dogfood. Status: Implemented. |
 | 2026-05-10 | r4 dogfood + v1.6.1 patches (Iteration 3→4 narrow-change). Dogfood ran `/orchestra:spec-review` on this LLD with the just-shipped v1.6.0 skill — 13 findings (1 Critical / 8 Important / 4 Minor); attestation at `docs/reviews/007-spec-review-architecture-r4.review.yaml`; verdict=fail (consistency gate). Code patches: dropped stdin retry (MAX_RETRIES=0; second `sys.stdin.read()` returns empty making in-Python retry meaningless) — A5 reworded; added doc_disappeared try/except around write-time `read_bytes` (handles doc moved/deleted between dispatch and write per Edge Cases); 1 new test `test_doc_disappeared_between_dispatch_and_write` (T22b); 1 test rewritten T5 (`test_invalid_yaml_single_attempt_fails`) + T6 (`test_schema_validation_failed_error_surfaced`); pytest 143→144. Doc patches: A1+A12 manual-checkoff procedures spelled out; A14 reconciled (33 enumerated matrix rows + 4 helper assertions = 37 spec-review tests; baseline ≥140); fabricated arXiv 2603.07670 reference reframed to honest in-session attestation evidence; future-dated arXiv 2512.01786 reference removed pending verification; Multi-judge invocation flow gained 3 concrete attestation-filename derivation examples; cli.spec_review snippet `import os` added; token-cap=4000 justification added (observation-derived from 9 codex attestations rendering under 3000 tokens); max-iteration ambiguity resolved (canonical=3; bootstrap "up to 5" wording removed — r4+ always surfaces interview-gate). Status: Implemented (NOT yet Verified — flip post r5 dogfood confirms no regressions). |
+| 2026-05-10 | r5 dogfood + v1.6.1 doc-snippet sync (Iteration 4→5 narrow-change; r5 surfaced interview-gate per canonical max-iter rule, user explicitly approved continuation for patch verification). r5 attestation at `docs/reviews/007-spec-review-architecture-r5.review.yaml`; 13 r4 findings ALL VERIFIED RESOLVED. 7 NEW findings introduced by v1.6.1 patches themselves (4 Important / 3 Minor) — same disease v1.6.1 was meant to cure: doc-vs-code drift. r4 patches updated `MAX_RETRIES = 0` constant + A5 wording but did NOT update the full cli.spec_review module CODE SNIPPET in the LLD, leaving the snippet showing old retry-loop code (yaml.safe_load instead of yaml.load+_NoTimestampLoader, missing TypeError catch, missing _NoTimestampLoader class definition); also Edge Cases bullets on empty-output and doc-moved-to-archive were stale relative to single-attempt + doc_disappeared semantics. r5 snippet sync: rewrote retry block to single-attempt + comment; added _NoTimestampLoader class definition with rationale; added TypeError to exception tuple; wrapped write-time read_bytes in try/except matching code; updated 2 Edge Cases bullets. 3 Minor r5 findings deferred to v1.6.2 followup (Problem Statement defect 3 fabricated-citation cite, token-cap measurement procedure, Changelog pytest-math chain-of-reasoning). Pytest 144 unchanged (doc-only patches; no code touched). Status: Implemented. r6 dogfood NOT run (canon-frozen at r5; further iteration surfaces interview-gate again). |

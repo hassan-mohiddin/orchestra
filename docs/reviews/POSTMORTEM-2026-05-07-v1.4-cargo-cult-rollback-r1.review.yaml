@@ -1,0 +1,47 @@
+schema_version: "1.0"
+doc_subject:
+  path: docs/postmortems/POSTMORTEM-2026-05-07-v1.4-cargo-cult-rollback.md
+  content_hash: sha256:f13f72bfd94db077d6096d2c049f83ee159ef7eb59370ab5eddde2dbd2402e69
+  iteration: 1
+reviewer:
+  identifier: "codex:adversarial-review+gpt-5-codex"
+  invoked_at: 2026-05-10T00:00:00Z
+  context_isolation: fresh_subagent
+gates:
+  completeness:
+    verdict: pass
+    findings: []
+    justification: "All 11 STANDARDS-required postmortem sections present and filled (Summary, Impact, Timeline, Root Cause, What Went Well, What Went Wrong, Where We Got Lucky, Action Items, Lessons Learned, Related Documents, Changelog). Severity classified (SEV3 process incident). Blameless framing maintained throughout (roles only, no names except in DRI metadata)."
+  evidence:
+    verdict: pass
+    findings: []
+    justification: "Post-fix: timeline now sourced from git reflog + git log with explicit timestamps + commit hashes + IST timezone. Action items now cite immutable artifacts (commit hashes + file paths + cross-repo refs). Cited research papers (arXiv 2410.21819) URL-verified. Original draft had fabricated UTC timestamps + non-auditable action item tracking — corrected after codex round 1."
+  clarity:
+    verdict: pass
+    findings: []
+    justification: "Where We Got Lucky section surfaces 5 concrete near-misses (caught at 3 docs not 30; unpushed commits; markers internally inconsistent; no production users; Path B viable). Lessons Learned are actionable (8 specific patterns with corresponding action items). Mermaid diagram in Root Cause shows trigger→cascade→rollback flow."
+  consistency:
+    verdict: conditional_pass
+    findings:
+      - severity: Medium
+        location: "Action Items § Tracking column"
+        problem: "Mutation testing action item (last row) lacks tracking artifact entirely — currently tracked only via 'this session's chat' which is not durable. Other Action Items have immutable refs but this one doesn't."
+overall_verdict: conditional_pass
+required_followup:
+  - "v1.6.x — File `docs/bugs/BUG-NNN-mutation-testing-coverage.md` to give the mutation-testing action item an immutable tracker (currently chat-only). Until filed, that single Action Item row remains non-auditable."
+  - "Optional — round 2 codex pass to verify codex round 1 fixes (timeline rewrite, immutable trackers) didn't introduce new gaps. Per LLD-006-r4 max-3 convention, round 2 acceptable; round 3+ would surface Interview Gate."
+notes: |
+  Codex round 1 adversarial review of v1.4 cargo-cult-rollback postmortem
+  (gpt-5-codex). Verdict: needs-attention. 2 findings: 0 Critical, 1 High
+  (PM1 fabricated timeline), 1 Medium (PM2 non-auditable action items).
+
+  Both findings addressed inline (Draft full-edit allowed). Material
+  factual corrections: rollback timestamp 2026-05-07 21:06:40 +0530 (was
+  fabricated UTC); 4 dropped commits = df64b51, 9d1d8c8, cd6cacb, e5d49a1
+  (v1.4 impl work, not BUG markers as originally claimed); BUG-008
+  marker commits 41f866c/9945c07/f88abb7 stayed on origin/main.
+
+  Honest framing: this attestation reflects post-codex-r1-fix state.
+  Original draft had fabricated facts. The lesson — that Opus self-review
+  on history would not have caught the fabrication — supports the
+  multi-judge architecture LLD-007 codifies.

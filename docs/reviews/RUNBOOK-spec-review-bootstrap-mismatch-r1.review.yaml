@@ -1,0 +1,41 @@
+schema_version: "1.0"
+doc_subject:
+  path: docs/runbooks/RUNBOOK-spec-review-bootstrap-mismatch.md
+  content_hash: sha256:0ee98b55732741520f039fd64e648c39bcb344f82669360e96c3558b4570842c
+  iteration: 1
+reviewer:
+  identifier: "codex:adversarial-review+gpt-5-codex"
+  invoked_at: 2026-05-10T00:00:00Z
+  context_isolation: fresh_subagent
+gates:
+  completeness:
+    verdict: pass
+    findings: []
+    justification: "All 9 STANDARDS-required runbook sections present in correct order (When This Fires, Quick Reference, Diagnosis, Mitigation, Verification, Escalation, Background, Related Documents, Changelog). P3 severity classified. 3am-friendly Quick Reference (post-RB1-2 fix: now single-line directive)."
+  evidence:
+    verdict: pass
+    findings: []
+    justification: "Real incident cited (2026-05-10 orchestra LLD-007 review with wrong cwd). Concrete commands provided with expected/actual output for each Diagnosis step. Background explains the codex companion script behavior with reference to script path."
+  clarity:
+    verdict: pass
+    findings: []
+    justification: "Post-fix: Quick Reference is single-line scan-friendly. Verification is checkbox-gated with explicit pass criterion (4 of 4 required). Escalation routing is role-based (orchestra plugin DRI → codex upstream issue tracker → durable BUG doc), not person-named."
+  consistency:
+    verdict: pass
+    findings: []
+    justification: "Runbook stays operational throughout. References LLD-007 + postmortem v1.4 correctly. Background section honestly notes the v1.6.x followup (preflight cwd validation not yet implemented)."
+overall_verdict: pass
+required_followup:
+  - "v1.6.x — Add preflight check in codex companion wrapper that asserts `path-arg ⊂ cwd-repo` before invoking codex. Would prevent this footgun upstream rather than mitigating it via runbook. Background section already flags this as missing."
+notes: |
+  Codex round 1 adversarial review of bootstrap-mismatch runbook (gpt-5-codex).
+  Verdict: needs-attention → addressed inline → re-attestation pass.
+
+  4 findings (0 Critical, 1 High, 3 Medium):
+  - RB1-1 (High) escalation person-bound → role/channel routing
+  - RB1-2 (Medium) Quick Reference multi-step → single-line directive
+  - RB1-3 (Medium) Diagnosis step 1 placeholder → concrete capture commands
+  - RB1-4 (Medium) Verification not gated → checkbox-gated with pass rule
+
+  All addressed in initial draft revision. This attestation captures
+  the post-fix state which passes all 4 gates.

@@ -1,0 +1,47 @@
+schema_version: "1.0"
+doc_subject:
+  path: docs/runbooks/RUNBOOK-iteration-plateau-detection.md
+  content_hash: sha256:dad3a5240603cb34716b8660780c4cec465a5029af6e0c3d8e27d3f936282b6a
+  iteration: 1
+reviewer:
+  identifier: "codex:adversarial-review+gpt-5-codex"
+  invoked_at: 2026-05-10T00:00:00Z
+  context_isolation: fresh_subagent
+gates:
+  completeness:
+    verdict: pass
+    findings: []
+    justification: "All 9 STANDARDS-required runbook sections present and filled. P3 severity classified. Quick Reference is single-line (post-IP fix). Background includes real plateau examples (LLD-005 + LLD-006 with finding count trajectories)."
+  evidence:
+    verdict: pass
+    findings: []
+    justification: "References real LLD-005/LLD-006 plateau patterns with finding counts (25→23, 12→10→11→9). Cites arXiv 2410.21819 self-preference bias for different-model escalation. Cross-references orchestra-canonical Interview Gate sources (cli/templates/standards-default-7.md + skills/design-docs/SKILL.md) post-IP1 fix."
+  clarity:
+    verdict: pass
+    findings: []
+    justification: "Post-IP3 fix: Diagnosis Step 1 has deterministic overlap signature `<gate>::<normalized-location>::<normalized-issue-key>` with concrete normalization rules. Post-IP4 fix: Escalation has executable codex-companion command + attestation path, not just architectural reference. Roles separated cleanly: rule (orchestra template) = trigger; runbook = post-trigger procedure."
+  consistency:
+    verdict: pass
+    findings: []
+    justification: "Post-IP1 + IP2 fixes: § 1 'When This Fires' no longer redefines trigger logic locally; references orchestra-canonical sources only (cli/templates + SKILL.md). No drift between rule and runbook. SCALE-side cross-repo path explicitly labeled as generated-from-template, not source-of-truth."
+overall_verdict: pass
+required_followup:
+  - "v1.6.x — Implement `cli.spec_review_overlap` helper referenced in Diagnosis Step 1. Currently TBD — operators compute signatures by hand using the rules. Would automate plateau detection."
+notes: |
+  Codex round 1 adversarial review of iteration-plateau runbook (gpt-5-codex).
+  Verdict: needs-attention → 4 findings addressed inline → re-attestation pass.
+
+  Findings (0 Critical, 2 High, 2 Medium):
+  - IP1 (High) cross-repo `.claude/rules/interview-gate.md` reference unresolved
+    in orchestra repo → replaced with orchestra-canonical paths
+    (cli/templates/standards-default-7.md + skills/design-docs/SKILL.md)
+  - IP2 (High) trigger-vs-procedure drift — runbook redefined trigger logic →
+    § 1 rewritten as strict post-trigger procedure
+  - IP3 (Medium) subjective overlap criteria → deterministic signature with
+    normalization rules (gate + normalized-location + normalized-issue-key)
+  - IP4 (Medium) escalation referenced multi-judge architecture without
+    invocation path → added concrete codex-companion command + attestation
+    output path
+
+  Single-source-of-truth principle preserved: Interview Gate trigger lives
+  in orchestra template; runbook is procedure-after-trigger only.

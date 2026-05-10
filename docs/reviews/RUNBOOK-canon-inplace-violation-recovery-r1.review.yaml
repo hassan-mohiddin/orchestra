@@ -1,0 +1,67 @@
+schema_version: '1.0'
+doc_subject:
+  path: docs/runbooks/RUNBOOK-canon-inplace-violation-recovery.md
+  content_hash: sha256:2ccbcfe11b78054b215173f23e2e15e3d5d4d56db7eb4d2d077b6d340b6f8a61
+  iteration: 1
+reviewer:
+  identifier: subagent:general-purpose+spec-review-v1
+  invoked_at: '2026-05-10T15:30:00Z'
+  context_isolation: fresh_subagent
+gates:
+  completeness:
+    verdict: pass
+    findings: []
+    justification: 'All required sections present: Header (Severity P3), When This
+      Fires, Quick Reference, Diagnosis (3 steps), Mitigation (steps 4-9), Verification
+      (5-item checklist), Escalation, Background, Related Documents, Changelog.'
+  evidence:
+    verdict: pass
+    findings:
+    - severity: Minor
+      location: "Background \xA7 enforcement-layer-1"
+      problem: Citation cli/lint.py:490-521 verified against code. Internally inconsistent
+        with Related Documents earlier 486-521 form. Pick one canonical range.
+    justification: 'Code citations verified against cli/lint.py: lint_commit_no_canon_inplace_edit
+      at 490-521, lint_staged at 705-728 with L2 invocation at line 728, lint_commit
+      at 668-682. Commit SHAs cited but not verifiable from review scope. Minor inconsistency
+      in citation range is the only finding.'
+  clarity:
+    verdict: pass
+    findings:
+    - severity: Minor
+      location: "Mitigation \xA7 Step 7"
+      problem: for-loop bash example uses literal triple-dot ellipsis inside shell
+        loop which is not valid bash. Operator copy-pasting at 3am will get syntax
+        error.
+    justification: Sections linearly ordered. Each step has single concrete action.
+      Command blocks copy-pasteable. Quick Reference one-liner accurately compresses
+      the 9-step procedure. Stop conditions explicit. 3am operator can act without
+      backstory.
+  consistency:
+    verdict: conditional_pass
+    findings:
+    - severity: Important
+      location: "Background \xA7 first paragraph"
+      problem: Citation range for L2 given as cli/lint.py:490-521 here but as cli/lint.py:486-521
+        in Related Documents. Pick one canonical range and use in both places.
+    - severity: Minor
+      location: "Related Documents \xA7 cli/lint.py references"
+      problem: Three separate ranges cited but Background reuses different form. Same
+        code two different citation styles in same doc.
+    - severity: Minor
+      location: "Quick Reference \xA7 single-line directive"
+      problem: References cli.lifecycle update-attestation-paths as CLI subcommand
+        but Related Documents description reads as Python helper. Tighten phrasing.
+    justification: Code citations agree with cli/lint.py contents. Two internal inconsistencies
+      need single-source-of-truth resolution before this runbook can be trusted as
+      a 3am reference.
+overall_verdict: conditional_pass
+required_followup:
+- 'Reconcile cli/lint.py L2 line-range citation: pick 486-521 OR 490-521 and use consistently.'
+- 'Step 7 bash loop: replace literal triple-dot with valid shell continuation.'
+- Clarify cli.lifecycle update-attestation-paths surface as CLI subcommand.
+notes: 'Substance is sound. The 9-step procedure matches the 2026-05-10 incident recovery
+  pattern. Conditional_pass driven by surface-level citation inconsistency and one
+  bash-syntax nit, both fixable in narrow-change append.
+
+  '

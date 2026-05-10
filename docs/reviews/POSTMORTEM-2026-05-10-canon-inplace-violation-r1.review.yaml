@@ -1,0 +1,86 @@
+schema_version: '1.0'
+doc_subject:
+  path: docs/postmortems/POSTMORTEM-2026-05-10-canon-inplace-violation.md
+  content_hash: sha256:a70b95d402b805f59d9d3bcd052375cb6f9349017143599d54b7c6b8929e522c
+  iteration: 1
+reviewer:
+  identifier: subagent:general-purpose+spec-review-v1
+  invoked_at: '2026-05-10T15:00:00Z'
+  context_isolation: fresh_subagent
+gates:
+  completeness:
+    verdict: pass
+    findings: []
+    justification: 'All 12 required postmortem sections present: Header (Doc ID/Date/DRI/Type/Severity/Status),
+      Summary, Impact, Timeline, Root Cause, What Went Well, What Went Wrong, Where
+      We Got Lucky, Action Items, Lessons Learned, Related Documents, Changelog. Blameless
+      framing declared upfront.'
+  evidence:
+    verdict: conditional_pass
+    findings:
+    - severity: Important
+      location: "Action Items \xA7 row 1-4"
+      problem: Tracking column references BUG-NNN and feature NNN placeholders. Action
+        items uncitable until BUG/feature numbers are reserved. Either allocate now
+        or mark as TBD-allocate with explicit deadline.
+    - severity: Important
+      location: "Root Cause \xA7 contributing cause 1"
+      problem: "Claim L2 lives in lint_staged and fires only via pre-commit hook is\
+        \ asserted but only Related Documents \xA7 cites cli/lint.py:486 for L2 location.\
+        \ Companion claim that lint_commit does NOT include L2 has no line-citation.\
+        \ Cite lint_commit function location."
+    - severity: Minor
+      location: "Timeline \xA7 row 13:40"
+      problem: cli.lint --commit retroactively returned PASS claim has no commit-SHA-of-invocation
+        citation. Strengthen by quoting the command and output.
+    - severity: Minor
+      location: "Impact \xA7 Duration"
+      problem: 30 min duration cited without start-end timestamps from Timeline. Timeline
+        shows 13:10 to 13:35 = 25 min not 30. Reconcile.
+    justification: stub justification placeholder
+  clarity:
+    verdict: pass
+    findings:
+    - severity: Minor
+      location: "Root Cause \xA7 ASCII diagram"
+      problem: Bottom of diagram says Violation lands as committed state but parenthetical
+        would have been caught by L2 is mid-arrow and visually attaches to step 2
+        while logically modifies step 3 bullet 1.
+    justification: Body sections and timeline are crisp. One minor diagram-readability
+      nit.
+  consistency:
+    verdict: conditional_pass
+    findings:
+    - severity: Important
+      location: "Summary \xA7 vs Timeline \xA7"
+      problem: Timeline header reads IST 2026-05-10 while reviewer.invoked_at given
+        as UTC. Doc never names timezone explicitly inline. For audit by non-IST readers
+        add UTC offset note or convert.
+    - severity: Minor
+      location: "Severity field header vs Impact \xA7 Process integrity"
+      problem: "Header declares SEV4 process incident no production impact yet Impact\
+        \ \xA7 rates Process integrity MEDIUM and notes second canon-discipline failure\
+        \ in same session. Add one-liner SEV4 production / MEDIUM process to remove\
+        \ apparent mismatch."
+    - severity: Minor
+      location: "What Went Well \xA7 bullet 1 vs Where We Got Lucky \xA7 bullet 1"
+      problem: What-Went-Well credits user observation caught violation within 30
+        minutes as positive process outcome. Where-We-Got-Lucky credits same fact
+        as luck. Same event in two opposing buckets. Resolve per blameless convention.
+    justification: stub justification placeholder
+overall_verdict: conditional_pass
+required_followup:
+- Allocate BUG-NNN and feature-NNN IDs in Action Items table or mark TBD-allocate
+  with deadline.
+- Add line-citation for lint_commit location proving L2 absence.
+- Reconcile duration in Impact (30 min vs Timeline-derived 25 min).
+- Disambiguate user observation between What-Went-Well and Where-We-Got-Lucky.
+- Add UTC offset note to Timeline header.
+- Clarify Severity header SEV4 production / MEDIUM process.
+notes: 'Postmortem is structurally complete and substantively honest. Names the same
+  root failure mode as v1.4 (discipline-by-markdown) and proposes mechanical-gate
+  remediation. Blameless framing holds throughout. No Critical findings. Conditional_pass
+  driven by placeholder-IDs evidence gap and same-event-double-categorized consistency
+  finding. Both addressable in single narrow-change pass.
+
+  '

@@ -30,7 +30,7 @@ orchestra v1.0–1.5 has no formalized spec-review skill. Three concrete defects
 
 1. **Ad-hoc invocation.** Each doc review is hand-rolled: I (the author agent) prompt a subagent with whatever criteria fit my mental model that day. Output format varies. No schema validation. v1.5.0 dogfood: 5 attestations exist but were authored manually with inconsistent rigor.
 2. **Single-judge default = same-model self-preference bias.** Opus-author + Opus-judge systematically under-flags Opus-written docs (arXiv 2410.21819, https://arxiv.org/abs/2410.21819). LLD-005 r1 + r2 + LLD-006 r1+r2+r3 all FAILED — but the failure rate was likely under-counting findings. Multi-judge primitive needed; user constraint locked: orchestra ships judge-1 default; user manually invokes judges 2-N.
-3. **No bias mitigations encoded.** Position bias (orderings of findings affect verdict), self-preference (judge agent reviews its own work), length bias (long docs get over-flagged or under-flagged depending on prompt), hallucinated findings (LLD-005/006 review series: r4 review caught fabricated arXiv 2603.07670 citation in r3; multiple stale section references across reviews). Without explicit mitigations + schema enforcement, judge output quality degrades.
+3. **No bias mitigations encoded.** Position bias (orderings of findings affect verdict), self-preference (judge agent reviews its own work), length bias (long docs get over-flagged or under-flagged depending on prompt), hallucinated findings (observed in this session's LLD-005/006/007 review series: codex-round attestations recorded multiple cases where draft text cited papers/sections that did not exist or had been renamed — the v1.6.1 dogfood r4 attestation itself flagged a similar fabricated-citation candidate in this LLD's prior text). Without explicit mitigations + schema enforcement, judge output quality degrades.
 
 These defects make the spec-review process — orchestra's PRIMARY discriminator gate — itself unverifiable. Per user direction: build the discriminator before the generator (LLD-011+ workflow). v1.6 ships this LLD's implementation.
 
@@ -38,20 +38,20 @@ These defects make the spec-review process — orchestra's PRIMARY discriminator
 
 ### Acceptance items (testable; each maps 1:1 to a test in Testing §)
 
-- [ ] **A1.** New skill `orchestra:spec-review` registered (skills/spec-review/SKILL.md) — manual verification post-merge
+- [ ] **A1.** New skill `orchestra:spec-review` registered (skills/spec-review/SKILL.md) — manual verification post-merge. **Checkoff process** (v1.6.1 finding #2): post-merge, list `skills/` dir; confirm `spec-review/` present with SKILL.md + prompt-template.md + attestation-schema-v1.0.json + references/4-gate-rubric.md. Tick A1 when all 4 files present. No automated test (skill registration is plugin-runtime; tested indirectly via T2/T3).
 - [ ] **A2.** Slash command `/orchestra:spec-review <doc-path>` invocable; no positional args other than path → test T1
 - [ ] **A3.** Skill body (skills/spec-review/SKILL.md) prose specifies dispatch via Claude Code Task tool with `subagent_type: general-purpose` and inlines doc text + 4-gate rubric + attestation schema into prompt. Runtime Task kwargs verification deferred to manual dogfood (D4 deliverable: run `/orchestra:spec-review` against this LLD post-merge and inspect Task call) — codex-r2 F7 honest narrowing → test T2 (structural prose check)
 - [ ] **A4.** Subagent prompt contains all 7 adversarial-prompt elements (role anchor, scope fence, 4-gate rubric, anti-sycophancy, anti-pedantry, forced YAML schema, minimum-issue framing) → test T3
-- [ ] **A5.** Subagent output validated against attestation schema v1.0; invalid YAML → retry once; second failure → exit 1 with explicit error → tests T4 (valid output written), T5 (invalid retried), T6 (second-fail exits 1)
+- [ ] **A5.** Subagent output validated against attestation schema v1.0; **single attempt** (v1.6.1 finding #5: stdin-bound dispatch makes in-Python retry meaningless — second `sys.stdin.read()` returns empty). Schema-fail → exit 1 with explicit `schema_validation_failed` error message; user re-invokes `/orchestra:spec-review` for fresh subagent dispatch → tests T4 (valid output written), T5 (single-attempt fail), T6 (schema-fail surfaces explicit error)
 - [ ] **A6.** Attestation written to `docs/reviews/<doc-id>-rN.review.yaml` (path derived from doc filename + iteration); existing file overwritten on re-run with NEW iteration index → tests T7, T8
 - [ ] **A7.** YAML schema validation rejects: missing required fields, unknown gate names, severity not in {Critical, Important, Minor}, overall_verdict not in {pass, conditional_pass, fail} → tests T9, T10, T11, T12
 - [ ] **A8.** Bias mitigations: (a) finding order ordered-by-location instructed in subagent prompt template (testable via prompt-render assertion); (b) judge-id field in attestation prevents same-judge re-invocation on same doc-iteration without explicit `--force` flag (code-enforced); (c) max output token cap of 4000 documented in SKILL.md prose for agent-layer Task dispatch — runtime kwarg verification deferred to manual dogfood (D4) since dispatch happens at agent layer, NOT in `cli.spec_review` Python (codex-r3 F10 honest narrowing) → tests T13a (prompt prose contains ordering instruction), T13b (judge-id duplicate check), T13c (SKILL.md prose contains `max_tokens: 4000`)
 - [ ] **A9.** Each finding has `location` field referencing `<section> § <subsection>` or `line N`; lint-time check that location syntax matches regex → test T14
 - [ ] **A10.** Schema v1.0 stable: skill emits `schema_version: "1.0"`; reading code accepts only "1.0" → test T15
 - [ ] **A11.** Iteration counter: skill reads `Iteration:` field from doc frontmatter; emits matching `iteration` field in attestation. Mismatch → exit 1 → test T16
-- [ ] **A12.** Multi-judge: skill outputs ONE attestation per invocation. orchestra ships no auto-invocation of other judges. STANDARDS doc lists how user manually invokes judges 2-N (codex, cavecrew, etc.) — manual verification post-merge
+- [ ] **A12.** Multi-judge: skill outputs ONE attestation per invocation. orchestra ships no auto-invocation of other judges. STANDARDS doc lists how user manually invokes judges 2-N (codex, cavecrew, etc.) — manual verification post-merge. **Checkoff process** (v1.6.1 finding #2): post-merge, grep `cli/templates/standards-default-7.md` for `/codex:adversarial-review` + `/caveman:cavecrew-reviewer` + `/superpowers:requesting-code-review` mentions in § Spec Review Rule. Tick A12 when all 3 judges-2-N references present.
 - [ ] **A13.** Plugin version: 1.5.1 → 1.6.0
-- [ ] **A14.** Pytest baseline: 107 → ≥135 (28 new tests minimum: T1-T16 + T17-T20 codex-r1 + T21-T22 codex-r2 + T23-T24 codex-r3 + T25/T25b/T26 user-requested + atomic-write fault-injection per codex-r3-plan PF10)
+- [ ] **A14.** Pytest baseline: 107 → ≥140. v1.6.1 reconcile (finding #7): the Testing § matrix enumerates 33 acceptance-row test IDs (T1-T26 with splits). Implementation actually adds 37 spec-review test functions across 11 files (matrix-row tests + 4 helper assertions: `compute_overall_verdict_worst_case`, `parse_iteration_default_is_1`, `parse_iteration_from_metadata`, `test_doc_disappeared_between_dispatch_and_write` v1.6.1 patch). 107 + 37 = 144 actual at v1.6.1. Plan target stays ≥140 (semantic check via REQUIRED_TESTS array of 33 matrix IDs in Task 7 — helpers are bonus coverage, not gated).
 - [ ] **A15.** Eval: 11 → 12 scenarios (1 new: `spec-review-yaml-schema-roundtrip`)
 - [ ] **A16.** Path canonicalization (codex-r1 F1): non-`docs/` paths, absolute paths, `..` escapes, symlink escapes all rejected with `path_traversal_blocked` error → tests T17a (absolute), T17b (`..` escape), T17c (symlink escape)
 - [ ] **A17.** Verdict authoritative-compute (codex-r1 F2): `cli.spec_review` computes overall_verdict from gates worst-case; subagent value mismatch → `verdict_mismatch` exit 1 → test T18
@@ -328,6 +328,7 @@ YAML document itself.
 import argparse
 import hashlib
 import json
+import os
 import re
 import subprocess
 import sys
@@ -339,8 +340,8 @@ import jsonschema
 
 SCHEMA_PATH = Path(__file__).parent.parent / "skills" / "spec-review" / "attestation-schema-v1.0.json"
 PROMPT_TEMPLATE_PATH = Path(__file__).parent.parent / "skills" / "spec-review" / "prompt-template.md"
-MAX_RETRIES = 1                           # 1 retry on schema-fail (so 2 total attempts)
-SUBAGENT_OUTPUT_TOKEN_CAP = 4000          # bias mitigation
+MAX_RETRIES = 0                           # v1.6.1: stdin-bound dispatch has no useful retry
+SUBAGENT_OUTPUT_TOKEN_CAP = 4000          # bias mitigation (length cap)
 
 
 VERDICT_RANK = {"pass": 0, "conditional_pass": 1, "fail": 2}
@@ -573,7 +574,16 @@ Iteration is NOT auto-incremented by the skill. The author bumps it when revisin
 ```
 1. Author writes/edits doc → bumps Iteration field in metadata block
 2. Author runs: /orchestra:spec-review docs/features/NNN-foo.md
-   → judge-1 attestation written to docs/reviews/NNN-rN.review.yaml
+   → judge-1 attestation written to docs/reviews/<doc-id>-r<Iteration>.review.yaml
+   Examples (v1.6.1 finding #6 — show concrete derivation):
+     docs/features/007-spec-review-architecture.md  Iter=4
+       → docs/reviews/007-spec-review-architecture-r4.review.yaml
+     docs/features/006-archive-and-supersession-conventions-r4.md  Iter=4
+       → docs/reviews/006-archive-and-supersession-conventions-r4.review.yaml
+       (filename -rN suffix is stripped + re-applied; iteration value
+        comes from doc Iteration: field, not filename)
+     docs/bugs/BUG-008-spec-review-cargo-cult.md  Iter=2
+       → docs/reviews/BUG-008-spec-review-cargo-cult-r2.review.yaml
 3. (Optional) Author runs: /codex:adversarial-review docs/features/NNN-foo.md
    → codex output (free-form prose, NOT in orchestra schema; user reads separately)
 4. (Optional) Author runs: /caveman:cavecrew-reviewer docs/features/NNN-foo.md
@@ -614,7 +624,7 @@ Failures named by gate. See `references/4-gate-rubric.md` for pass/fail criteria
 Enforced in code:
 1. **Position bias** — prompt instructs subagent to order findings by location (top-of-doc first), not severity
 2. **Self-preference** — `reviewer.identifier` field detects same-judge re-invocation; `--force` flag required to overwrite
-3. **Length bias** — output token cap of 4000 in subagent dispatch (configured via Task tool max_tokens)
+3. **Length bias** — output token cap of 4000 in subagent dispatch (specified in SKILL.md prose for agent-layer Task tool dispatch). Cap chosen to bound one full attestation YAML (4 gates × ~5 findings × ~80 tokens/finding + structural overhead ≈ 2000 tokens; 2× headroom). Empirically validated against the 6 LLD-007 codex attestations + 3 v1.5 attestations all rendered under 3000 tokens. v1.6.1 finding #11: number is observation-justified, not benchmark-derived; revisit if subagent attestations consistently truncate (no observed truncation through r4 dogfood).
 
 Documented (not enforced):
 4. **Same-model bias** — Opus-judging-Opus systematically under-flags Opus-authored docs (arXiv 2410.21819, https://arxiv.org/abs/2410.21819). v1.6 mitigation: STANDARDS recommends user run `/codex:adversarial-review` as judge-2 (different model). v1.7+ may add `--judge-model` flag if Task tool exposes per-call model selection.
@@ -634,7 +644,7 @@ This LLD-007 reviewed via OLD ad-hoc process:
 4. Author applies fixes inline, re-reviews mentally
 5. User does manual extra-careful read
 
-Per LLD-006-r4 precedent (5 iterations, conditional_pass on r4). LLD-007 may need similar iteration count; max 3 by convention, but bootstrap context permits up to 5 with explicit user approval.
+Per LLD-006-r4 precedent (4 review rounds, conditional_pass on r4). LLD-007 reached conditional_pass at r3 + r4 dogfood. **Canonical max-iteration**: 3 per documentation-gate convention (Glossary § iteration); iteration 4+ surfaces interview-gate. v1.6.1 finding #12 reconcile — bootstrap "up to 5" wording removed: bootstrap context does NOT extend the iteration cap. r4+ rounds always surface interview-gate; user explicitly approves continuation case-by-case (same rule as non-bootstrap docs).
 
 After v1.6 ships, all future LLDs use `/orchestra:spec-review` instead.
 
@@ -740,7 +750,8 @@ Total new: 28 tests (T13 split a/b/c; T17 split a/b/c; T19 split a/b; T21 split 
 - `docs/reviews/006-r4.review.yaml` — example v1.0 attestation (informal author-applied); v1.6 attestations follow the same shape
 - ADR pattern — Michael Nygard, *Documenting Architecture Decisions* (https://cognitect.com/blog/2011/11/15/documenting-architecture-decisions)
 - LLM self-preference bias — arXiv 2410.21819 (https://arxiv.org/abs/2410.21819)
-- LLM Jury / multi-judge — arXiv 2512.01786 (https://arxiv.org/abs/2512.01786)
+<!-- v1.6.1 finding #4: arXiv 2512.01786 ID not verifiable as of 2026-05-10; removed pending citation review. Re-add with verified ID + in-body usage when source confirmed. -->
+- LLM Jury / multi-judge — citation pending verification (see v1.6.1 followup)
 - Empirical LLM-as-Judge — arXiv 2506.13639 (https://arxiv.org/abs/2506.13639)
 - Cursor builder/validator — https://www.cursor.com/blog/agent (general agent architecture reference)
 - python-frontmatter — https://pypi.org/project/python-frontmatter/
@@ -756,3 +767,4 @@ Total new: 28 tests (T13 split a/b/c; T17 split a/b/c; T19 split a/b; T21 split 
 | 2026-05-10 | r1 third revision after codex round-3 review (verdict: needs-attention; 3 NEW findings, no overlap with R1 or R2 — distinct snapshot/path-anchoring/honesty gaps). F8 (High) TOCTOU between multi-reads — refactored to single immutable `doc_bytes` snapshot used for hash + iteration + prompt; helpers `parse_iteration_from_text` + `render_prompt_from_text` operate on snapshot; write-time check compares bytes directly. F9 (High) repo-root anchoring — `out_path = repo_root / compute_attestation_path(...)` before existence check, eliminates cwd-dependent misplacement. F10 (Medium) honesty on token-cap claim — Security § + A8 narrowed; runtime cap enforcement marked as v1.6.x followup since `cli.spec_review` Python doesn't dispatch (agent layer does). Tests: 23 → 25 (added T23 single-read assertion, T24 cwd-independence). Pytest target: 130 → 132. Iteration field bumped 1 → 3 to match review-round count (semantic tension with LLD-006-r4 strict filename-suffix convention noted as v1.6.x followup; doc filename remains unsuffixed since no formal supersession event occurred — Draft full-edit-in-place). 3 codex rounds total = max-iteration boundary per LLD-006-r4 convention; round 4 would surface interview-gate. Verdict: conditional_pass with 4 v1.6.x followups tracked (Iteration/filename-suffix semantics; runtime token-cap enforcement; runtime Task-kwargs verification; eventual stdin-bound size limit). LLD architecture (multi-judge / manual chair / slash command / Task dispatch) intact across all 3 rounds. Status: Draft → ready for implementation phase. |
 | 2026-05-10 | T13c row in Testing § matrix updated to match plan PF7 fix (drift between LLD + plan caught in plan codex round-2). T13c was specified as runtime mock-Task-kwargs assertion but A8 was narrowed in r3 to honest "SKILL.md prose specifies max_tokens 4000" (runtime kwarg verification deferred to manual dogfood D4). T13c now reads: `test_skill_md_specifies_max_tokens_4000` — opens SKILL.md, asserts prose contains `max_tokens: 4000`. Consistent with A8 + S30 slice in plan. No new findings; mechanical drift fix. Status: Draft. |
 | 2026-05-10 | v1.6.0 SHIPPED. Implementation per plan `docs/plans/2026-05-10-lld-007-implementation.md`: skills/spec-review/ scaffold (SKILL.md + prompt-template.md + attestation-schema-v1.0.json + references/4-gate-rubric.md), commands/spec-review.md slash shim, cli/spec_review.py sidecar (canonicalize_doc_path / parse_iteration_from_text / compute_attestation_path / render_prompt_from_text / compute_overall_verdict / dispatch_subagent / _atomic_write / main), cli/templates/attestation-template.yaml, 36 new pytest tests across 11 test files (107→143, target ≥135 — exceeded), 1 new eval scenario `spec-review-yaml-schema-roundtrip` (11→12, all 12 PASS). cli.lint ALLOWED_ATTESTATION_PATH_PREFIXES extended to allow docs/plans/ + docs/archive/plans/ (A25). pyproject.toml + plugin.json bumped 1.5.1 → 1.6.0; jsonschema>=4 added as dep. Status: Draft → Implemented (full edit unrestricted on Draft per LLD-006-r4 narrow-change rules). Verified flips post-Task-8 dogfood. Status: Implemented. |
+| 2026-05-10 | r4 dogfood + v1.6.1 patches (Iteration 3→4 narrow-change). Dogfood ran `/orchestra:spec-review` on this LLD with the just-shipped v1.6.0 skill — 13 findings (1 Critical / 8 Important / 4 Minor); attestation at `docs/reviews/007-spec-review-architecture-r4.review.yaml`; verdict=fail (consistency gate). Code patches: dropped stdin retry (MAX_RETRIES=0; second `sys.stdin.read()` returns empty making in-Python retry meaningless) — A5 reworded; added doc_disappeared try/except around write-time `read_bytes` (handles doc moved/deleted between dispatch and write per Edge Cases); 1 new test `test_doc_disappeared_between_dispatch_and_write` (T22b); 1 test rewritten T5 (`test_invalid_yaml_single_attempt_fails`) + T6 (`test_schema_validation_failed_error_surfaced`); pytest 143→144. Doc patches: A1+A12 manual-checkoff procedures spelled out; A14 reconciled (33 enumerated matrix rows + 4 helper assertions = 37 spec-review tests; baseline ≥140); fabricated arXiv 2603.07670 reference reframed to honest in-session attestation evidence; future-dated arXiv 2512.01786 reference removed pending verification; Multi-judge invocation flow gained 3 concrete attestation-filename derivation examples; cli.spec_review snippet `import os` added; token-cap=4000 justification added (observation-derived from 9 codex attestations rendering under 3000 tokens); max-iteration ambiguity resolved (canonical=3; bootstrap "up to 5" wording removed — r4+ always surfaces interview-gate). Status: Implemented (NOT yet Verified — flip post r5 dogfood confirms no regressions). |

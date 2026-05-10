@@ -68,7 +68,7 @@ def _run(tmp_path, monkeypatch, capsys, yaml_outputs, iteration: int = 1, force=
 def test_schema_version_must_be_1_0(tmp_path, monkeypatch, capsys):
     """T15 / S10 — A10: schema_version='1.1' → schema-fail."""
     bad = _valid_attestation_yaml().replace('"1.0"', '"1.1"')
-    rc, cap, _ = _run(tmp_path, monkeypatch, capsys, [bad, bad])
+    rc, cap, _ = _run(tmp_path, monkeypatch, capsys, [bad])
     assert rc == 1
     assert "schema" in cap.err.lower() or "validation" in cap.err.lower()
 
@@ -79,7 +79,7 @@ def test_schema_version_must_be_1_0(tmp_path, monkeypatch, capsys):
 def test_missing_required_field_rejected(tmp_path, monkeypatch, capsys):
     """T9 / S11 — A7: drop overall_verdict → schema-fail."""
     bad = _valid_attestation_yaml().replace("overall_verdict: pass\n", "")
-    rc, _, _ = _run(tmp_path, monkeypatch, capsys, [bad, bad])
+    rc, _, _ = _run(tmp_path, monkeypatch, capsys, [bad])
     assert rc == 1
 
 
@@ -90,7 +90,7 @@ def test_unknown_gate_name_rejected(tmp_path, monkeypatch, capsys):
         "  consistency: {verdict: pass, findings: [], justification: 'no contradictions'}\n"
         "  bogus: {verdict: pass, findings: [], justification: 'extra'}\n",
     )
-    rc, _, _ = _run(tmp_path, monkeypatch, capsys, [bad, bad])
+    rc, _, _ = _run(tmp_path, monkeypatch, capsys, [bad])
     assert rc == 1
 
 
@@ -103,7 +103,7 @@ def test_severity_enum_violated_rejected(tmp_path, monkeypatch, capsys):
         "    findings:\n"
         "      - {severity: Info, location: 'Body § Paragraph 1', problem: 'something'}\n",
     )
-    rc, _, _ = _run(tmp_path, monkeypatch, capsys, [bad, bad])
+    rc, _, _ = _run(tmp_path, monkeypatch, capsys, [bad])
     assert rc == 1
 
 
@@ -112,7 +112,7 @@ def test_overall_verdict_enum_violated_rejected(tmp_path, monkeypatch, capsys):
     bad = _valid_attestation_yaml().replace(
         "overall_verdict: pass\n", "overall_verdict: maybe\n"
     )
-    rc, _, _ = _run(tmp_path, monkeypatch, capsys, [bad, bad])
+    rc, _, _ = _run(tmp_path, monkeypatch, capsys, [bad])
     assert rc == 1
 
 
@@ -128,7 +128,7 @@ def test_location_field_regex_enforced(tmp_path, monkeypatch, capsys):
         "    findings:\n"
         "      - {severity: Important, location: 'garbage', problem: 'something'}\n",
     )
-    rc, _, _ = _run(tmp_path, monkeypatch, capsys, [bad, bad])
+    rc, _, _ = _run(tmp_path, monkeypatch, capsys, [bad])
     assert rc == 1
 
 
@@ -142,7 +142,7 @@ def test_empty_findings_no_justification_rejected(tmp_path, monkeypatch, capsys)
         "  completeness: {verdict: pass, findings: [], justification: 'all sections present'}\n",
         "  completeness: {verdict: pass, findings: []}\n",
     )
-    rc, _, _ = _run(tmp_path, monkeypatch, capsys, [bad, bad])
+    rc, _, _ = _run(tmp_path, monkeypatch, capsys, [bad])
     assert rc == 1
 
 
@@ -151,7 +151,7 @@ def test_empty_findings_short_justification_rejected(tmp_path, monkeypatch, caps
     bad = _valid_attestation_yaml().replace(
         "justification: 'all sections present'", "justification: 'ok'"
     )
-    rc, _, _ = _run(tmp_path, monkeypatch, capsys, [bad, bad])
+    rc, _, _ = _run(tmp_path, monkeypatch, capsys, [bad])
     assert rc == 1
 
 
@@ -166,18 +166,22 @@ def test_valid_yaml_passes(tmp_path, monkeypatch, capsys):
     assert out_path.exists()
 
 
-def test_invalid_yaml_retries_once(tmp_path, monkeypatch, capsys):
-    """T5 / S21 — A5: invalid first attempt; valid second → exit 0."""
-    bad = "not: valid\nyaml at all"
-    good = _valid_attestation_yaml()
-    rc, cap, n_calls = _run(tmp_path, monkeypatch, capsys, [bad, good])
-    assert rc == 0, f"stderr={cap.err}"
-    assert n_calls == 2, "dispatch_subagent should be called exactly twice (1 fail + 1 retry)"
+def test_invalid_yaml_single_attempt_fails(tmp_path, monkeypatch, capsys):
+    """T5 / S21 (v1.6.1) — A5 reworded: stdin-bound dispatch has no retry.
 
-
-def test_invalid_yaml_twice_fails(tmp_path, monkeypatch, capsys):
-    """T6 / S22 — A5: invalid twice → exit 1."""
+    Per v1.6.1 dogfood finding #5: sys.stdin.read() returns empty on second
+    call, making in-Python retry meaningless. Schema-fail → exit 1
+    immediately. User re-invokes /orchestra:spec-review for fresh dispatch.
+    """
     bad = "missing: required\nfields"
-    rc, cap, n_calls = _run(tmp_path, monkeypatch, capsys, [bad, bad])
+    rc, cap, n_calls = _run(tmp_path, monkeypatch, capsys, [bad])
     assert rc == 1
-    assert n_calls == 2
+    assert n_calls == 1, f"dispatch_subagent should be called exactly once, got {n_calls}"
+
+
+def test_schema_validation_failed_error_surfaced(tmp_path, monkeypatch, capsys):
+    """T6 / S22 (v1.6.1) — A5: schema-fail surfaces explicit error message."""
+    bad = "schema_version: '0.0'\n"  # invalid schema version
+    rc, cap, _ = _run(tmp_path, monkeypatch, capsys, [bad])
+    assert rc == 1
+    assert "schema" in cap.err.lower() or "validation" in cap.err.lower()

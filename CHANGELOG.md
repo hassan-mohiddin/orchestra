@@ -1,5 +1,46 @@
 # Changelog
 
+## v1.6.1 — 2026-05-10
+
+Dogfood patches. Ran `/orchestra:spec-review` on LLD-007 itself using the
+v1.6.0 skill just shipped — produced 13 findings; this release addresses
+all of them. No new features; pure correctness + consistency.
+
+### Code
+
+- Dropped `cli.spec_review` retry loop (`MAX_RETRIES = 0`). Stdin-bound
+  dispatch makes in-Python retry meaningless: `sys.stdin.read()` returns
+  empty on second call. Schema-fail → exit 1 with explicit
+  `schema_validation_failed` error; user re-invokes
+  `/orchestra:spec-review` for fresh subagent dispatch.
+- Wrapped write-time `canonical_path.read_bytes()` in try/except for
+  doc-moved-to-archive case. New error code `doc_disappeared` (exit 1)
+  replaces the prior FileNotFoundError Python crash.
+- Added 1 new pytest test (`test_doc_disappeared_between_dispatch_and_write`).
+  Rewrote T5/T6 to match new single-attempt semantics. Pytest: 143 → 144.
+
+### Docs (LLD-007)
+
+- A1 + A12 manual-verification checkoff procedures spelled out
+- A5 reworded for single-attempt semantics
+- A14 reconciled (33 matrix rows + 4 helper assertions = 37 spec-review
+  tests; pytest baseline ≥140)
+- Multi-judge invocation flow gained 3 concrete filename derivation
+  examples (007 / 006-r4 / BUG-008)
+- Code snippet missing `import os` added (would have crashed on
+  os.getpid/os.replace/os.fsync)
+- Token-cap=4000 justification added (observation-derived from 9 codex
+  attestations rendering under 3000 tokens)
+- Fabricated arXiv 2603.07670 reframed to honest in-session evidence
+- Future-dated arXiv 2512.01786 removed pending verification
+- Max-iteration ambiguity resolved (canonical=3; r4+ surfaces
+  interview-gate; bootstrap "up to 5" wording removed)
+- LLD Iteration: 3 → 4 (narrow-change WHITELIST allows in-place)
+
+### Plugin metadata
+
+- Version 1.6.0 → 1.6.1
+
 ## v1.6.0 — 2026-05-10
 
 LLD-007 spec-review architecture shipped. Multi-judge with manual chair —

@@ -1,0 +1,156 @@
+schema_version: '1.0'
+doc_subject:
+  path: docs/features/008-commit-skill.md
+  content_hash: sha256:f97a2f943f862f22f92977e0cb6a84b0a89db96ea35ba0bb4a909b31d8e8c0c7
+  iteration: 1
+reviewer:
+  identifier: subagent:general-purpose+spec-review-v1
+  invoked_at: '2026-05-10T00:00:00Z'
+  context_isolation: fresh_subagent
+gates:
+  completeness:
+    verdict: conditional_pass
+    findings:
+    - severity: Important
+      location: "Success Criteria \xA7 Acceptance items A6"
+      problem: "A6 specifies `cli.install_hooks --pre-commit --commit-msg` but Scope\
+        \ \xA73 specifies a new `--bootstrap` flag and the code snippet uses `[\"\
+        --all\", \"--bootstrap\"]`; three contradictory invocation forms with no chosen\
+        \ contract for the cli.init call site."
+    - severity: Important
+      location: "Success Criteria \xA7 A8"
+      problem: A8 says documentation-gate.md splits with 'Gates 4+5 move to skill'
+        but does not enumerate which prose moves to which references/ file, nor specify
+        whether the SCALE-side file is rewritten in place or replaced wholesale; migration
+        mechanic ambiguous.
+    - severity: Important
+      location: "Testing \xA7 Phase impl new test matrix"
+      problem: A10 budget claims '~15 new' tests (>=165 target) but the test matrix
+        enumerates only 13 distinct test IDs (T1-T8 with T4a-c and T6a-e expansions),
+        and T8 is a baseline assertion not a behavior test; the count gap is unexplained.
+    - severity: Minor
+      location: "Success Criteria \xA7 A11"
+      problem: Phase 0 audit doc path docs/plans/2026-05-10-test-quality-audit.md
+        is committed-to but no decision rule is stated for what happens if the audit
+        doc itself is rejected during spec-review (only the >20% delete-count escalation
+        is covered).
+    - severity: Minor
+      location: "Deliverables \xA7 D5"
+      problem: "D5 cites 'delete 3 .claude/rules/*.md files' but Migration \xA7 Post-skill-ship\
+        \ state lists only canon-frozen-guard.md and commit-strategy.md as DELETED\
+        \ while documentation-gate.md is partially edited (Gates 4+5 portion removed);\
+        \ the count 3 deleted files disagrees with the Migration sections 2 deletes\
+        \ + 1 partial-edit."
+  evidence:
+    verdict: conditional_pass
+    findings:
+    - severity: Important
+      location: "Problem Statement \xA7 Concrete failure mode"
+      problem: Three enforcement layers all failed cites BUG-009 and BUG-010 closing
+        two gaps but does not link to the postmortem document where the failure attribution
+        was finalized; reader must reconstruct which commits/specifics are authoritative
+        without a linked source.
+    - severity: Important
+      location: "Design \xA7 cli.lint.is_narrow_change tiered extension"
+      problem: Code snippet shows pseudo-code with bare placeholders for 'Verify each
+        ref is Minor severity in cited attestation' and 'Verify Changelog row added
+        per finding' but does not cite where those verification helpers live or will
+        live (no file:line target); without that, an implementer cannot estimate effort
+        or locate the integration point.
+    - severity: Important
+      location: "Edge Cases \xA7 7"
+      problem: Tiered rule with mismatched severity claim Verification reads attestation;
+        rejects with severity_mismatch error this anti-gaming check is asserted as
+        a property of is_narrow_change but the BUG-011 reference at cli/lint.py:397-427
+        covers only the prior strict-binary code; no evidence (file:line or BUG-011
+        phase reference) shows where attestation-YAML reading is implemented.
+    - severity: Minor
+      location: "Success Criteria \xA7 A4"
+      problem: '(precedent: cli.lint._load_extract_mermaid loads from skills/design-docs/scripts/)
+        precedent cited without file:line; reviewer cannot verify the precedent matches
+        the proposed pattern.'
+  clarity:
+    verdict: conditional_pass
+    findings:
+    - severity: Important
+      location: "Glossary \xA7 canon-frozen status set"
+      problem: Glossary references canon-frozen-eligible files and canon-frozen status
+        set but never enumerates the canonical set {Approved, Implemented, Verified,
+        Fix Applied, Current}; a fresh reader has to chase LLD-006-r4 to know which
+        Status values trigger the skill checklist.
+    - severity: Important
+      location: "Edge Cases \xA7 9"
+      problem: References file modified post-ship each references/<file>.md is itself
+        a Design Doc / discipline doc. Edits route through normal canon-frozen workflow
+        but references/ lives under skills/commit/, not under docs/, and L1 prefix
+        list (REFS_ELIGIBLE_PREFIXES in lint.py) covers only docs/{features,bugs,adr,design,postmortems,runbooks}/.
+        Mechanism by which skill-internal files are subject to canon-frozen lint is
+        left implicit and likely contradicts the lint code.
+    - severity: Important
+      location: "Design \xA7 Skill invocation flow"
+      problem: Step 4 says Skill defers mechanical checks to cli.lint --pre-commit
+        (already runs in hook) but step 5/6 imply the hook fires after the agents
+        own commit decision; reader cannot tell whether the skill should pre-emptively
+        run lint inline (so the agent can see findings before staging) or only rely
+        on hook-time enforcement. Affects skill SKILL.md prose authoring.
+    - severity: Minor
+      location: "Scope \xA7 Out of Scope last bullet"
+      problem: 5 deferred BUGs (001/002/004/005) that lists 4 bug numbers, not 5;
+        whichever number is missing or whether its a typo on 5 is unclear without
+        consulting the followups checklist.
+  consistency:
+    verdict: conditional_pass
+    findings:
+    - severity: Important
+      location: "Problem Statement \xA7 layer 4"
+      problem: "Lists 6 SCALE-side rule files but the SCALE rules directory currently\
+        \ also contains interview-gate.md and canon-frozen-guard.md per project-instruction\
+        \ excerpts and the LLD itself (Migration \xA7) deletes only 2 files outright\
+        \ (canon-frozen-guard, commit-strategy) plus a partial edit of documentation-gate.\
+        \ Inconsistent with Deliverables D5 (delete 3 .claude/rules/*.md files)."
+    - severity: Important
+      location: "Success Criteria \xA7 A11 vs Testing \xA7 Phase 0"
+      problem: A11 says 150 existing tests categorized but BUG-011 (Related Doc cited
+        as foundation) declares its own pytest baseline computation as 144 + 5 = 149.
+        Either the 150 figure post-dates BUG-011s 144 baseline (5 tests added between
+        docs) without that being noted, or one of the two numbers is stale.
+    - severity: Important
+      location: "Design \xA7 cli.install_hooks framework-detection vs BUG-006 Fix\
+        \ Description"
+      problem: BUG-006 specifies snippet path as cli/templates/precommit-yaml-snippet.txt;
+        LLD-008 cites cli/templates/precommit-yaml-patch.txt (matches actual filesystem).
+        BUG-006 is stale on the filename but LLD-008 does not call out the rename
+        / does not state BUG-006 needs filename reconciliation as a sub-task.
+    - severity: Minor
+      location: "Acceptance \xA7 A14 vs Related Documents"
+      problem: 'A14 says BUG-011 closes via this skill ship (Status: Investigating
+        to Fix Applied) but BUG-011 Changelog already records Status: Draft to Implemented
+        post r1 spec-review; the documented current Status is Investigating per BUG-011
+        frontmatter, but the Changelog and frontmatter disagree internally LLD-008
+        does not flag that BUG-011s own status field is inconsistent with its changelog
+        before promising a transition from Investigating.'
+    - severity: Minor
+      location: "Related Documents \xA7 companion plan reference"
+      problem: Lists docs/plans/2026-05-10-test-quality-audit.md as a companion plan
+        to be filed but A11 marks it as a hard prerequisite (spec-reviewed before
+        LLD-008 implementation begins); the prerequisite plan does not yet exist,
+        and the LLD does not gate its own approval on that plan being filed first.
+overall_verdict: conditional_pass
+required_followup:
+- "Reconcile cli.install_hooks invocation contract (A6 vs Scope \xA73 vs code snippet)\
+  \ pick one flag set"
+- Enumerate canon-frozen status set explicitly in Glossary
+- Resolve A11 baseline number (150 vs BUG-011s 144) and document the delta
+- Clarify whether skill references/*.md are governed by L2 lint or by a separate skill-internal
+  review process (Edge Case 9)
+- Specify exactly which prose blocks of SCALE documentation-gate.md migrate to which
+  references/ file
+- "Reconcile delete 3 files (D5) with Migration \xA7 2 deletes + 1 partial-edit"
+- File the test-quality-audit plan before merging this LLD, OR drop A11 to a Deliverable
+  rather than an Acceptance gate
+notes: 'Doc is well-structured and ambitious in scope, but several invocation contracts
+  (cli.install_hooks flags, references-doc governance, SCALE migration mechanics)
+  carry contradictions across sections. None rise to Critical because the architectural
+  shape skill-as-discipline-layer with hook-as-mechanical-backstop is coherent and
+  well-motivated. All conditional_pass findings are addressable as narrow-change Changelog
+  appends since Status: Draft permits full edit pre-canon-freeze.'

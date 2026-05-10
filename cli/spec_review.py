@@ -34,9 +34,7 @@ SCHEMA_PATH = (
 PROMPT_TEMPLATE_PATH = (
     Path(__file__).parent.parent / "skills" / "spec-review" / "prompt-template.md"
 )
-MAX_RETRIES = 0  # v1.6.1: stdin-bound dispatch has no useful retry — second
-                 # sys.stdin.read() returns empty. User re-invokes the slash
-                 # command for fresh subagent dispatch.
+MAX_RETRIES = 1
 SUBAGENT_OUTPUT_TOKEN_CAP = 4000
 
 VERDICT_RANK = {"pass": 0, "conditional_pass": 1, "fail": 2}
@@ -180,17 +178,27 @@ def main(argv=None) -> int:
     prompt = render_prompt_from_text(doc_text, schema)
 
     attestation = None
-    yaml_text = dispatch_subagent(prompt)
-    try:
-        attestation = yaml.load(yaml_text, Loader=_NoTimestampLoader)
-        jsonschema.validate(attestation, schema)
-    except (yaml.YAMLError, jsonschema.ValidationError, TypeError) as e:
-        print(
-            f"error: schema_validation_failed: {e}. "
-            f"Re-invoke /orchestra:spec-review for fresh dispatch.",
-            file=sys.stderr,
-        )
-        return 1
+    last_error = None
+    for attempt in range(MAX_RETRIES + 1):
+        yaml_text = dispatch_subagent(prompt)
+        try:
+            attestation = yaml.load(yaml_text, Loader=_NoTimestampLoader)
+            jsonschema.validate(attestation, schema)
+            last_error = None
+            break
+        except (yaml.YAMLError, jsonschema.ValidationError, TypeError) as e:
+            last_error = e
+            if attempt < MAX_RETRIES:
+                print(
+                    f"attempt {attempt + 1}: schema-fail, retrying. error: {e}",
+                    file=sys.stderr,
+                )
+                continue
+            print(
+                f"error: schema_validation_failed after {MAX_RETRIES + 1} attempts: {e}",
+                file=sys.stderr,
+            )
+            return 1
 
     # Iteration check
     if attestation["doc_subject"]["iteration"] != iteration:
@@ -212,17 +220,8 @@ def main(argv=None) -> int:
         )
         return 1
 
-    # F6+F8: stale-state byte-compare. Wrap in try/except for doc_disappeared
-    # case (v1.6.1 finding #9) — doc moved/deleted between dispatch and write.
-    try:
-        write_time_bytes = canonical_path.read_bytes()
-    except (FileNotFoundError, OSError) as e:
-        print(
-            f"error: doc_disappeared: doc removed/inaccessible between dispatch "
-            f"and write. {e}. Re-run spec-review.",
-            file=sys.stderr,
-        )
-        return 1
+    # F6+F8: stale-state byte-compare
+    write_time_bytes = canonical_path.read_bytes()
     if write_time_bytes != doc_bytes:
         print(
             f"error: stale_state: doc bytes changed between dispatch and write. "

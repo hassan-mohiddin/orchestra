@@ -6,8 +6,23 @@ Contributions welcome. Read this first to keep PRs frictionless.
 
 1. Open an issue describing the change before coding (especially for new templates / gates / skills)
 2. Fork + branch off `main`
-3. Run `python -m cli.lint --doc <changed-doc>` on any docs you touch
-4. Submit PR referencing the issue
+3. Install the pre-commit hook (one-time, after clone) — see § Pre-commit hook below
+4. Run `python -m cli.lint --doc <changed-doc>` on any docs you touch
+5. Submit PR referencing the issue
+
+## Pre-commit hook (required for contributors)
+
+orchestra dogfoods its own canon-inplace enforcement. After cloning, install the pre-commit hook:
+
+```bash
+python -m cli.install_hooks --repo .
+```
+
+This installs `.git/hooks/pre-commit` which runs `python -m cli.lint --pre-commit` (calls `lint_staged()` invoking L1 Refs-eligibility + L2 canon-inplace narrow-change + L3 attestation-path-resolution + L4 doc-id-burn) before each commit.
+
+Canon-inplace violations on Status: Implemented/Verified/Current/... docs are rejected; supersession workflow required (see `docs/features/006-archive-and-supersession-conventions-r4.md` and `docs/runbooks/RUNBOOK-canon-inplace-violation-recovery.md`). Bypass via `--no-verify` is discouraged; if the hook fires you almost certainly need supersession not in-place edit.
+
+**Why it matters**: orchestra repo previously did not install its own hook (BUG-010). Two canon-inplace violations landed (`653db4e` + `bc359e7` 2026-05-10) before user observation caught them. Pre-commit hook is the first-line defense; `cli.lint --commit <SHA>` (BUG-009 retroactive L2) is the post-hoc backstop.
 
 ## What we want
 

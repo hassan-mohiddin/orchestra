@@ -5,7 +5,7 @@
 > **DRI:** Hassan Mohiddin
 > **Type:** Bug Report
 > **Severity:** Medium
-> **Status:** Implemented
+> **Status:** Investigating
 
 ## Observed Behavior
 
@@ -44,7 +44,7 @@ Whitelist extends to allow body edits on canon-frozen ONLY when:
 
 L2 lint check enforces (3) — `is_narrow_change` extended with finding-citation parsing.
 
-## Reproduction
+## Steps to Reproduce
 
 ```bash
 # Inspect the over-correction outcome:
@@ -61,7 +61,7 @@ Under strict-binary rule: any non-whitelist body change on canon-frozen → supe
 
 Under proposed tiered rule: zero supersessions for this fix set; one batched narrow-change commit with `Addresses: docs/reviews/007-spec-review-architecture-r4.review.yaml finding 1 (Important)` etc. across all 12 findings. Same fixes applied to original LLD-007 in-place; ~60KB disk saved; audit trail preserved via Changelog entries citing each finding.
 
-## Fix Design
+## Fix Description
 
 ### Phase 1 — code change in cli/lint.py
 
@@ -127,6 +127,29 @@ Pytest target: 144 + 5 = **149** (this BUG independently). If BUG-009 lands firs
 - [ ] 5 new tests pass; pytest baseline ≥149
 - [ ] CHANGELOG.md v1.7.0 entry describes tiered model
 - [ ] Plugin version 1.6.x → 1.7.0
+
+## Environment
+
+- orchestra repo: any branch implementing v1.7+
+- Python: 3.10+
+- LLD-007 v1.6+ shipped (provides Severity enum {Critical, Important, Minor} on attestation findings — the signed source of truth for the tiered rule)
+- LLD-006-r4 v1.5+ shipped (provides current strict-binary `is_narrow_change` to extend)
+
+## Root Cause
+
+LLD-006-r4 narrow-change rule was designed as v1.4-cargo-cult backlash — strict-binary discipline to prevent silent canon-frozen body edits. Severity-blind by design (any non-whitelist body edit forbidden equally). For Critical findings (architectural change, security gap), supersession is justified. For Minor findings (typos, citation hygiene), supersession is over-correction. The rule lacks finer granularity that would track the severity-of-driving-finding through to the permitted-edit decision.
+
+## Iteration Log
+
+- **r1 (2026-05-10)** — Bug filed instead of LLD-008 per user direction. Captures over-correction observed in this session's r5 supersession (12 non-Critical findings drove ~60KB doc duplicate). Spec-review verdict fail (Critical-tagged severity-enum false-positive + Important pytest target ambiguity + Important Phase-4 framing tension); all addressed inline as narrow-change appends since Status: Draft. Reproduction strengthened with concrete git commands; r4 attestation cited; Phase 4 reframed as forward-only (no rollback of prior supersessions); pytest target pinned ≥149; canon-frozen-guard rule dependency clarified. Status: Draft → Investigating (no impl yet; design in narrow form awaiting v1.7+ ship).
+
+## Regression Prevention
+
+- Tiered model preserves audit value (Changelog row per addressed finding cites attestation path + finding ID + severity) while reducing supersession overhead for non-Critical changes.
+- Anti-gaming: severity comes from the spec-review attestation YAML (signed by fresh-context subagent with bias mitigations), not author claim. Author cannot self-promote a Critical finding to Minor to bypass supersession.
+- Critical findings ALWAYS require supersession (no bypass exception, no author override).
+- canon-frozen-guard rule (SCALE-side, this session) encodes tiered logic at agent-discipline layer; once shipped, agent applies tier rule before attempting edit.
+- Until v1.7+ implementation lands, strict-binary stands; this BUG documents the design and tracks v1.7+ implementation.
 
 ## Related Documents
 

@@ -5,7 +5,7 @@
 > **DRI:** Hassan Mohiddin
 > **Type:** Bug Report
 > **Severity:** High
-> **Status:** Implemented
+> **Status:** Fix Applied
 
 ## Observed Behavior
 
@@ -47,7 +47,7 @@ Both commits made body edits to canon-frozen LLD-007 (Status: Implemented at HEA
 
 Same logic as `lint_commit_no_canon_inplace_edit` but reading both states from git rather than HEAD vs working tree.
 
-## Reproduction
+## Steps to Reproduce
 
 ```bash
 cd /tmp && git init && mkdir -p docs/features && \
@@ -60,7 +60,7 @@ cd /tmp && git init && mkdir -p docs/features && \
 # Actual:   PASS
 ```
 
-## Fix Design
+## Fix Description
 
 Extend `lint_commit()` in `cli/lint.py:668-682`:
 
@@ -144,6 +144,30 @@ Pytest target: 144 → 149.
 - [ ] `cli.lint --commit 68fd538` (the revert commit) PASSES (revert restores canon state; not a violation)
 - [ ] Existing pytest 144 + 5 new = 149 (no regressions; 144 baseline preserved + 5 new tests)
 
+## Environment
+
+- orchestra repo: `/Users/mohammedhassanmohiddin/Documents/Antigravity/orchestra` (main branch)
+- Python: 3.10+ (orchestra `requires-python` per pyproject.toml)
+- Git: any version supporting `git show <SHA>:<path>` and `git diff-tree --no-commit-id --name-only -r <SHA>` (>= 1.7)
+- OS: tested Darwin 25.4.0 (macOS); platform-agnostic
+- Reproduces on: any commit where prior canon-frozen doc body was edited without supersession (e.g., 653db4e + bc359e7)
+
+## Root Cause
+
+`lint_commit()` at `cli/lint.py:668-682` was originally scoped to L1 only (Refs:-eligibility on commit subject + body). L2 (`lint_commit_no_canon_inplace_edit` at `cli/lint.py:490-521`) was wired only into `lint_staged()` (line 728) — the pre-commit-hook path. The retroactive `--commit <SHA>` path inspected only commit metadata, not the diff content. Combined with BUG-010 (no pre-commit hook installed), this left zero enforcement layers active when canon-frozen body edits landed.
+
+## Iteration Log
+
+- **r1 (2026-05-10)** — Bug filed post-supersession-redo of LLD-007. Identified the gap; spec-review verdict conditional_pass with 4 findings (2 Minor wording, 2 false-positive on severity-enum drift). Acceptance pytest target tightened from `≥145` to `=149`. Status: Draft → In Progress.
+- **r1 implementation (2026-05-10)** — Code lands in `cli/lint.py` `lint_commit()` extending it with new private helper `_lint_commit_canon_inplace()`. 6 new tests in `tests/test_lint_commit_l2.py`. Pytest 144 → 150. Verified retroactively. Status: In Progress → Fix Applied.
+
+## Regression Prevention
+
+- New tests T1-T6 in `tests/test_lint_commit_l2.py` exercise canon-inplace + narrow-change + revert-exemption + L1-regression cases.
+- BUG-010 ships pre-commit hook self-install — first-line defense (`lint_staged` catches at commit time).
+- This BUG ships post-hoc backstop (`lint_commit --SHA` catches commits that bypassed the hook via `--no-verify` or were authored before hook existed).
+- POSTMORTEM-2026-05-10-session-process-drift Action Item #1 references this BUG; closure verified via historical-violation reproduction in Acceptance.
+
 ## Related Documents
 
 - `docs/postmortems/POSTMORTEM-2026-05-10-canon-inplace-violation.md` — root incident
@@ -159,3 +183,4 @@ Pytest target: 144 → 149.
 |---|---|
 | 2026-05-10 | BUG filed post-supersession redo of LLD-007 r5. Identifies enforcement gap that allowed canon-inplace commits 653db4e + bc359e7 to land. High severity (closes hole that produced this session's incident). |
 | 2026-05-10 | r1 spec-review verdict: conditional_pass. 4 findings (2 Minor wording + 2 false-positive on severity-enum — false positives because spec-review prompt-template's `Critical/Important/Minor` enum applies to attestation findings, NOT to doc-header severity which uses orchestra convention `Critical/High/Medium/Low` for BUGs). Acceptance pytest target tightened from `≥145` to exact `=149`. False-positive enum-vocabulary drift tracked as v1.6.x followup (spec-review prompt should distinguish finding-severity vs doc-header-severity). Status: Draft → Implemented. |
+| 2026-05-10 | Code implemented. `cli/lint.py` `lint_commit()` now adds L2 retroactive check via new private helper `_lint_commit_canon_inplace()`. Reads prior file state from `<SHA>~1` and current state from `<SHA>` via `git show`; if prior Status canon-frozen and `is_narrow_change()` returns False → emits Finding. `revert:` and `Revert ` subject prefixes exempted (reverts are recovery, not violations — re-running L2 on a revert would double-flag the original violation). `tests/test_lint_commit_l2.py` adds 6 tests (T1 violation caught, T2 narrow-change passes, T3 new-file passes, T4 non-canon-Draft passes, T5 revert exempted, T6 L1 regression). Pytest 144 → 149 + 1 revert test = 150. Verified retroactively: `cli.lint --commit 653db4e` now FAILS with canon-inplace finding; `cli.lint --commit 68fd538` PASSES (revert exempt) — both per acceptance. |

@@ -5,7 +5,7 @@
 > **DRI:** Hassan Mohiddin
 > **Type:** Bug Report
 > **Severity:** High
-> **Status:** Implemented
+> **Status:** Fix Applied
 
 ## Observed Behavior
 
@@ -33,7 +33,7 @@ Two installation paths:
 
 Choosing path 1 (manual + documented) for v1.6.x patch; auto-install considered for future polish.
 
-## Reproduction
+## Steps to Reproduce
 
 ```bash
 cd /Users/mohammedhassanmohiddin/Documents/Antigravity/orchestra && \
@@ -44,7 +44,7 @@ cd /Users/mohammedhassanmohiddin/Documents/Antigravity/orchestra && \
 
 Cross-reference: BUG-006 already filed on the broader pre-commit framework choice (heredoc-shell vs framework). BUG-010 is narrower: just install the hook in the orchestra repo using the existing `cli.install_hooks` shipped in v1.5.
 
-## Fix Design
+## Fix Description
 
 Two-part fix:
 
@@ -101,6 +101,30 @@ Add hook-install check to `cli/init.py` or `Makefile`. If `.git/hooks/pre-commit
 - [ ] Reproduction `ls .git/hooks/pre-commit` returns success exit
 - [ ] Behavioral check: attempt canon-inplace commit on test branch → hook rejects
 
+## Environment
+
+- orchestra repo: `/Users/mohammedhassanmohiddin/Documents/Antigravity/orchestra` (main branch)
+- Python: 3.10+ (interpreter resolved via `$PYTHON` env override → `python3` → `python` fallback chain in pre-commit.sh template post-fix)
+- Git: any version with `.git/hooks/` standard support
+- OS: tested Darwin 25.4.0 (macOS); template uses POSIX shell so portable across Linux/macOS
+
+## Root Cause
+
+orchestra ships `cli.install_hooks` for downstream consumers but never invokes it on its own repo at clone or release time. `.git/hooks/` contained only `*.sample` files; pre-commit gate was inactive. Compounded by an env-portability bug in `cli/templates/pre-commit.sh` using bare `python` (fails on systems where only `python3` exists or where venv-bin paths vary) — only discovered when the hook fired for the first time in this session.
+
+## Iteration Log
+
+- **r1 (2026-05-10)** — Bug filed; spec-review verdict conditional_pass; lint-entrypoint and reproduction wording reconciled. Status: Draft → In Progress.
+- **r1 implementation (2026-05-10)** — `python -m cli.install_hooks --repo .` invoked; `.git/hooks/pre-commit` installed (193 bytes, 0o755). CONTRIBUTING.md § Pre-commit hook section appended. Hook fired on next commit attempt → caught template env-portability bug → patched `cli/templates/pre-commit.sh` with `$PYTHON`/`python3`/`python` fallback chain → reinstalled via `--force`. Hook now operational. Status: In Progress → Fix Applied.
+
+## Regression Prevention
+
+- Pre-commit hook now active on orchestra repo. First-line defense against canon-inplace + Refs:-eligibility violations.
+- `cli/templates/pre-commit.sh` env-portability fix: PR-tested on system without bare `python` on PATH. Future contributors unaffected.
+- CONTRIBUTING.md install instruction explicit; new contributors run `python -m cli.install_hooks --repo .` after clone.
+- BUG-009 ships post-hoc backstop for any commit that bypassed the hook (via `--no-verify`).
+- Auto-install on bootstrap (Part 3 in Fix Description) tracked as v1.6.x followup; would prevent contributors forgetting the manual install.
+
 ## Related Documents
 
 - `docs/postmortems/POSTMORTEM-2026-05-10-canon-inplace-violation.md` — root incident (this gap is contributing-cause-2)
@@ -115,3 +139,5 @@ Add hook-install check to `cli/init.py` or `Makefile`. If `.git/hooks/pre-commit
 |---|---|
 | 2026-05-10 | BUG filed post-supersession redo of LLD-007 r5. Self-install gap was contributing-cause-2 of canon-inplace violation. Fix is one-shot install + CONTRIBUTING.md doc. High severity. |
 | 2026-05-10 | r1 spec-review verdict: conditional_pass. 4 findings (2 Important on lint-entrypoint naming + severity-enum drift; 2 Minor). Lint-entrypoint reconciled to `python -m cli.lint --pre-commit` calling `lint_staged()` with L1+L2+L3+L4 in both Observed Behavior and Fix Design Part 2. Reproduction got post-fix expected output. Severity-enum finding is false-positive (reviewer applied finding-enum to doc-header field — orchestra BUG vocab is Critical/High/Medium/Low; tracked as v1.6.x prompt-template followup). Status: Draft → Implemented. |
+| 2026-05-10 | Implementation: Part 1 ran `python -m cli.install_hooks --repo .` — installed `.git/hooks/pre-commit` (193 bytes, 0o755). Hook script invokes `python -m cli.lint --pre-commit` with `set -euo pipefail`. Part 2: appended Pre-commit hook section to `CONTRIBUTING.md` § Quick path with rationale (BUG-010 + BUG-009 reference) and bypass discouragement. Acceptance items 1-3 met. Acceptance item 4 (`ls .git/hooks/pre-commit` exit 0) verified. Acceptance item 5 (behavioral check on test branch) deferred — relies on BUG-009 L2 retroactive (just-shipped) for failure-mode confirmation; hook content matches expected entry-point. Part 3 (auto-install on bootstrap) remains as v1.6.x followup. |
+| 2026-05-10 | Env-portability fix on `cli/templates/pre-commit.sh` discovered when first hook invocation failed with `python: command not found` (modern systems may have python3 only; venv-bin paths vary). Template now resolves Python interpreter via `$PYTHON` env override → `python3` → `python` fallback chain; fails loudly if none. Hook reinstalled via `--force`; behavioral check now confirms hook fires correctly on this commit (the bootstrap commit). |

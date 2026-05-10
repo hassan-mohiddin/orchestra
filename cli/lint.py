@@ -666,7 +666,13 @@ def lint_doc_id_burn(new_doc_path: Path, repo_root: Path) -> list[Finding]:
 
 
 def lint_commit(commit_sha: str, repo_root: Path) -> list[Finding]:
-    """Lint a single commit: subject + body Refs:-eligibility (L1)."""
+    """Lint a single commit: subject+body Refs:-eligibility (L1) + canon-inplace (L2 retroactive).
+
+    L2 retroactive (BUG-009) — read prior file state from `<SHA>~1` and current
+    state from `<SHA>`; if prior Status canon-frozen and diff is non-narrow,
+    emit Finding. Closes the post-hoc-detection gap that allowed canon-inplace
+    commits 653db4e + bc359e7 to retroactively pass cli.lint --commit.
+    """
     try:
         subject = subprocess.check_output(
             ["git", "log", "-1", "--format=%s", commit_sha],
@@ -676,10 +682,58 @@ def lint_commit(commit_sha: str, repo_root: Path) -> list[Finding]:
             ["git", "log", "-1", "--format=%B", commit_sha],
             cwd=repo_root, text=True,
         )
+        files = subprocess.check_output(
+            ["git", "diff-tree", "--no-commit-id", "--name-only", "-r", commit_sha],
+            cwd=repo_root, text=True,
+        ).strip().splitlines()
     except subprocess.CalledProcessError as e:
-        return [Finding("error", commit_sha, f"git log failed: {e}")]
+        return [Finding("error", commit_sha, f"git log/diff failed: {e}")]
 
-    return lint_commit_refs_eligible(subject, body, repo_root)
+    findings = lint_commit_refs_eligible(subject, body, repo_root)
+    findings.extend(_lint_commit_canon_inplace(commit_sha, subject, files, repo_root))
+    return findings
+
+
+def _lint_commit_canon_inplace(commit_sha: str, subject: str, files: list[str],
+                                repo_root: Path) -> list[Finding]:
+    """L2 retroactive — reject canon-frozen body edits in a committed SHA (BUG-009).
+
+    Skip on `revert:` prefix — reverts ARE body changes by design (they restore
+    prior state). They are recovery, not new violations. The reverted commit
+    itself is what L2 catches; running L2 on the revert would double-flag.
+    """
+    if subject.startswith("revert:") or subject.startswith("Revert "):
+        return []
+    findings: list[Finding] = []
+    for path in files:
+        if not path.endswith(".md") or not path.startswith(REFS_ELIGIBLE_PREFIXES):
+            continue
+        try:
+            prior_text = subprocess.check_output(
+                ["git", "show", f"{commit_sha}~1:{path}"],
+                cwd=repo_root, text=True, stderr=subprocess.DEVNULL,
+            )
+        except subprocess.CalledProcessError:
+            continue  # New file at this commit; nothing to violate
+        prior_status = parse_status(prior_text)
+        if prior_status not in CANON_FROZEN_STATUSES:
+            continue
+        try:
+            new_text = subprocess.check_output(
+                ["git", "show", f"{commit_sha}:{path}"],
+                cwd=repo_root, text=True, stderr=subprocess.DEVNULL,
+            )
+        except subprocess.CalledProcessError:
+            continue  # File deleted/moved; archive flow handles separately
+        ok, why = is_narrow_change(prior_text, new_text)
+        if not ok:
+            findings.append(Finding(
+                "error", path,
+                f"Doc Status was {prior_status!r} (canon-frozen) at {commit_sha}~1. "
+                f"Non-narrow change in commit {commit_sha}: {why}. "
+                "Use supersession (new file with -rN suffix and Supersedes:) instead.",
+            ))
+    return findings
 
 
 def lint_commit_range(rev_range: str, repo_root: Path) -> list[Finding]:

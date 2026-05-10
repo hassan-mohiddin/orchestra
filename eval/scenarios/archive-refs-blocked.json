@@ -1,0 +1,21 @@
+{
+  "name": "archive-refs-blocked",
+  "description": "v1.5 LLD-006-r4 — Refs: into docs/archive/ rejected by lint --commit (L1).",
+  "setup": [
+    "git init --quiet --initial-branch=main",
+    "mkdir -p docs/archive/features",
+    "printf '# Old\\n\\n> **Status:** Rejected\\n' > docs/archive/features/005-old.md",
+    "git add docs/archive/features/005-old.md",
+    "git -c user.email=t@t -c user.name=t commit -q -m 'docs: seed archive doc'",
+    "git -c user.email=t@t -c user.name=t commit -q --allow-empty -m \"$(printf 'fix: thing\\n\\nRefs: docs/archive/features/005-old.md\\n')\""
+  ],
+  "exercise": [
+    {
+      "cmd": "PYTHONPATH=/Users/mohammedhassanmohiddin/Documents/Antigravity/orchestra /Users/mohammedhassanmohiddin/Documents/Antigravity/SCALE\\ APP/.venv/bin/python -m cli.lint --commit HEAD --no-mermaid > lint.out 2> lint.err; echo $? > lint.exit"
+    }
+  ],
+  "assert": [
+    {"type": "file_contains", "path": "lint.exit", "substring": "1"},
+    {"type": "file_contains", "path": "lint.err", "substring": "not in Refs:-eligible prefix list"}
+  ]
+}

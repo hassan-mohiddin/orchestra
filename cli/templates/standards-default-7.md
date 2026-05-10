@@ -154,6 +154,58 @@ Blameless. Roles, never names.
 
 All diagrams must use Unicode symbols, descriptive labels, accessible colors.
 
+## Archive Convention (v1.5)
+
+Rejected and superseded docs live in `docs/archive/<type>/`. Canon docs live at top-level type directories. Reviews (`docs/reviews/`) and investigations (`docs/investigations/`) are append-only / scratch and never move to archive.
+
+Lifecycle terminal states:
+- **Rejected** — draft abandoned, no successor; doc-id burned (first-iteration only).
+- **Superseded** — replaced by newer revision; new revision lives at canon path; old revision moves to archive with `Superseded by:` frontmatter link.
+
+## Supersession Workflow (v1.5)
+
+NEVER in-place edit canon-frozen docs (Status ∈ {Approved, Implemented, Verified, Fix Applied, Current}). Allowed in-place changes (a "narrow change"):
+- Append a Changelog table row (no row modification or removal)
+- Modify whitelisted frontmatter fields ONLY: `Status`, `Iteration`, `Superseded by`
+
+Anything else requires supersession:
+1. Create new revision file `<type>/NNN-name-r<N+1>.md` with `Supersedes:` frontmatter
+2. Iterate + review until canon-frozen
+3. Update prior file frontmatter (narrow change): `Status: Superseded`, `Superseded by:`
+4. `git mv` prior file to `docs/archive/<type>/`
+
+### Rejected-supersession (failed revision attempts)
+
+When a draft (`Supersedes: <prior>`) is itself Rejected before reaching canon-frozen:
+- The Rejected revision moves to archive with `Status: Rejected`
+- The Rejected file's `Supersedes:` field is RETAINED (historical fact)
+- The prior file's frontmatter is NOT mutated
+
+### Rejection of Draft / Proposed docs
+
+Drafts that have not reached canon-frozen may be rejected by setting `Status: Rejected` and adding `Reason:` field (full edit allowed since narrow-change rules apply only to canon-frozen docs). Move to archive. Doc-id burned (first-iteration) or r-suffix burned (supersession-iteration).
+
+## Doc-ID Burn Policy (v1.5)
+
+- First-iteration filenames (`NNN-name.md`): doc-id never reused. New first-iteration doc-id must be strictly greater than `max(first-iteration ids in canon ∪ archive)` of same type.
+- Supersession-iteration filenames (`NNN-name-rN.md`): EXEMPT from doc-id burn (reuse same id by design); instead, r-suffix must be strictly greater than max existing r-suffix for that base-name.
+
+Filename convention: first iteration `NNN-name.md` (no suffix). Iteration 2+: `NNN-name-r2.md`, `NNN-name-r3.md`.
+
+## Refs: Line Restriction (v1.5)
+
+`Refs:` lines on any commit type must point to Refs:-eligible canon docs only. A Refs:-eligible doc:
+- Lives at `docs/<canon-type>/<id>-name(-rN)?.md` where canon-type ∈ {features, bugs, adr, design, postmortems, runbooks}
+- Has `Status` ∈ canon-frozen-statuses
+
+Lint rejects Refs into:
+- `docs/archive/` (archived docs)
+- `docs/investigations/` (scratch)
+- `docs/reviews/` (attestations, not docs)
+- `docs/plans/` (plans are mutable working documents, NOT canon-frozen contract surfaces; never Refs:-eligible)
+- Any path outside the 6 canon-type directories
+- Any canon doc whose Status is not canon-frozen (e.g. Drafts)
+
 ## Spec Review Rule (4 gates)
 
 After writing or updating any doc destined for `docs/` and a commit:

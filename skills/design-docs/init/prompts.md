@@ -130,6 +130,15 @@ Next steps:
   1. Install pre-commit hook:    python -m cli.install_hooks
   2. Write your first design doc: ask Claude "create a feature LLD for X"
   3. Lint manually anytime:      python -m cli.lint --pre-commit
+  4. (v1.5) Reject a Draft:       python -m cli.lifecycle reject --file <path> --reason <line>
+  5. (v1.5) Lint attestations:    python -m cli.lint --attestations
+
+Terminology (v1.5):
+  - canon-located doc — lives at docs/<type>/ (Drafts + canon-frozen)
+  - canon-frozen — Status in {Approved, Implemented, Verified, Fix Applied, Current}
+  - archived — Status in {Rejected, Superseded}; lives at docs/archive/<type>/
+  - narrow change — append Changelog row + flip whitelisted frontmatter only
+  - supersession — new -rN file with Supersedes: link; prior moves to archive
 
 Status: ready.
 ```

@@ -4,7 +4,7 @@
 > **Date:** 2026-05-08
 > **DRI:** Hassan Mohiddin
 > **Type:** Feature LLD
-> **Status:** Draft
+> **Status:** Implemented
 > **Iteration:** 4
 > **Supersedes:** docs/features/006-archive-and-supersession-conventions.md
 >
@@ -732,4 +732,5 @@ Total new: 13 tests. Suite post-merge: 85 + 13 = 98.
 | Date | Change |
 |---|---|
 | 2026-05-07 | r3 written addressing all 10 r2 review findings via pre-dispatch checklist (P1-P9). Resolves: (1) doc-id-burn vs supersession conflict — burn applies to first-iteration only; supersession-iteration uses r-suffix uniqueness rule; (2) supersession path resolution — single mechanism (lint chain traversal); (3) L3 acceptance now mapped 1:1 to T10; (4) is_narrow_change() helpers fully specified using python-frontmatter; (5) narrow-change whitelist single source of truth in Glossary; (6) Reason: field clarification; (7) Refs:-eligibility check enforces canon-frozen Status; (8) version bump rationale single sentence; (9) BEFORE/AFTER merge labels added; (10) all design decisions committed. Status: Draft. r3 bootstrap review FAILED (`docs/reviews/006-r3.review.yaml` — 11 findings, 2 critical: L4 self-check glob bug + plans Refs ambiguity). |
+| 2026-05-10 | Implementation shipped. cli/lint.py L1-L4 + cli/lifecycle.py + STANDARDS template + SKILL.md + 22 unit tests + 1 eval scenario (archive-refs-blocked). Pytest: 85 → 107 (13 spec floor + 9 sibling tests). Eval: 10 → 11 scenarios. Plugin version 1.3.0 → 1.5.0 (1.4 burnt). Dependency added: python-frontmatter>=1.1, PyYAML>=6.0. parse_metadata supports both YAML frontmatter AND markdown blockquote (`> **Key:** value`) — orchestra docs use the latter; spec implied frontmatter via python-frontmatter library, real-world support unifies both. Status: Draft → Implemented. |
 | 2026-05-08 | r4 written addressing all 9 r3 review findings. Resolves: (1) L4 self-check glob — explicit exclusion of file currently being added (`p.resolve() == new_doc_resolved` skip); self-check verified against r4 itself: max_r=3 (excluding r4), new_r=4, 4>3 PASSES; (2) plans Refs handling — plans REMOVED from REFS_ELIGIBLE_PREFIXES; plans NEVER Refs:-eligible per v1.5; (3) Supersedes/Superseded-by path resolution — `resolve_supersession_link()` checks both canon and archive locations; no frontmatter rewrite needed on migration; (4) r1/r2/r3 dogfood lifecycle — promotion rule defined: r1 was never canon-frozen → r1+r2+r3 ALL Rejected (not Superseded); r4 stays canon at -r4 filename with Supersedes: r1; (5) Reason-field test added (T11) to lint floor; floor now 13; (6) T10 split into T10a/b/c (3 distinct test functions); (7) "canon doc" disambiguated into canon-located vs Refs:-eligible; (8) Migration block fully executable via `cli.lifecycle reject` + `cli.lifecycle update-attestation-paths` helpers; cli.lifecycle spec in scope; (9) "full edit" replaced by "rejection-finalization edit" defined in Glossary. Status: Draft. r4 bootstrap subagent review pending. |

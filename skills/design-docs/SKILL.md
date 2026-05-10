@@ -248,6 +248,38 @@ For bug fixes, no `fix:` commit until the user explicitly confirms the bug is re
 | `python -m cli.lint --doc <path>` | Lint a single doc against STANDARDS |
 | `python -m cli.decisions_index` | Auto-generate `docs/adr/DECISIONS.md` index with relationship types |
 
+## Archive + Supersession Workflow (v1.5)
+
+orchestra docs follow a roll-forward lifecycle. Canon-frozen docs (Status ∈ `{Approved, Implemented, Verified, Fix Applied, Current}`) are contract surfaces — never edit them in place except for narrow changes.
+
+### Narrow change (allowed in-place edit)
+- Append a row to the `## Changelog` table (existing rows byte-identical)
+- Modify whitelisted frontmatter fields ONLY: `Status`, `Iteration`, `Superseded by`
+
+### Supersession (replacing a canon-frozen doc)
+1. Create new revision file `<type>/NNN-name-r<N+1>.md` with `Supersedes: <prior path>` frontmatter
+2. Iterate + Gate 3 review until canon-frozen
+3. Update prior file (narrow change): `Status: Superseded` + `Superseded by: <new path>`
+4. `git mv` prior to `docs/archive/<type>/`
+
+### Rejection (Draft / Proposed only)
+Set `Status: Rejected` + add `Reason:` line, `git mv` to `docs/archive/<type>/`. Doc-id burned (first-iteration files only).
+
+Use `python -m cli.lifecycle reject --file <path> --reason <one-line>` for the rejection edit.
+
+### Rejected-supersession
+A draft (`Supersedes: <prior>`) that itself fails review: moves to archive `Status: Rejected`, retains `Supersedes:` as historical fact, prior file's frontmatter NOT mutated.
+
+### Filename convention
+- First iteration: `NNN-name.md` (no suffix)
+- Iteration 2+: `NNN-name-r2.md`, `NNN-name-r3.md`, ...
+
+### Doc-id-burn policy
+- First-iteration ids strictly greater than max(canon ∪ archive) — burned ids never reused
+- Supersession-iteration files (with `-rN`) exempt; r-suffix uniqueness instead
+
+Lint enforces all four checks (L1-L4) at commit-time. See `cli/lint.py` § "v1.5 LLD-006-r4".
+
 ## Pitfall Rules (industry-research-derived)
 
 1. **ADR is RECORDED, not deliberated.** Long "Options Considered" weighing alternatives without a chosen direction = RFC, not ADR. In solo mode, decide first; record after. In team mode, deliberation can use ADR-template-with-Proposed-status as an RFC.

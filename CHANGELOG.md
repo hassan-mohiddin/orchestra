@@ -1,5 +1,52 @@
 # Changelog
 
+## v1.5.0 — 2026-05-10
+
+Implements LLD-006-r4 — archive + supersession file conventions. v1.4 burnt
+(rolled back via `git reset --hard f88abb7` 2026-05-07; never released).
+
+### New CLI
+
+- **`python -m cli.lifecycle reject --file <path> --reason <line>`** — sets Status: Rejected + Reason: line. Idempotent.
+- **`python -m cli.lifecycle update-attestation-paths --reviews <yaml>...`** — rewrites `doc_subject.path` after canon→archive moves. Idempotent.
+- **`python -m cli.lint --attestations`** — runs L3 across all `docs/reviews/*.review.yaml`.
+
+### New lint checks (cli/lint.py)
+
+- **L1 Refs:-eligibility** — Refs: line on fix:/feat: must point to canon-frozen doc under one of `{features, bugs, adr, design, postmortems, runbooks}/`. Plans, archive, investigations, reviews are NOT Refs:-eligible.
+- **L2 narrow-change** — in-place edit of canon-frozen doc allowed only for whitelisted frontmatter fields {Status, Iteration, Superseded by} + Changelog table append-only.
+- **L3 attestation path-mutation** — `doc_subject.path` in review YAMLs must resolve to existing file under canon-or-archive prefix.
+- **L4 doc-id-burn** — first-iteration doc-id strict-greater than max(canon ∪ archive); supersession-iteration `-rN` filenames exempt with r-suffix uniqueness.
+
+### Conventions
+
+- Archive directory: `docs/archive/<type>/` for Rejected + Superseded docs
+- Supersession workflow: new `-rN` file with `Supersedes:` link → prior moves to archive (narrow-change Status flip permitted)
+- Rejected-supersession rule: failed Draft revision moves to archive Rejected; prior frontmatter NOT mutated
+- Filename: first iteration `NNN-name.md`; iterations 2+ `NNN-name-rN.md`
+- Refs: line never points to plans/, archive/, investigations/, reviews/
+
+### Dogfood migration
+
+- `docs/archive/features/` populated with 5 Rejected docs: LLD-005 r1+r2, LLD-006 r1+r2+r3
+- Architecture validated end-to-end on its own design docs
+
+### Tests + eval
+
+- 107 pytest tests (85 v1.3 baseline + 22 new v1.5 lint tests across L1-L4)
+- 11/11 eval scenarios (10 v1.3 + 1 new: archive-refs-blocked)
+
+### Dependencies
+
+- python-frontmatter (>=1.1) — YAML frontmatter parsing for narrow-change check
+- PyYAML (>=6.0) — attestation parsing
+
+### Docs
+
+- `docs/features/006-archive-and-supersession-conventions-r4.md` (canon LLD, conditional_pass)
+- `cli/templates/standards-default-7.md` adds Archive Convention + Supersession + Doc-ID Burn + Refs sections
+- `skills/design-docs/SKILL.md` adds Archive + Supersession Workflow section
+
 ## v1.3.0 — 2026-05-06
 
 Adds Tier 3 doc browser via MkDocs Material — orchestra docs become a fully searchable, navigable, GitHub-Pages-publishable site.

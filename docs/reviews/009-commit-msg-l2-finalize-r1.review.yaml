@@ -1,0 +1,159 @@
+schema_version: '1.0'
+doc_subject:
+  path: docs/features/009-commit-msg-l2-finalize.md
+  content_hash: sha256:5ecc2a790830bda5e21e9965aa08de65fa33ead015d50f4cf1c9a802688dd3cc
+  iteration: 1
+reviewer:
+  identifier: subagent:general-purpose+spec-review-v1
+  invoked_at: '2026-05-11T00:00:00Z'
+  context_isolation: fresh_subagent
+gates:
+  completeness:
+    verdict: fail
+    findings:
+    - severity: Critical
+      location: "Success Criteria \xA7 A14 BUG-011 reconciliation"
+      problem: "A14 contradicts repo ground truth. BUG-011 frontmatter Status: Investigating\
+        \ BUT r1 Changelog row records 'Status: Draft to Implemented' \u2014 and spec-review\
+        \ attestation reached verdict on Implemented state. A14 unilaterally declares\
+        \ 'Investigating; full edit permitted' without resolving WHICH state is canonical.\
+        \ If BUG-011 is truly Implemented per its Changelog: editing it via LLD-009\
+        \ IS canon-inplace requiring narrow-change discipline this LLD ships \u2014\
+        \ chicken/egg. Decide: precursor commit fi..."
+    - severity: Important
+      location: "Success Criteria \xA7 A2 L2-finalize entrypoint"
+      problem: "Behavior undefined when commit-msg fires but pre-commit never fired\
+        \ (initial commit / framework split / hooks just installed). Pending file\
+        \ absent \u2192 A2 'return 0 pass' = silent fail-open. Either justify (pre-commit\
+        \ IS canonical detector; no pending = no canon-inplace = safe) or add sanity\
+        \ check (any staged .md under REFS_ELIGIBLE_PREFIXES \u2192 warn)."
+    - severity: Important
+      location: "Success Criteria \xA7 A3 is_narrow_change extension"
+      problem: 'A3 says ''MUST be added BEFORE existing is_narrow_change body'' but
+        pseudocode shows SINGLE merged function. Strict-binary ''fallback'' is actually
+        early-return. Pick: wrapper-call-original OR inline rewrite. Inline implied
+        by signature change (now takes commit_msg + repo_root); call sites in lint_staged
+        + lint_commit must be enumerated.'
+    - severity: Important
+      location: "Success Criteria \xA7 A5 _verify_changelog_row_per_finding tolerance"
+      problem: "Tolerant search requires both attestation basename AND finding marker\
+        \ in single row. Real Changelog row format not specified. Provide exemplar:\
+        \ '| 2026-05-11 | Addresses: 009-commit-msg-l2-finalize-r1.review.yaml finding\
+        \ 3 (Minor) \u2014 fixed pending-file format wording |'. Without exemplar:\
+        \ authors guess; L2-finalize rejects valid intent. Add to A5 + T5a fixture."
+    - severity: Minor
+      location: "Success Criteria \xA7 A14"
+      problem: "BUG-011's actual fix surface is tiered rule in A3. Status flip in\
+        \ A14 should be SEPARATE Status-flip commit (whitelist edit) AFTER A1-A13\
+        \ verification \u2014 not lumped into 'LLD-009 impl' obscuring pre-commit/commit-msg\
+        \ ordering."
+  evidence:
+    verdict: fail
+    findings:
+    - severity: Critical
+      location: "Success Criteria \xA7 A4 _verify_finding_in_attestation YAML traversal"
+      problem: "Flattening 'for gate in gates.values(): all_findings.extend(gate.findings)'\
+        \ relies on dict iteration order to produce stable 1-indexed mapping. Per\
+        \ attestation-schema-v1.0.json gates is dict \u2014 JSON key order NOT guaranteed;\
+        \ yaml.safe_load preserves source order Python 3.7+ but NOT across reviewers\
+        \ writing in arbitrary key order. Author cites 'finding 3' \u2014 3 in whose\
+        \ ordering? Two reviewers same findings different gate order = different finding_n\
+        \ indices. Load-bearing for anti-gaming (T3f). ..."
+    - severity: Important
+      location: "Success Criteria \xA7 A6 FINDING_REF_RE anchoring"
+      problem: 'Regex accepts paths anywhere; no anchor under docs/reviews/. Author
+        could cite attestation in docs/archive/reviews/ or anywhere. Add prefix anchor:
+        ''^Addresses:\s+(docs/reviews/\S+\.review\.yaml)\s+...'' AND A4 path-resolution
+        guard against ALLOWED_ATTESTATION_PATH_PREFIXES analog.'
+    - severity: Important
+      location: "Success Criteria \xA7 A2 + Design \xA7 pending file format separator"
+      problem: "Claims '<sha>  <path>' two-space 'same as git ls-files-stage column\
+        \ ordering' \u2014 but git ls-files --stage actually outputs '<mode> <sha>\
+        \ <stage>\\t<path>' (TAB before path). Two-space is INVENTED for this LLD,\
+        \ not git mirror. Either (a) admit invention or (b) actually mirror git (tab).\
+        \ If path contains two spaces: split misbehaves. Tab safer."
+    - severity: Important
+      location: "Design \xA7 lint_commit_msg_finalize line 311 finally unlink"
+      problem: "pending_file.unlink() in finally \u2014 if commit-msg fires twice\
+        \ (re-edit message refires hook; --amend --no-edit edge), SECOND fire sees\
+        \ pending unlinked from first \u2192 A2 returns 0 pass = silent fail-open\
+        \ second time. Mitigate: unlink(missing_ok=True) + assert pre-commit re-runs\
+        \ before commit-msg in normal flow, OR leave pending in place + use mtime/staged-sha\
+        \ for staleness."
+    - severity: Minor
+      location: "Success Criteria \xA7 A10 audit log line format"
+      problem: "'<commit-sha-prefix>' wrong \u2014 at ORCHESTRA_BYPASS time commit\
+        \ hasn't landed; no sha to log. Use HEAD~0 ref OR omit and log only msg-first-line.\
+        \ Update A10 + T10b."
+    - severity: Minor
+      location: "Design \xA7 commit-msg.sh wrapper python fallback"
+      problem: "Falls back to 'python' if python3 missing \u2014 but orchestra targets\
+        \ Python 3.9+ (cli/lint.py uses 'str | None'). 'python' alias unreliable across\
+        \ distros (often Python 2 older systems). Pin python3 or document minimum."
+  clarity:
+    verdict: pass
+    findings:
+    - severity: Minor
+      location: "Success Criteria \xA7 A3 line-range reference"
+      problem: "'expected line range cli/lint.py:430-470 post-LLD-008 baseline; exact\
+        \ line confirmed at impl time' \u2014 LLD-008 doesn't move is_narrow_change\
+        \ (adds skill structure not lint logic). Post-LLD-008 line range = current\
+        \ line range. Statement implies LLD-008 changes lint.py line numbers; it does\
+        \ not."
+    - severity: Minor
+      location: "Glossary \xA7 Addresses line"
+      problem: Glossary format vs A4 example error message uses different quote/bare
+        conventions. Pick one (bare strings) and stick to it.
+  consistency:
+    verdict: conditional_pass
+    findings:
+    - severity: Important
+      location: "Success Criteria \xA7 A16 + A12 pytest target coordination"
+      problem: "A16: 'LLD-008 baseline 161 + LLD-009 ~25 distinct test functions =\
+        \ 186'. Matrix at lines 434-471 enumerates 36 distinct test functions; line\
+        \ 475 says '161 + 36 = 197'. A16 says 25; matrix 36; total math disagrees.\
+        \ Pick consistent number across A16 + Testing \xA7 total + CHANGELOG."
+    - severity: Important
+      location: "Success Criteria \xA7 A12 + A13 vs LLD-008 skills/commit/templates"
+      problem: "LLD-008 A3 ships hook templates; commit-msg.sh has 'current Refs:-line\
+        \ check'. LLD-009 A12 UPDATES commit-msg.sh adding --commit-msg-finalize call.\
+        \ LLD-008 r2 line 141 already includes '+ cli.lint --commit-msg-finalize (added\
+        \ in LLD-009)' comment \u2014 so which LLD ships actual contents? If LLD-008's\
+        \ commit-msg.sh already has L2-finalize: LLD-009 A12 is no-op or duplicate.\
+        \ If not: LLD-009 must specify exact contents. Diff-style spec needed."
+    - severity: Minor
+      location: "Edge Cases \xA7 3 git commit --amend"
+      problem: Claim 'pre-commit re-fires; pending overwritten; commit-msg re-fires'.
+        But 'git commit --amend --no-edit' does NOT fire commit-msg when message unchanged
+        (git skips editor). Claim incorrect for --amend --no-edit variant.
+    - severity: Minor
+      location: "Related Documents \xA7 cli/lint.py:367-395"
+      problem: "Line range '367-395' for 'extract_changelog_and_strip + helpers' \u2014\
+        \ actually extract_changelog_and_strip ends at line 366 current file; line\
+        \ 367 starts _split_metadata_and_body. Line-anchored references drift; recommend\
+        \ dropping line numbers for non-stable code OR use function-name anchors."
+overall_verdict: fail
+required_followup:
+- "Reconcile BUG-011 frontmatter Status vs Changelog row (A14) \u2014 precursor commit\
+  \ OR clarify which is canonical"
+- 'Fix attestation finding-index resolution: canonical gate order OR Addresses: gate-name
+  format OR content-hash addressing. Update A4 + A6 + FINDING_REF_RE + tests T3f/T4a-d'
+- Pin separator in pending-file format (tab recommended) OR explicitly state two-space
+  is orchestra invention; update A1/A2 spec
+- Anchor FINDING_REF_RE attestation path under docs/reviews/ prefix; add A4 path-resolution
+  guard
+- "Reconcile test-count: A16 says 25; matrix says 36; total says 197 \u2014 pick one\
+  \ number"
+- "Resolve commit-msg.sh template ownership between LLD-008 ships file and LLD-009\
+  \ A12 updates contents \u2014 provide diff-style spec"
+- Provide concrete Changelog row exemplar satisfying _verify_changelog_row_per_finding
+  tolerance; add to A5 + T5a
+- Document fail-open semantics when commit-msg fires without pending file
+- 'Fix A10 audit log format: no commit-sha at L2-finalize time; use HEAD ref or drop'
+- Correct edge case 3 amend claim (--amend --no-edit does not re-fire commit-msg)
+notes: 'Overall fail driven by 2 Critical findings (A14 BUG-011 state contradiction;
+  A4 finding-index resolution structurally fragile). Both addressable as narrow-change
+  edits since Status: Draft. Important findings cluster around format-spec gaps (separator,
+  regex anchoring, Changelog row exemplar) authors will guess at. Architectural split
+  (L2-detect pre-commit / L2-finalize commit-msg) and tiered rule shape sound. Recommend
+  iteration 2 with critical fixes + Important items, then re-review.'

@@ -1,0 +1,101 @@
+schema_version: '1.0'
+doc_subject:
+  path: docs/features/008-commit-skill.md
+  content_hash: sha256:28f75ec5a07b4f69c1a873247d9701c4e066fd7c2c47b34f3ccbb6152d68545a
+  iteration: 3
+reviewer:
+  identifier: subagent:general-purpose+spec-review-v1
+  invoked_at: '2026-05-11T00:00:00Z'
+  context_isolation: fresh_subagent
+gates:
+  completeness:
+    verdict: conditional_pass
+    findings:
+    - severity: Important
+      location: "Success Criteria \xA7 A10"
+      problem: 'A10 claims 11 distinct test functions but enumeration yields 12: T1+T2+T3+T4a-d
+        (4)+T5a-c (3)+T6+T7=12. Pytest target 150+11=161 off-by-one (should be 162).
+        LLD-009 A16 inherits wrong baseline (cites 161).'
+    - severity: Important
+      location: "Success Criteria \xA7 A6"
+      problem: 'A6 cli.init invokes install_hooks with no framework awareness. Edge
+        Case 6 claims framework detection (LLD-010) wins. But LLD-008 ships without
+        framework detection (deferred LLD-010). Interleave window between LLD-008
+        ship and LLD-010 ship: install_hooks lacks framework detection; raw hooks
+        written alongside framework. Specify (a) A6 deferred until LLD-010 lands,
+        OR (b) cli.init bootstrap silently no-ops when .pre-commit-config.yaml present
+        until LLD-010.'
+    - severity: Minor
+      location: "Success Criteria \xA7 A5"
+      problem: Interaction between existing --force flag (cli/install_hooks.py:48)
+        and new --on-conflict={skip,replace,append} not specified. Are they mutually
+        exclusive? Does --force imply --on-conflict=replace? Implementer must guess.
+  evidence:
+    verdict: pass
+    findings: []
+    justification: 'Cited line ranges spot-checked against current source: cli/lint.py:71-73
+      CANON_FROZEN_STATUSES confirmed; :77-80 REFS_ELIGIBLE_PREFIXES confirmed; :36-52
+      _load_extract_mermaid confirmed; cli/install_hooks.py:48-75 interactive prompt
+      path confirmed. SCALE migration counts match filesystem. A2 8-file enumeration
+      matches Scope 2 layout. Pytest baseline arithmetic 107+37+6=150 holds.'
+  clarity:
+    verdict: conditional_pass
+    findings:
+    - severity: Important
+      location: "Design \xA7 cli.install_hooks non-interactive bootstrap"
+      problem: 'Pseudocode ''if on_conflict not in (skip, replace, append):'' as gate
+        to interactive/TTY-fallback. argparse with choices=[''skip'',''replace'',''append'']
+        enforces valid value before this code runs; sentinel triggering interactive
+        mode is undefined. (a) on_conflict default must be None/sentinel and argparse
+        choices made optional, OR (b) flag-absent vs flag-present-with-default needs
+        explicit handling. As written: interactive path unreachable.'
+    - severity: Minor
+      location: "Success Criteria \xA7 A8 + Migration"
+      problem: 'A8 ''REWRITE-IN-PLACE documentation-gate.md retain Gates 1-3 verbatim;
+        REPLACE Gates 4+5 with one-line pointer''. But documentation-gate.md also
+        has ''Quick Reference'' section at line 109+ mentioning Gate 4 + Gate 5 (lines
+        121, 124). Partial-edit not specified for those Quick Reference Gate 4/5 lines:
+        prune, update, or retain?'
+    - severity: Minor
+      location: "Scope \xA7 In-Scope item 2"
+      problem: 'Phrasing ''5 reference files with content sourced from canon-frozen-guard,
+        commit-strategy plus 3 NEW reference files'' parses ambiguously: 5+3=8 (wrong)
+        or 5 total of which 2 migrated + 3 new (correct per A2). Tightening prevents
+        reader confusion.'
+  consistency:
+    verdict: conditional_pass
+    findings:
+    - severity: Important
+      location: "Success Criteria \xA7 A10 vs LLD-009 \xA7 A16"
+      problem: 'LLD-008 A10 declares pytest target 161. LLD-009 A16 cites LLD-008
+        baseline 161 as starting point. If A10 miscounts (Completeness finding 1:
+        actual 12 functions = 162), LLD-009 baseline citation also wrong. Cross-doc
+        number must reconcile.'
+    - severity: Important
+      location: "Success Criteria \xA7 A12"
+      problem: A12 'BUG-010 Part 3 closes via A6; BUG-010 stays Fix Applied'. BUG-010
+        status not verified in this attestation. If BUG-010 is canon-frozen (Fix Applied
+        in canon-frozen-status set per Glossary), Changelog-append on close permitted
+        via whitelist. A12 doesn't specify whether Part 3 close generates Changelog
+        row on BUG-010, leaving migration discipline ambiguous.
+    - severity: Minor
+      location: "Related Documents \xA7 companion-LLD cross-refs"
+      problem: "Three-way reciprocal cross-ref consistent. However LLD-008 Out-of-Scope\
+        \ cites '5 deferred BUGs (BUG-001/002/004/005)' \u2014 only 4 IDs listed,\
+        \ not 5. Off-by-one in count vs enumeration."
+overall_verdict: conditional_pass
+required_followup:
+- 'Recount A10 test functions: 12 not 11. Pytest target 162 not 161. Reconcile with
+  LLD-009 A16 baseline cite.'
+- Specify --force vs --on-conflict precedence in A5.
+- 'Fix --on-conflict pseudocode argparse semantics: interactive/TTY-fallback path
+  needs sentinel.'
+- Clarify cli.init bootstrap behavior on consumer with .pre-commit-config.yaml between
+  LLD-008 ship and LLD-010 ship.
+- Specify Quick Reference (documentation-gate.md lines 109+) treatment in A8 partial-edit.
+- "Reconcile Out-of-Scope '5 deferred BUGs (BUG-001/002/004/005)' \u2014 4 IDs enumerated."
+notes: 'r3 narrowed scope cleanly addresses iteration-plateau root cause. Split clean:
+  LLD-008 contains no L2-finalize logic, no framework-detection logic, no tiered-rule
+  logic. No overlap detected with LLD-009/010. Cross-references bidirectionally consistent.
+  Substantive residual issues: arithmetic + impl-time ambiguities. None Critical;
+  all addressable inline pre-impl.'

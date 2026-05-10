@@ -206,6 +206,31 @@ Lint rejects Refs into:
 - Any path outside the 6 canon-type directories
 - Any canon doc whose Status is not canon-frozen (e.g. Drafts)
 
+## Interview Gate (v1.5.1)
+
+When ANY of the following hits, STOP and ask the user before proceeding silently:
+
+1. **Low context** — not enough info; would have to guess at intent
+2. **Ambiguous instruction** — multiple plausible readings; blast radius >10 min
+3. **Silent design decision** — about to commit to architecture not in the doc/instruction
+4. **Ambiguous scope** — user said "fix X" but multiple things qualify
+5. **Pre-dispatch checklist** — P3 (OR / "alternatively" without commitment) or P8 ("improvise")
+6. **Judgment call** — two roughly equal options, blast radius >10 min
+7. **Iteration plateau** — same review/test failing 3+ times with overlapping findings → context drift suspected; interview before iter 4
+
+Format: 1-sentence current state + 1-sentence decision point + 2-4 concrete options (one Recommended with reason).
+
+NOT triggers: mechanical execution, single-step ops with obvious answer, user said "use your judgment", auto-mode (interview only on large blast radius).
+
+Anti-patterns:
+- Asking permission for low-blast-radius task work
+- Sequential ping-pong instead of batched questions
+- Generic "should I?" without concrete options
+- Building 80% of the wrong thing then asking
+- Asking AFTER deciding (theater)
+
+Backward-flow workflow primitives (return-to-phase, feedback-loop state machine) deferred to v2.0+ (LLD-011+).
+
 ## Spec Review Rule (4 gates)
 
 After writing or updating any doc destined for `docs/` and a commit:

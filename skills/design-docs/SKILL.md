@@ -280,6 +280,25 @@ A draft (`Supersedes: <prior>`) that itself fails review: moves to archive `Stat
 
 Lint enforces all four checks (L1-L4) at commit-time. See `cli/lint.py` § "v1.5 LLD-006-r4".
 
+## Interview Gate (v1.5.1)
+
+STOP and ask the user when ANY of these hit:
+
+- **Low context / ambiguous instruction** — multiple plausible readings, blast radius >10 min
+- **Silent design decision** — committing to architecture not in the doc/instruction
+- **Ambiguous scope** — user said "fix X" but multiple things qualify
+- **Judgment call** — two roughly equal options, blast radius >10 min
+- **Iteration plateau** — same review/test failing 3+ times → context drift; interview before iter 4
+- **Pre-dispatch checklist hit** — P3 or P8 (OR / alternatively / improvise)
+
+Use `AskUserQuestion` (preferred) or chat. Format: state + decision point + 2-4 options (one Recommended with reason). Then stop and wait — do NOT pre-implement.
+
+NOT triggers: mechanical execution, obvious one-step ops, user said "use your judgment", auto-mode with small blast radius.
+
+Anti-patterns: over-asking on low-blast tasks; ping-pong instead of batched questions; generic "should I?"; deciding-then-asking (theater).
+
+Backward-flow workflow primitives deferred to v2.0+ (LLD-011+).
+
 ## Pitfall Rules (industry-research-derived)
 
 1. **ADR is RECORDED, not deliberated.** Long "Options Considered" weighing alternatives without a chosen direction = RFC, not ADR. In solo mode, decide first; record after. In team mode, deliberation can use ADR-template-with-Proposed-status as an RFC.

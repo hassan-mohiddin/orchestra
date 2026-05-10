@@ -1,5 +1,50 @@
 # Changelog
 
+## v1.5.1 — 2026-05-10
+
+Interview Gate philosophy added — first half of the "backward-flow workflow"
+discipline. Auto-loaded when scaffolded via `cli.init` (`docs/STANDARDS.md`)
+and surfaced in the design-docs skill.
+
+### Philosophy
+
+When ANY of these hit, STOP and ask the user before proceeding silently:
+
+- Low context / ambiguous instruction (blast radius >10 min)
+- Silent design decision (architecture not in the doc/instruction)
+- Ambiguous scope ("fix X" but multiple things qualify)
+- Judgment call between roughly equal options (blast radius >10 min)
+- Iteration plateau (same review/test failing 3+ times → context drift)
+- Pre-dispatch checklist P3 (OR / "alternatively") or P8 ("improvise it")
+
+Format: state + decision point + 2-4 options (one Recommended with reason).
+Then stop and wait — do NOT pre-implement.
+
+### NOT triggers
+
+Mechanical execution, single-step ops with obvious answer, user said "use your
+judgment", auto-mode with small blast radius.
+
+### Files
+
+- `cli/templates/standards-default-7.md` — Interview Gate section (scaffolds
+  on init via `cli.init`)
+- `skills/design-docs/SKILL.md` — Interview Gate addendum
+- `docs/design/orchestra-philosophy.md` — Changelog v1.5.1 entry
+
+### Origin
+
+BUG-008 root-cause: silent design decisions + cargo-cult markers. Pre-dispatch
+checklist P1-P9 (LLD-006-r4 brainstorm scratch) encodes same discipline at
+LLD-author level. Interview Gate extends to general agent behavior.
+
+### Deferred
+
+Backward-flow workflow primitives (return-to-phase, feedback-loop state
+machine, persistence) deferred to v2.0+ (LLD-011+ per orchestra roadmap).
+Interview Gate ships standalone because it costs nothing to encode and
+prevents the failure mode immediately.
+
 ## v1.5.0 — 2026-05-10
 
 Implements LLD-006-r4 — archive + supersession file conventions. v1.4 burnt

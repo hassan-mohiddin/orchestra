@@ -4,7 +4,7 @@
 > **Date:** 2026-05-06
 > **DRI:** Hassan Mohiddin
 > **Severity:** Medium
-> **Status:** Investigating
+> **Status:** Fix Applied
 
 ## Observed Behavior
 

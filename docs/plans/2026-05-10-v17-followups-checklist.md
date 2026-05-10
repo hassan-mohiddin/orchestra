@@ -124,12 +124,13 @@ Source: `docs/postmortems/POSTMORTEM-2026-05-10-session-process-drift.md` § Act
 
 Source: `README.md` Roadmap table. Each = future LLD + skill ship.
 
+- [ ] **E0. `orchestra:commit` skill (NEW — narrower-scope predecessor to E4 workflow skill)** — proposed end-of-v1.6.2 session. Packages all commit-time discipline into single skill: 4 lint levels (L1-L4) + 2 hook templates (pre-commit + commit-msg) + 6 SCALE-side rules consolidated (canon-frozen-guard, interview-gate, documentation-gate, commit-strategy, skills-routing, task-tracking) + BUG-006/010/011 unified framework-detection + tiered supersession + Refs:-line + doc-vs-code commit conventions. **Higher priority than E4** because narrower scope = faster ship; closes B5-partial + F1 + F2 + D3 + BUG-006 + BUG-010-Part-3 + BUG-011 unified ship. Status: **needs grilling session** before LLD draft. Brainstorm inputs: SCALE `.claude/rules/*` (6 files) + orchestra `cli/templates/*.sh` (2 hooks) + `cli/lint.py` (L1-L4) + `cli/install_hooks.py` + 11 BUGs + POSTMORTEM-canon-inplace + POSTMORTEM-session-process-drift. Grilling needed because: cli/templates/ messy (~13 files); test suite needs audit for skill coverage; scope-creep risk into E4 workflow skill territory.
 - [ ] **E1. LLD-008 memory architecture** — referenced in older handoff; orthogonal to v1.6. Capture how memory entries grow / consolidate / archive over multi-session work
 - [ ] **E2. LLD-009 lessons-capture** — separate skill for distilled-learning extraction (postmortems → reusable rules)
 - [ ] **E3. LLD-010 skills-registry auto-population** — auto-discover plugins in `~/.claude/plugins/` → emit `.claude/skills-registry.md` with situation→skill bindings
-- [ ] **E4. LLD-011+ workflow skill** — backward-flow primitives. Heavy. Where mechanical Interview-Gate hook lives. Workflow skill template-generates SCALE-side rules → unifies cross-repo strategy. **Highest ROI deferred item — closes 6+ followups simultaneously (B5, F1, F2, D3 partial).**
+- [ ] **E4. LLD-011+ workflow skill (v2.0+)** — backward-flow state-machine primitives (return-to-phase, feedback-loop persistence, mechanical Interview-Gate hook). Heavy. Workflow skill template-generates SCALE-side rules → unifies cross-repo strategy. **Closes B5, F1, F2, D3 partial AFTER E0 commit-skill ships its narrower scope first.** E4 picks up state-machine + multi-step-workflow primitives that E0 explicitly defers.
 - [ ] **E5. `orchestra:tasks` skill (v1.2 placeholder)** — task-tracking discipline + cross-agent state
-- [ ] **E6. `orchestra:gates` skill (v1.2 placeholder)** — pre-commit / CI gate enforcement broader than docs
+- [ ] **E6. `orchestra:gates` skill (v1.2 placeholder)** — pre-commit / CI gate enforcement broader than docs. **May overlap heavily with E0 commit-skill — grilling session must clarify boundary; possible E6 absorbs into E0.**
 - [ ] **E7. `orchestra:plans` skill (v1.3 placeholder)** — plan-as-source artifact with TDD vertical slicing
 
 ### § F. Cross-repo strategy migration
@@ -213,6 +214,7 @@ This doc IS the followup tracker. Updates land here directly. When all items in 
 | Date | Hypothesis | Change | Result |
 |---|---|---|---|
 | 2026-05-10 | End-of-session capture; nothing should fall through. Consolidate v1.6.2 ship + canon-inplace incident + 11 BUG triage + roadmap items into single tracker | Plan doc filed at `docs/plans/2026-05-10-v17-followups-checklist.md`. 8 sections (A-H), 30+ checkbox items. References: 11 BUGs + 3 postmortems + 3 runbooks + LLD-006-r4 + LLD-007-r5 + 6 SKILL/LLD placeholders | Status: Active. Updates land directly on this doc (Plans not canon-frozen) |
+| 2026-05-10 | User proposed `orchestra:commit` skill as narrower-scope predecessor to E4 workflow skill — packages commit-time discipline (4 lint levels + 2 hooks + 6 SCALE rules + BUG-006/010/011 unification). Higher ROI shorter ship than full workflow skill. | Added § E0 entry. E4 reframed as state-machine successor. E6 (gates skill) flagged for possible absorption into E0. Marked **needs grilling session** before LLD draft. | Pre-compact prep: memory entry filed at `project_v17_commit_skill_proposal.md`. Post-compact entry point: grilling session on E0 scope + scope-creep boundary vs E4/E6. |
 
 ## Changelog
 

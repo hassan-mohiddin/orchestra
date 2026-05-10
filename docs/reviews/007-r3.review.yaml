@@ -1,6 +1,6 @@
 schema_version: "1.0"
 doc_subject:
-  path: docs/features/007-spec-review-architecture.md
+  path: docs/archive/features/007-spec-review-architecture.md
   content_hash: sha256:b1a560b83db0419a373be90cfce9b1ed417ecc917f84572aef76ed84684192d5
   iteration: 3
 reviewer:

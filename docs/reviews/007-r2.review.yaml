@@ -1,6 +1,6 @@
 schema_version: "1.0"
 doc_subject:
-  path: docs/features/007-spec-review-architecture.md
+  path: docs/archive/features/007-spec-review-architecture.md
   content_hash: sha256:retroactive_r2_no_snapshot_captured
   iteration: 2
 reviewer:

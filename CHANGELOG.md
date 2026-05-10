@@ -1,5 +1,41 @@
 # Changelog
 
+## v1.6.1 — 2026-05-10
+
+Dogfood patches shipped via LLD-006-r4 supersession workflow. r4 dogfood
+ran `/orchestra:spec-review` on LLD-007 itself using the v1.6.0 skill
+just shipped — produced 13 findings; this release addresses all of
+them.
+
+### Process note
+
+Original v1.6.1 commits (`653db4e` + `bc359e7`) made body edits
+in-place on the canon-frozen LLD-007. LLD-006-r4 § narrow change
+forbids canon-frozen body edits — supersession required. Original
+commits reverted (`68fd538`); this release re-applies the same
+content via proper supersession: archive prior LLD as Rejected,
+create `-r5.md` supersession file with patches, re-attest. Tooling
+gaps that allowed the violation tracked as v1.6.x followups.
+
+### Code
+
+- Dropped `cli.spec_review` retry loop (`MAX_RETRIES = 0`). Stdin-bound
+  dispatch makes in-Python retry meaningless.
+- `doc_disappeared` try/except wraps write-time `read_bytes`
+- Added 1 new pytest test (`test_doc_disappeared_between_dispatch_and_write`).
+  Rewrote T5/T6 for single-attempt semantics. Pytest: 143 → 144.
+
+### Docs
+
+- LLD-007 superseded: `docs/archive/features/007-spec-review-architecture.md`
+  → `docs/features/007-spec-review-architecture-r5.md` (Iteration: 5)
+- All 13 r4 findings addressed in `-r5.md`
+- 3 Minor r5 findings deferred to v1.6.2 followup
+
+### Plugin metadata
+
+- Version 1.6.0 → 1.6.1
+
 ## v1.6.0 — 2026-05-10
 
 LLD-007 spec-review architecture shipped. Multi-judge with manual chair —

@@ -90,6 +90,7 @@ Files:
 | Date | Hypothesis | Change | Result |
 |---|---|---|---|
 | 2026-05-06 | (none yet — bug filed for v1.4 fix) | — | — |
+| 2026-05-10 | Python-tag is required by mkdocs-mermaid2-plugin (no non-tag alternative); inform users at install-time + provide patch template. | `cli/viewer.py` `install_mkdocs()` emits post-install warning when `.pre-commit-config.yaml` present, citing `--unsafe` requirement and template path; new `cli/templates/precommit-yaml-patch.txt`; `README.md` Tier 3 section gains `--unsafe` note. | Status: Investigating → Fix Applied. No automated test added — install warning is observational. |
 
 ## Regression Prevention
 

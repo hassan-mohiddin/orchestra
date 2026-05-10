@@ -23,6 +23,7 @@ GITIGNORE_SITE_ENTRY = "site/"
 MKDOCS_INSTALL_FILES = [
     ("mkdocs.yml", "mkdocs.yml"),
     ("docs/index.md", "docs-index.md"),
+    ("docs/tags.md", "tags.md"),
     ("requirements-docs.txt", "requirements-docs.txt"),
     ("mkdocs_hooks.py", "mkdocs_hooks.py"),
 ]
@@ -127,10 +128,15 @@ def render_doc(doc: Path, output_dir: Path, format: str = "svg",
 
 
 def install_mkdocs(repo_root: Path, force: bool = False) -> InstallResult:
-    """Write 4 files (mkdocs.yml, docs/index.md, requirements-docs.txt,
-    mkdocs_hooks.py) and append site/ to .gitignore.
+    """Write 5 files (mkdocs.yml, docs/index.md, docs/tags.md,
+    requirements-docs.txt, mkdocs_hooks.py) and append site/ to .gitignore.
 
     Idempotent: skip-existing default. --force overwrites.
+
+    BUG-007 v1.6.2: emits a post-install warning when `.pre-commit-config.yaml`
+    is present, since the shipped mkdocs.yml uses a YAML python-tag for the
+    mkdocs-mermaid2-plugin fence wiring which strict `check-yaml` hooks reject
+    without `--unsafe`.
     """
     templates_dir = Path(__file__).parent / "templates"
     result = InstallResult()
@@ -149,6 +155,19 @@ def install_mkdocs(repo_root: Path, force: bool = False) -> InstallResult:
         result.files_written.append(target)
 
     _ensure_gitignore_entry(repo_root, GITIGNORE_SITE_ENTRY)
+
+    # BUG-007: warn when pre-commit framework is in use
+    if (repo_root / ".pre-commit-config.yaml").exists():
+        print(
+            "NOTE: Your repo uses pre-commit. The shipped mkdocs.yml contains a\n"
+            "  YAML python-tag (`!!python/name:mermaid2.fence_mermaid_custom`)\n"
+            "  required by mkdocs-mermaid2-plugin. Strict `check-yaml` hooks reject\n"
+            "  python-tags without --unsafe. Update your .pre-commit-config.yaml:\n"
+            "    - id: check-yaml\n"
+            "      args: [--unsafe]\n"
+            "  Or commits touching mkdocs.yml will fail with a python-tag error.\n"
+            "  See cli/templates/precommit-yaml-patch.txt for the exact snippet.",
+        )
 
     return result
 

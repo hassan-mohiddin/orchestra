@@ -102,6 +102,7 @@ nav:
 | Date | Hypothesis | Change | Result |
 |---|---|---|---|
 | 2026-05-06 | (none yet — bug filed for v1.4 fix) | — | — |
+| 2026-05-10 | Material tags plugin needs explicit `tags_file:` directive + `tags.md` placeholder + nav entry. | `cli/templates/mkdocs.yml`: `- tags` → `- tags: tags_file: tags.md` + `nav: Tags: tags.md` row; new `cli/templates/tags.md`; `cli/viewer.py` `MKDOCS_INSTALL_FILES` extended (4 → 5 files); `tests/test_cli_viewer.py` count assertions updated. | Status: Investigating → Fix Applied. Pytest 144 → 150 (after BUG-009/010 land). |
 
 ## Regression Prevention
 

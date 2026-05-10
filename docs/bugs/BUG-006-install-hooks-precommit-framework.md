@@ -89,6 +89,7 @@ Files:
 | Date | Hypothesis | Change | Result |
 |---|---|---|---|
 | 2026-05-06 | (none yet — bug filed for v1.4 fix) | — | — |
+| 2026-05-10 | v1.4 burnt; deferred to v1.7+. Fix: cli.install_hooks must detect `.pre-commit-config.yaml` presence; if found, emit warning + offer to add orchestra hook as a `local` repo entry instead of overwriting `.git/hooks/pre-commit`. Related to BUG-010 (orchestra repo's own hook install) — fix unifies framework-detection logic. | none — deferred | Status remains Investigating; v1.7+ |
 
 ## Regression Prevention
 

@@ -119,6 +119,7 @@ Apply only to `docs/**/*.md` (not skill markdown, not README, not CHANGELOG.md).
 
 | Date | Hypothesis | Change | Result |
 |---|---|---|---|
+| 2026-05-10 | Substantive root cause (no formal spec-review primitive) substantively closed by LLD-007 v1.6 ship — `orchestra:spec-review` skill formalizes the 4-gate rubric, attestation YAML schema v1.0, dispatch protocol via Task tool with bias mitigations. BUG-009 + BUG-010 close the enforcement gaps that allowed Gate 3 violations to land (lint_commit retroactive L2 + pre-commit hook self-install). User runs `/orchestra:spec-review <doc>` per doc. | LLD-007 v1.6.0 (`feat: ship LLD-007` commit `6ca0ea7`) + LLD-007 v1.6.1 supersession (`feat: ship v1.6.1 via supersession` commit `2ce394a`) + BUG-009 (`fix: BUG-009 + BUG-010` commit `6c13610`). | Status: Investigating → Fix Applied. Note: original "expected behavior" auto-fire-on-doc-commit (commit hook rejecting docs without spec-review marker) NOT fully implemented — that requires workflow skill v2.0+ (LLD-011+). Substantive closure: spec-review primitive shipped + enforcement gaps closed. Auto-fire-on-doc-commit deferred. |
 | 2026-05-06 | (none yet — bug filed for v1.4 fix) | — | — |
 
 ## Regression Prevention

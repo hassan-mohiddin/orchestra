@@ -31,7 +31,8 @@ plugins:
       # 10.9.1 is latest stable as of 2026-05-06.
       # Tested with mkdocs-mermaid2-plugin >=1.2.0 + mkdocs-material >=9.5.0.
       version: 10.9.1
-  - tags
+  - tags:
+      tags_file: tags.md
 
 markdown_extensions:
   - admonition
@@ -51,6 +52,7 @@ markdown_extensions:
 
 nav:
   - Home: index.md
+  - Tags: tags.md
   - Standards: STANDARDS.md
   - Decisions:
     - Index: adr/DECISIONS.md

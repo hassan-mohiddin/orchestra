@@ -100,6 +100,7 @@ Files:
 | Date | Hypothesis | Change | Result |
 |---|---|---|---|
 | 2026-05-06 | (none yet — bug filed for v1.4 fix) | — | — |
+| 2026-05-10 | v1.4 burnt; deferred to v1.7+. Fix: introduce template-variable substitution in cli.init for {project_name}, {tech_stack}, {repo_url} read from .claude/orchestra.json. | none — deferred | Status remains Investigating; v1.7+ |
 
 ## Regression Prevention
 

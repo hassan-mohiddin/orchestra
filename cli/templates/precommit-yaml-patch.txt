@@ -1,0 +1,21 @@
+# BUG-007 v1.6.2 — pre-commit `check-yaml` patch for orchestra-shipped mkdocs.yml
+#
+# orchestra's mkdocs.yml requires a YAML python-tag
+# (`!!python/name:mermaid2.fence_mermaid_custom`) for mkdocs-mermaid2-plugin
+# fence wiring. Strict `check-yaml` hooks reject python-tags without --unsafe.
+# Patch your .pre-commit-config.yaml `check-yaml` hook entry as below:
+
+# repos:
+#   - repo: https://github.com/pre-commit/pre-commit-hooks
+#     rev: v4.5.0   # or current
+#     hooks:
+#       - id: check-yaml
+#         args: [--unsafe]   # <-- ADD THIS LINE
+
+# Without --unsafe, commits touching mkdocs.yml fail with:
+#   could not determine a constructor for the tag
+#     'tag:yaml.org,2002:python/name:mermaid2.fence_mermaid_custom'
+
+# Alternative if you cannot allow --unsafe project-wide: exclude mkdocs.yml
+# from check-yaml using `exclude: ^mkdocs\.yml$`. Less secure (hides the file
+# from the validator entirely) but scoped.

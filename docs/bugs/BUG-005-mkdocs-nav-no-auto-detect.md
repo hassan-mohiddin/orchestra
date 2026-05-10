@@ -75,6 +75,7 @@ Files:
 | Date | Hypothesis | Change | Result |
 |---|---|---|---|
 | 2026-05-06 | (none yet — bug filed for v1.4 fix) | — | — |
+| 2026-05-10 | v1.4 burnt; deferred to v1.7+. Fix: extend mkdocs_hooks.py with on_files event auto-discovering docs/ subdirs not in nav and emitting nav warnings; or migrate to awesome-pages plugin. | none — deferred | Status remains Investigating; v1.7+ |
 
 ## Regression Prevention
 

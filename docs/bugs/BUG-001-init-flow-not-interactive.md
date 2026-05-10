@@ -76,6 +76,7 @@ Files to change:
 | Date | Hypothesis | Change | Result |
 |---|---|---|---|
 | 2026-05-06 | (none yet — bug filed for v1.4 fix) | — | — |
+| 2026-05-10 | v1.4 burnt; v1.5/v1.6 prioritized canon-discipline (LLD-006-r4 + LLD-007 spec-review). orchestra:init skill exists (skills/init/) and runs AskUserQuestion at runtime, but BUG's specific concern (markdown-only flow without genuine prompts on first invocation) needs verification against current init skill behavior in fresh repo. | none — deferred | Status remains Investigating; v1.7+ tracking |
 
 ## Regression Prevention
 

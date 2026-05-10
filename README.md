@@ -130,6 +130,8 @@ Orchestra docs include mermaid diagrams in markdown code fences. Render them wit
 
 Mermaid validation is built into `python -m cli.lint --doc` and `--pre-commit` modes (default-on; opt out via `--no-mermaid`). Lint catches syntax errors at commit time so broken diagrams never land in main.
 
+**Note for repos using pre-commit (`.pre-commit-config.yaml`):** the shipped `mkdocs.yml` contains a YAML python-tag (`!!python/name:mermaid2.fence_mermaid_custom`) required by mkdocs-mermaid2-plugin. Strict `check-yaml` hooks reject python-tags without the `--unsafe` flag. After running `cli.viewer install-mkdocs`, add `args: [--unsafe]` to your `check-yaml` hook entry. See `cli/templates/precommit-yaml-patch.txt` (orchestra plugin) for the exact snippet (BUG-007).
+
 ## Configuration
 
 Edit your project's `.claude/settings.local.json` or `.claude/settings.json`:

@@ -163,7 +163,7 @@ from cli.viewer import (
 def test_install_mkdocs_fresh_repo(tmp_repo: Path) -> None:
     result = install_mkdocs(tmp_repo)
     assert result.ok
-    assert len(result.files_written) == 4
+    assert len(result.files_written) == 5
     assert (tmp_repo / "mkdocs.yml").exists()
     assert (tmp_repo / "docs" / "index.md").exists()
     assert (tmp_repo / "requirements-docs.txt").exists()
@@ -176,7 +176,7 @@ def test_install_mkdocs_idempotent(tmp_repo: Path) -> None:
     second = install_mkdocs(tmp_repo)
     assert second.ok
     assert len(second.files_written) == 0
-    assert len(second.files_skipped) == 4
+    assert len(second.files_skipped) == 5
 
 
 def test_install_mkdocs_force_overwrites(tmp_repo: Path) -> None:
@@ -184,7 +184,7 @@ def test_install_mkdocs_force_overwrites(tmp_repo: Path) -> None:
     (tmp_repo / "mkdocs.yml").write_text("# user-edited content\n")
     result = install_mkdocs(tmp_repo, force=True)
     assert result.ok
-    assert len(result.files_written) == 4
+    assert len(result.files_written) == 5
     assert "site_name" in (tmp_repo / "mkdocs.yml").read_text()
 
 

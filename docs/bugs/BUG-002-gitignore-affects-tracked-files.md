@@ -96,6 +96,7 @@ Files:
 | Date | Hypothesis | Change | Result |
 |---|---|---|---|
 | 2026-05-06 | (none yet — bug filed for v1.4 fix) | — | — |
+| 2026-05-10 | v1.4 burnt; deferred to v1.7+. Fix: cli.init must `git ls-files --error-unmatch <path>` before appending to .gitignore; if tracked, warn + skip. | none — deferred | Status remains Investigating; v1.7+ |
 
 ## Regression Prevention
 

@@ -226,6 +226,12 @@ def lint_doc(path: Path) -> list[Finding]:
             "could not infer doc type from path; skipping section + status checks",
         )]
 
+    # Archive exemption — docs under docs/archive/ are historical snapshots
+    # (= git history per plan §6.2 + canon §4.12 terminal_state_suffix). Not
+    # a lint target. Skip L2 + placeholder + mermaid checks for archived docs.
+    if "archive" in path.parts:
+        return findings
+
     # 1. Metadata block — must exist within first 25 lines
     head = "\n".join(text.splitlines()[:25])
 
@@ -330,6 +336,8 @@ def lint_strict_enum_match(path: Path) -> list[Finding]:
     doc_type = detect_doc_type(path)
     if doc_type is None or doc_type not in STATUS_ENUMS:
         return []
+    if "archive" in path.parts:
+        return []  # Archive exemption — historical, not a lint target
 
     text = path.read_text(encoding="utf-8")
     head = "\n".join(text.splitlines()[:25])
@@ -372,6 +380,8 @@ def lint_mermaid(path: Path) -> list[Finding]:
     findings: list[Finding] = []
     if not path.exists():
         return [Finding("error", str(path), "file does not exist")]
+    if "archive" in path.parts:
+        return findings  # Archive exemption — historical, not a lint target
 
     em = _load_extract_mermaid()
     diagrams = em.extract_diagrams_from_file(path)

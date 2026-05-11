@@ -42,6 +42,25 @@ def test_regular_adr_still_validated(tmp_path):
     assert findings, "expected metadata + section findings on regular adr"
 
 
+def test_archive_path_exempted(tmp_path):
+    """Archive is historical (= git history). L2 + L5 must not fire."""
+    body = "# stale archived doc\n\n(no metadata block; no sections)\n"
+    p = tmp_path / "docs" / "archive" / "design" / "stale.md"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(body)
+    findings = lint_doc(p)
+    assert findings == [], f"archive must be exempt; got {[f.message for f in findings]}"
+
+
+def test_archive_subtype_path_also_exempted(tmp_path):
+    body = "# archived bug\n"
+    p = tmp_path / "docs" / "archive" / "bugs" / "BUG-001-old.md"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(body)
+    findings = lint_doc(p)
+    assert findings == []
+
+
 def test_real_decisions_md_passes():
     """Smoke against the actual repo DECISIONS.md."""
     import subprocess

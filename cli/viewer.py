@@ -298,6 +298,10 @@ def main(argv: list[str] | None = None) -> int:
     except ViewerError as e:
         print(f"error: {e}", file=sys.stderr)
         return 1
+    # argparse subparsers(required=True) guarantees one branch matches, but
+    # mypy/pyrefly need explicit fallthrough.
+    parser.print_help(sys.stderr)
+    return 2
 
 
 if __name__ == "__main__":

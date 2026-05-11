@@ -45,7 +45,8 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest>=7.0",
-    "types-PyYAML>=6.0",  # type stubs for `import yaml` (pyrefly / mypy)
+    "types-PyYAML>=6.0",         # type stubs for `import yaml` (pyrefly / mypy)
+    "types-jsonschema>=4.0",     # type stubs for `import jsonschema`
 ]
 
 [project.urls]

@@ -37,10 +37,11 @@ def _seed_scale(tmp_path: Path) -> Path:
     # CLAUDE.md sentinel
     (scale / ".claude").mkdir(exist_ok=True)
     (scale / ".claude" / "CLAUDE.md").write_text("# SCALE — Claude Code\n\nbody.\n")
-    # apps/web/package.json sentinel
-    (scale / "apps" / "web").mkdir(parents=True, exist_ok=True)
+    # apps/{api,web,worker}/ SCALE monorepo layout sentinel
+    for sub in ("api", "web", "worker"):
+        (scale / "apps" / sub).mkdir(parents=True, exist_ok=True)
     (scale / "apps" / "web" / "package.json").write_text(
-        '{"name": "scale", "version": "0.1.0"}\n'
+        '{"name": "dashboard", "version": "0.1.0"}\n'
     )
     return scale
 
@@ -96,6 +97,7 @@ def test_migration_rejects_missing_claude_md_sentinel(tmp_path: Path) -> None:
 
 def test_migration_rejects_missing_apps_web_sentinel(tmp_path: Path) -> None:
     scale = _seed_scale(tmp_path)
+    # Remove apps/web/package.json AND apps/worker to break layout sentinel
     (scale / "apps" / "web" / "package.json").unlink()
     plan = MigrationPlan(scale_root=scale, expected_remote=EXPECTED_REMOTE)
     rc = migrate(plan)

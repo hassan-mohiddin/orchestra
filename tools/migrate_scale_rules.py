@@ -90,12 +90,23 @@ def _check_claude_md_sentinel(scale_root: Path) -> None:
 
 
 def _check_apps_web_sentinel(scale_root: Path) -> None:
+    """Sentinel B: SCALE-canonical layout marker (apps/web/package.json present).
+
+    Combined with sentinel A (CLAUDE.md SCALE header), git toplevel match,
+    and --expected-remote, gives 4-factor repo identity. Content-substring
+    check intentionally avoided — SCALE repos may rename internal `name` field
+    (e.g., 'dashboard' product name) without changing the repo identity.
+    """
     p = scale_root / "apps" / "web" / "package.json"
     if not p.is_file():
         raise MigrationError(f"missing sentinel: {p}")
-    text = p.read_text(encoding="utf-8")
-    if "scale" not in text.lower():
-        raise MigrationError(f"sentinel {p}: 'scale' substring not found")
+    # Also require the SCALE monorepo layout marker (api + worker siblings)
+    for sibling in ("api", "worker"):
+        if not (scale_root / "apps" / sibling).is_dir():
+            raise MigrationError(
+                f"sentinel layout check failed: apps/{sibling}/ not found "
+                f"(expected SCALE monorepo: apps/{{api,web,worker}}/)"
+            )
 
 
 def _verify_repo_identity(plan: MigrationPlan) -> None:

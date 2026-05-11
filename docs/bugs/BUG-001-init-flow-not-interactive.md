@@ -77,6 +77,7 @@ Files to change:
 |---|---|---|---|
 | 2026-05-06 | (none yet — bug filed for v1.4 fix) | — | — |
 | 2026-05-10 | v1.4 burnt; v1.5/v1.6 prioritized canon-discipline (LLD-006-r4 + LLD-007 spec-review). orchestra:init skill exists (skills/init/) and runs AskUserQuestion at runtime, but BUG's specific concern (markdown-only flow without genuine prompts on first invocation) needs verification against current init skill behavior in fresh repo. | none — deferred | Status remains Investigating; v1.7+ tracking |
+| 2026-05-11 | Verified current state: neither `skills/init/SKILL.md` nor `skills/design-docs/init/SKILL.md` references the `AskUserQuestion` tool. Both files describe the 3-prompt flow as markdown only — Claude reads the description and decides ad-hoc whether to fire prompts or shortcut to defaults. Confirms BUG-001 root cause holds in v2.0.0 as filed. **Path C adopted** (modern alternative to BUG-001's original Path B): skill body imperatively instructs Claude to invoke `AskUserQuestion` once per question (Q1/Q2/Q3), then call `python -m cli.init --mode <a1> --preset <a2> --addons <a3>` with the answers. Programmatic CI path (CLI flags only) preserved as the only sanctioned bypass. | (a) `skills/design-docs/init/SKILL.md` rewritten with HARD RULE section + per-question AskUserQuestion option payloads. (b) `skills/init/SKILL.md` updated to surface the AskUserQuestion contract + delegate to sub-skill without short-circuit. (c) `skills/design-docs/init/prompts.md` reformatted as the canonical AskUserQuestion option-text source. (d) New regression gate `tests/test_init_skill_prompts.py` (6 tests) locks the imperative invocation contract into the skill body — any future edit that strips `AskUserQuestion` from the skill files RED-fails this test. | pytest 527 pass / pyrefly 0 / cli.lint --pre-commit clean. Manual fresh-repo verification still pending — Status holds at Investigating until user confirms `/orchestra:init` fires 3 AskUserQuestion prompts in a real fresh-install run. |
 
 ## Regression Prevention
 
@@ -93,3 +94,4 @@ Test: monkeypatch `builtins.input` in `tests/test_cli_init_interactive.py` to fe
 | Date | Change |
 |---|---|
 | 2026-05-06 | Filed during SCALE orchestra:init audit. Status: Investigating. Target fix: v1.4. |
+| 2026-05-11 | Path C fix applied: skill body now imperatively drives 3 prompts via AskUserQuestion tool; `tests/test_init_skill_prompts.py` regression gate added. Bundle target: v2.0.1 patch release. Status remains Investigating pending user fresh-repo verification. |

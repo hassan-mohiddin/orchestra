@@ -17,11 +17,29 @@ Commit-discipline consolidation. Wraps Refs:-line rules, canon-frozen narrow-cha
 
 ## Pre-stage checklist
 
-1. Identify commit type — code vs. doc. Doc and code commits MUST stay separate.
-2. For doc commit on canon-frozen-eligible file: route to canon-frozen-guard reference.
-3. For fix:/feat: code commit: ensure `Refs: docs/<type>/<doc>.md` line in commit body.
-4. Run `python -m cli.lint --pre-stage-check <doc-path> --commit-msg-draft "<msg>"` before `git add` — surfaces L2 narrow-change verdict early.
-5. Stage attestation file first (separate commit) if commit will reference an attestation finding.
+Before `git add` on a canon-frozen-eligible doc:
+
+1. Check prior Status: `git show HEAD:<path> | head -20 | grep "Status:"`.
+2. If Status ∈ {Approved, Implemented, Verified, Fix Applied, Current} → canon-frozen. Body changes require one of:
+   - **Whitelist edit** (Status / Iteration / Superseded by + Changelog append) → no `Addresses:` needed
+   - **Tiered narrow-change** (BUG-011) → `Addresses:` lines per finding + NEW Changelog row per finding
+   - **Supersession** → archive + `-rN.md` path (see `references/supersession-decision.md`)
+3. For tiered narrow-change:
+   - Read attestation YAML at `docs/reviews/<doc-id>-rN.review.yaml`.
+   - Note gate name (`completeness | evidence | clarity | consistency`) + 1-indexed finding-N within that gate.
+   - **Commit attestation YAML FIRST** (separate `docs:` commit) — uncommitted attestation fails `--pre-stage-check`.
+   - Add NEW Changelog row per finding to doc body:
+     ```
+     | <YYYY-MM-DD> | Addresses: docs/reviews/<doc-id>-rN.review.yaml gate <gate> finding <N> (Minor|Important) — <fix description> |
+     ```
+   - Draft commit message with `Addresses:` line per finding:
+     ```
+     Addresses: docs/reviews/<doc-id>-rN.review.yaml gate <gate> finding <N> (Minor|Important)
+     ```
+   - Early feedback: `python -m cli.lint --pre-stage-check <doc-path> --commit-msg-draft "$(cat msg.txt)"`.
+   - On PASS: stage doc + commit with prepared message.
+4. If Status: Draft / Investigating / Proposed → full edit permitted; standard discipline only.
+5. Doc and code commits MUST stay separate (see `references/doc-vs-code-commit.md`).
 
 ## References
 

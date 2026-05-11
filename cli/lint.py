@@ -21,9 +21,13 @@ Exit codes:
 from __future__ import annotations
 
 import argparse
+import datetime as _dt
+import getpass
 import importlib.util
+import os
 import re
 import shutil
+import socket
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -128,6 +132,19 @@ REQUIRED_SECTIONS: dict[str, list[str]] = {
 CONVENTIONAL_PREFIX_RE = re.compile(r"^(fix|feat)(\([^)]+\))?:")
 REFS_LINE_RE = re.compile(r"^Refs:\s+(\S+)", re.MULTILINE)
 METADATA_BLOCK_RE = re.compile(r"^>\s+\*\*([^:*]+):\*\*\s+(.+)$", re.MULTILINE)
+
+# v1.7 LLD-009 r6 — tiered narrow-change attestation citation regex
+ALLOWED_GATES: tuple[str, ...] = ("completeness", "evidence", "clarity", "consistency")
+FINDING_REF_RE = re.compile(
+    r"^Addresses:\s+(docs/reviews/[^\s]+\.review\.yaml)\s+gate\s+"
+    r"(completeness|evidence|clarity|consistency)\s+finding\s+(\d+)\s+"
+    r"\((Minor|Important|Critical)\)\s*$",
+    re.MULTILINE,
+)
+BYPASS_ANNOTATION_RE = re.compile(r"^Bypass:\s+(.+)$", re.MULTILINE)
+CI_ENV_VARS: tuple[str, ...] = (
+    "CI", "GITHUB_ACTIONS", "GITLAB_CI", "BUILDKITE", "CIRCLECI", "TRAVIS", "JENKINS_URL",
+)
 
 
 # ---------------------------------------------------------------------------
@@ -394,14 +411,108 @@ def _split_metadata_and_body(text: str) -> tuple[dict[str, str], str]:
     return (md, text[body_start:])
 
 
-def is_narrow_change(prior_text: str, new_text: str) -> tuple[bool, str]:
-    """Return (ok, reason). Permitted edits per LLD-006-r4 § narrow change:
-      1. Metadata: only WHITELIST_FRONTMATTER_FIELDS may differ
-      2. Changelog table: append-only (existing rows byte-identical)
-      3. Body excluding Changelog: byte-identical
+def _verify_finding_in_attestation(
+    repo_root: Path,
+    attestation_path: str,
+    gate: str,
+    finding_n: int,
+    claimed_severity: str,
+) -> tuple[bool, str]:
+    """Navigate gates[<gate>].findings[finding_n-1].severity; verify == claimed.
 
-    Handles both YAML frontmatter (`---\\n...\\n---`) and markdown blockquote
-    metadata blocks (`> **Key:** value`). orchestra v1.0+ default is the latter.
+    Reads STAGED content (git show :0:) — NOT working-tree — closes codex r2
+    CRITICAL trust-boundary break. Path-traversal defense via
+    `Path.is_relative_to` (NOT str.startswith — codex r2 HIGH#3).
+    """
+    import yaml as _yaml
+
+    if not attestation_path.startswith("docs/reviews/"):
+        return (False, f"attestation_path_outside_docs_reviews: {attestation_path}")
+    if gate not in ALLOWED_GATES:
+        return (False, f"unknown_gate: {gate!r} (allowed: {ALLOWED_GATES})")
+
+    try:
+        full = (repo_root / attestation_path).resolve()
+    except OSError as e:
+        return (False, f"attestation_path_resolve_error: {e}")
+    reviews_root = (repo_root / "docs" / "reviews").resolve()
+    try:
+        if not full.is_relative_to(reviews_root):
+            return (False, f"attestation_path_outside_docs_reviews: {attestation_path}")
+    except ValueError:
+        return (False, f"attestation_path_outside_docs_reviews: {attestation_path}")
+
+    try:
+        staged_yaml = subprocess.check_output(
+            ["git", "show", f":0:{attestation_path}"],
+            cwd=repo_root, text=True, stderr=subprocess.PIPE,
+        )
+    except subprocess.CalledProcessError as e:
+        stderr = (e.stderr or "").lower()
+        if "exists on disk, but not in" in stderr or "does not exist" in stderr or "no such" in stderr:
+            return (False, f"attestation_not_staged: {attestation_path}")
+        return (False, f"attestation_read_error: {e}")
+
+    try:
+        att = _yaml.safe_load(staged_yaml)
+    except _yaml.YAMLError as e:
+        return (False, f"attestation_parse_error: {e}")
+
+    findings = (((att or {}).get("gates") or {}).get(gate) or {}).get("findings") or []
+    if finding_n < 1 or finding_n > len(findings):
+        return (False, f"finding_n_out_of_range: gate {gate} finding {finding_n} "
+                       f"(have {len(findings)})")
+    actual = (findings[finding_n - 1] or {}).get("severity", "")
+    if actual != claimed_severity:
+        return (False, f"severity_mismatch: cited {claimed_severity}; attestation "
+                       f"{actual} (gate {gate} finding {finding_n})")
+    return (True, "")
+
+
+def _verify_changelog_row_per_finding(
+    new_body: str,
+    prior_body: str,
+    deduped_refs: list[tuple[str, str, int, str]],
+) -> tuple[bool, str]:
+    """Per ref: assert a NEW Changelog row (not in prior) cites attestation basename + gate + finding N.
+
+    Operates on the delta (new_rows - prior_rows) — defends against false-accept
+    where prior Changelog already mentioned same basename+finding from a previous
+    narrow-change. Per LLD-009 r6 A5 + sonnet F5.
+    """
+    new_rows, _ = extract_changelog_and_strip(new_body)
+    prior_rows, _ = extract_changelog_and_strip(prior_body)
+    prior_set = set(prior_rows)
+    delta_rows = [r for r in new_rows if r not in prior_set]
+
+    for att_path, gate, finding_n, _severity in deduped_refs:
+        att_basename = Path(att_path).name
+        pattern = re.compile(
+            rf"{re.escape(att_basename)}.*\bgate\s+{re.escape(gate)}\b.*\bfinding\s+{finding_n}\b",
+            re.IGNORECASE,
+        )
+        if not any(pattern.search(row) for row in delta_rows):
+            return (False,
+                    f"missing_changelog_row: {att_path} gate {gate} finding {finding_n} "
+                    f"(must be NEW row in Changelog, not inherited from prior commit)")
+    return (True, "")
+
+
+def is_narrow_change(
+    prior_text: str,
+    new_text: str,
+    commit_msg: str | None = None,
+    repo_root: Path | None = None,
+) -> tuple[bool, str]:
+    """Return (ok, reason). v1.7 LLD-009 r6 — tiered rule + L2-detect/L2-finalize.
+
+    L2-detect path (commit_msg is None): strict-binary — whitelist + Changelog
+    append only. Body change returns (False, reason). Caller annotates pending
+    file but does NOT block (lint_staged).
+
+    L2-finalize path (commit_msg + repo_root provided): tiered rule per
+    BUG-011 — Critical never bypasses; Minor body edit + Addresses: + new
+    Changelog row passes; Important uses ≤3 / ≥4 threshold.
     """
     prior_md, prior_body = _split_metadata_and_body(prior_text)
     new_md, new_body = _split_metadata_and_body(new_text)
@@ -417,14 +528,66 @@ def is_narrow_change(prior_text: str, new_text: str) -> tuple[bool, str]:
     prior_chlog, prior_no_chlog = extract_changelog_and_strip(prior_body)
     new_chlog, new_no_chlog = extract_changelog_and_strip(new_body)
 
-    if prior_no_chlog != new_no_chlog:
-        return (False, "body content outside Changelog table modified "
-                       "(any heading/paragraph/code-block change requires supersession)")
+    body_unchanged = (prior_no_chlog == new_no_chlog)
+    changelog_append_only = (new_chlog[:len(prior_chlog)] == prior_chlog)
 
-    if new_chlog[:len(prior_chlog)] != prior_chlog:
+    if body_unchanged and changelog_append_only:
+        return (True, "whitelist edit")
+
+    if commit_msg is None or repo_root is None:
+        # L2-detect path: strict-binary reject
+        if not body_unchanged:
+            return (False, "body content outside Changelog table modified "
+                           "(any heading/paragraph/code-block change requires supersession)")
         return (False, "Changelog rows modified or removed (only append allowed)")
 
-    return (True, "")
+    # L2-finalize path: tiered rule
+    if not changelog_append_only:
+        return (False, "Changelog rows modified or removed (only append allowed)")
+
+    refs = FINDING_REF_RE.findall(commit_msg)
+    if not refs:
+        return (False, "canon-inplace body change without Addresses: lines "
+                       "(supersession required, OR add `Addresses:` lines per finding)")
+
+    # Dedupe by (path, gate, finding_n) — anti-copy-paste-inflation
+    seen: set[tuple[str, str, int]] = set()
+    deduped_refs: list[tuple[str, str, int, str]] = []
+    for att_path, gate, finding_n_str, severity in refs:
+        key = (att_path, gate, int(finding_n_str))
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped_refs.append((att_path, gate, int(finding_n_str), severity))
+
+    critical_findings: list[str] = []
+    important_count = 0
+    for att_path, gate, finding_n, severity in deduped_refs:
+        ok, why = _verify_finding_in_attestation(
+            repo_root, att_path, gate, finding_n, severity,
+        )
+        if not ok:
+            return (False, why)
+        if severity == "Critical":
+            critical_findings.append(f"{att_path} gate {gate} finding {finding_n}")
+        elif severity == "Important":
+            important_count += 1
+
+    if critical_findings:
+        listing = "; ".join(critical_findings)
+        extra = f" [also {important_count} Important findings present]" if important_count else ""
+        return (False, f"Critical finding(s) cannot be fixed via narrow-change "
+                       f"(supersession required): {listing}{extra}")
+
+    if important_count >= 4:
+        return (False, f"{important_count} Important findings exceed narrow-change "
+                       f"threshold (3); supersession required")
+
+    ok, why = _verify_changelog_row_per_finding(new_body, prior_body, deduped_refs)
+    if not ok:
+        return (False, why)
+
+    return (True, "tiered narrow-change permitted")
 
 
 # ---------------------------------------------------------------------------
@@ -752,6 +915,294 @@ def lint_commit_range(rev_range: str, repo_root: Path) -> list[Finding]:
 
 
 # ---------------------------------------------------------------------------
+# v1.7 LLD-009 r6 — L2-detect + L2-finalize helpers
+# ---------------------------------------------------------------------------
+
+
+class UnresolvedMergeError(Exception):
+    """Raised when staged path has unresolved merge stages 1/2/3."""
+
+
+def _pending_file_path(repo_root: Path) -> Path:
+    """Resolve `<git-dir>/orchestra-canon-inplace-pending` (worktree-safe)."""
+    out = subprocess.check_output(
+        ["git", "rev-parse", "--git-path", "orchestra-canon-inplace-pending"],
+        cwd=repo_root, text=True,
+    ).strip()
+    p = Path(out)
+    if not p.is_absolute():
+        p = repo_root / p
+    return p
+
+
+def _read_staged_content(repo_root: Path, path: str) -> str:
+    """Read stage-0 staged content for path. Raises UnresolvedMergeError on merge stages."""
+    try:
+        return subprocess.check_output(
+            ["git", "show", f":0:{path}"],
+            cwd=repo_root, text=True, stderr=subprocess.PIPE,
+        )
+    except subprocess.CalledProcessError as e:
+        stderr = (e.stderr or "").lower()
+        if "unmerged" in stderr or "exists on disk, but not in" in stderr:
+            raise UnresolvedMergeError(path) from e
+        raise
+
+
+def _get_staged_blob_sha(repo_root: Path, path: str) -> str:
+    """Return 40-hex sha of staged blob for path; empty if not staged."""
+    try:
+        out = subprocess.check_output(
+            ["git", "ls-files", "--stage", "--", path],
+            cwd=repo_root, text=True, stderr=subprocess.PIPE,
+        ).strip()
+    except subprocess.CalledProcessError:
+        return ""
+    if not out:
+        return ""
+    # Format: <mode> <sha> <stage>\t<path>
+    fields = out.split()
+    return fields[1] if len(fields) >= 2 else ""
+
+
+def _is_ci_environment() -> tuple[bool, list[str]]:
+    """Per LLD-009 r6 A10 r5: ANY of CI_ENV_VARS non-empty → CI detected.
+
+    Returns (is_ci, list_of_set_vars).
+    """
+    set_vars = [v for v in CI_ENV_VARS if os.environ.get(v)]
+    return (bool(set_vars), set_vars)
+
+
+def _bypass_audit_log_entry(repo_root: Path, msg_subject: str, reason: str) -> None:
+    """Append TAB-separated 5-column entry to <git-dir>/orchestra-bypass-audit.log."""
+    git_dir_out = subprocess.check_output(
+        ["git", "rev-parse", "--git-path", "orchestra-bypass-audit.log"],
+        cwd=repo_root, text=True,
+    ).strip()
+    log_path = Path(git_dir_out)
+    if not log_path.is_absolute():
+        log_path = repo_root / log_path
+    try:
+        head_sha = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"],
+            cwd=repo_root, text=True, stderr=subprocess.DEVNULL,
+        ).strip()
+    except subprocess.CalledProcessError:
+        head_sha = "INITIAL"
+    ts = _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    try:
+        user_host = f"{getpass.getuser()}@{socket.gethostname()}"
+    except Exception:
+        user_host = "unknown@unknown"
+    line = "\t".join([ts, head_sha, user_host, msg_subject.replace("\t", " "), reason])
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    with log_path.open("a", encoding="utf-8") as fh:
+        fh.write(line + "\n")
+
+
+def _recompute_canon_inplace_candidates(repo_root: Path) -> list[tuple[str, str]]:
+    """ORCHESTRA_STRICT path: scan staged .md docs; return [(blob_sha, path)] for canon-inplace candidates.
+
+    Only invoked when pending file absent + ORCHESTRA_STRICT=1. Mirrors L2-detect path scan.
+    """
+    try:
+        staged = subprocess.check_output(
+            ["git", "diff", "--cached", "--name-only", "--diff-filter=ACM"],
+            cwd=repo_root, text=True,
+        ).strip().splitlines()
+    except subprocess.CalledProcessError:
+        return []
+    out: list[tuple[str, str]] = []
+    for path in staged:
+        if not path.endswith(".md") or not path.startswith(REFS_ELIGIBLE_PREFIXES):
+            continue
+        try:
+            prior_text = subprocess.check_output(
+                ["git", "show", f"HEAD:{path}"],
+                cwd=repo_root, text=True, stderr=subprocess.DEVNULL,
+            )
+        except subprocess.CalledProcessError:
+            continue
+        if parse_status(prior_text) not in CANON_FROZEN_STATUSES:
+            continue
+        try:
+            new_text = _read_staged_content(repo_root, path)
+        except UnresolvedMergeError:
+            continue
+        ok, _ = is_narrow_change(prior_text, new_text, commit_msg=None, repo_root=None)
+        if not ok:
+            sha = _get_staged_blob_sha(repo_root, path)
+            if sha:
+                out.append((sha, path))
+    return out
+
+
+def lint_commit_msg_finalize(msg_file_path: str, repo_root: Path) -> int:
+    """L2-finalize entrypoint: read pending + msg + staged-content; apply tiered rule.
+
+    Per LLD-009 r6 A2 + A10 + A10b:
+    - ORCHESTRA_BYPASS=1 → multi-var CI-deny + mandatory Bypass: annotation
+    - Pending absent + ORCHESTRA_STRICT=1 → recompute candidates inline
+    - Pending absent + ORCHESTRA_STRICT unset → fail-open (pre-commit was bypass-OK)
+    - Transactional cleanup (r6): success-only unlink; exception/reject preserves pending
+    """
+    if not msg_file_path:
+        print("error: commit-msg arg required for L2-finalize", file=sys.stderr)
+        return 1
+
+    msg = Path(msg_file_path).read_text(encoding="utf-8")
+    msg_subject = msg.splitlines()[0] if msg.splitlines() else ""
+
+    # ORCHESTRA_BYPASS handling (A10)
+    if os.environ.get("ORCHESTRA_BYPASS") == "1":
+        is_ci, set_vars = _is_ci_environment()
+        if is_ci:
+            err = (f"error: ORCHESTRA_BYPASS=1 cannot be used in CI environment "
+                   f"(detected via: {set_vars}). Fix the underlying issue or run locally.")
+            print(err, file=sys.stderr)
+            _bypass_audit_log_entry(repo_root, msg_subject,
+                                    f"DENIED_CI_DETECTED({','.join(set_vars)})")
+            return 1
+        bypass_m = BYPASS_ANNOTATION_RE.search(msg)
+        if not bypass_m:
+            err = ("error: ORCHESTRA_BYPASS=1 requires 'Bypass: <reason>' annotation "
+                   "in commit message body explaining justification.")
+            print(err, file=sys.stderr)
+            return 1
+        reason = bypass_m.group(1).strip()
+        print(f"WARNING: ORCHESTRA_BYPASS=1 set; L2-finalize skipped. Reason: {reason}",
+              file=sys.stderr)
+        _bypass_audit_log_entry(repo_root, msg_subject, reason)
+        return 0
+
+    pending_file = _pending_file_path(repo_root)
+    pending_entries: list[tuple[str, str]] = []
+
+    if pending_file.exists():
+        for line in pending_file.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            try:
+                sha, path = line.split("\t", 1)
+            except ValueError:
+                print(f"warning: pending-file malformed line: {line!r}", file=sys.stderr)
+                continue
+            pending_entries.append((sha, path))
+    elif os.environ.get("ORCHESTRA_STRICT") == "1":
+        pending_entries = _recompute_canon_inplace_candidates(repo_root)
+    else:
+        return 0  # fail-open per A2 default
+
+    if not pending_entries:
+        return 0
+
+    findings: list[Finding] = []
+    for pending_sha, path in pending_entries:
+        current_sha = _get_staged_blob_sha(repo_root, path)
+        if pending_sha and current_sha != pending_sha:
+            findings.append(Finding(
+                "error", path,
+                f"staged_drift: pending sha {pending_sha[:10]}; current {current_sha[:10]}",
+            ))
+            continue
+
+        try:
+            prior_text = subprocess.check_output(
+                ["git", "show", f"HEAD:{path}"],
+                cwd=repo_root, text=True, stderr=subprocess.DEVNULL,
+            )
+        except subprocess.CalledProcessError:
+            prior_text = ""
+
+        try:
+            new_text = _read_staged_content(repo_root, path)
+        except UnresolvedMergeError:
+            findings.append(Finding("error", path, "unresolved_merge: cannot evaluate canon-inplace"))
+            continue
+
+        ok, why = is_narrow_change(prior_text, new_text,
+                                    commit_msg=msg, repo_root=repo_root)
+        if not ok:
+            findings.append(Finding("error", path, why))
+
+    for f in findings:
+        print(f.format(), file=sys.stderr)
+
+    # r6 transactional: success-only cleanup (preserve on reject for retry-safety)
+    if not findings and pending_file.exists():
+        pending_file.unlink(missing_ok=True)
+
+    return 1 if findings else 0
+
+
+def lint_pre_stage_check(doc_path: str, commit_msg_draft: str, repo_root: Path) -> int:
+    """Author-iteration: run L2-finalize logic against working-tree + draft msg."""
+    full = repo_root / doc_path
+    if not full.exists():
+        print(f"error: {doc_path} not found", file=sys.stderr)
+        return 1
+    try:
+        prior_text = subprocess.check_output(
+            ["git", "show", f"HEAD:{doc_path}"],
+            cwd=repo_root, text=True, stderr=subprocess.DEVNULL,
+        )
+    except subprocess.CalledProcessError:
+        prior_text = ""
+    new_text = full.read_text(encoding="utf-8")
+
+    prior_status = parse_status(prior_text)
+    if prior_status not in CANON_FROZEN_STATUSES:
+        print(f"PASS — {doc_path} prior Status {prior_status!r} not canon-frozen; no L2 applies",
+              file=sys.stderr)
+        return 0
+
+    ok, why = is_narrow_change(prior_text, new_text,
+                                commit_msg=commit_msg_draft, repo_root=repo_root)
+    if ok:
+        print(f"PASS — {doc_path} draft message satisfies tiered rule", file=sys.stderr)
+        return 0
+    print(f"FAIL — {doc_path}: {why}", file=sys.stderr)
+    return 1
+
+
+def _l2_detect_write_pending(repo_root: Path, staged: list[str]) -> None:
+    """L2-detect (LLD-009 r6 A1): annotate canon-inplace candidates to pending file.
+
+    Truncates pending file at start; appends one TAB-separated `<sha>\\t<path>` per
+    canon-inplace candidate. Does NOT block.
+    """
+    pending_file = _pending_file_path(repo_root)
+    pending_file.parent.mkdir(parents=True, exist_ok=True)
+    pending_file.write_text("")  # truncate
+
+    for path in staged:
+        if not path.endswith(".md") or not path.startswith(REFS_ELIGIBLE_PREFIXES):
+            continue
+        try:
+            prior_text = subprocess.check_output(
+                ["git", "show", f"HEAD:{path}"],
+                cwd=repo_root, text=True, stderr=subprocess.DEVNULL,
+            )
+        except subprocess.CalledProcessError:
+            continue
+        if parse_status(prior_text) not in CANON_FROZEN_STATUSES:
+            continue
+        try:
+            new_text = _read_staged_content(repo_root, path)
+        except UnresolvedMergeError:
+            continue
+        ok, _ = is_narrow_change(prior_text, new_text, commit_msg=None, repo_root=None)
+        if ok:
+            continue
+        sha = _get_staged_blob_sha(repo_root, path)
+        if not sha:
+            continue
+        with pending_file.open("a", encoding="utf-8") as fh:
+            fh.write(f"{sha}\t{path}\n")
+
+
+# ---------------------------------------------------------------------------
 # Pre-commit mode — read staged files
 # ---------------------------------------------------------------------------
 
@@ -778,8 +1229,14 @@ def lint_staged(repo_root: Path) -> list[Finding]:
             continue
         findings.extend(lint_doc(path))
 
-    # L2 — canon-frozen narrow-change check (modifications only)
-    findings.extend(lint_commit_no_canon_inplace_edit(repo_root, staged))
+    # L2-detect (v1.7 LLD-009 r6): annotate pending file; does NOT block
+    # (replaces prior strict-binary L2 at pre-commit; L2-finalize at commit-msg-time
+    # enforces tiered rule per BUG-011. `lint_commit_no_canon_inplace_edit` retained
+    # for direct invocation + `lint_commit` retroactive path BUG-009.)
+    try:
+        _l2_detect_write_pending(repo_root, staged)
+    except subprocess.CalledProcessError:
+        pass  # pending file write failure shouldn't block pre-commit
 
     # L4 — doc-id-burn check (additions only)
     burn_eligible_prefixes = REFS_ELIGIBLE_PREFIXES + (
@@ -827,6 +1284,12 @@ def main(argv: list[str] | None = None) -> int:
     g.add_argument("--pre-commit", action="store_true", help="Lint staged docs (for pre-commit hook)")
     g.add_argument("--attestations", action="store_true",
                    help="Lint all attestation YAMLs in docs/reviews/ (L3)")
+    g.add_argument("--commit-msg-finalize", metavar="MSG_FILE",
+                   help="L2-finalize: read pending + msg + staged; apply tiered rule")
+    g.add_argument("--pre-stage-check", metavar="DOC_PATH",
+                   help="Author pre-stage check against working tree + draft commit msg")
+    parser.add_argument("--commit-msg-draft",
+                        help="Draft commit message text (used with --pre-stage-check)")
     parser.add_argument("--mermaid", action="store_true", default=None,
                         help="Validate mermaid blocks (default: on for --doc and --pre-commit)")
     parser.add_argument("--no-mermaid", action="store_true",
@@ -860,6 +1323,13 @@ def main(argv: list[str] | None = None) -> int:
         reviews_dir = root / "docs" / "reviews"
         attestations = sorted(reviews_dir.glob("*.review.yaml")) if reviews_dir.exists() else []
         findings = lint_attestation_path_resolution(root, attestations)
+    elif args.commit_msg_finalize:
+        return lint_commit_msg_finalize(args.commit_msg_finalize, root)
+    elif args.pre_stage_check:
+        if not args.commit_msg_draft:
+            print("error: --pre-stage-check requires --commit-msg-draft <text>", file=sys.stderr)
+            return 2
+        return lint_pre_stage_check(args.pre_stage_check, args.commit_msg_draft, root)
     elif args.pre_commit:
         findings = lint_staged(root)
         if run_mermaid:

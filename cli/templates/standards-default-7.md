@@ -1,7 +1,13 @@
 # Documentation Standards
 
 > Canonical reference for all doc types this skill produces. Templates implement these standards.
-> Last updated: 2026-05-06
+> Last updated: 2026-05-11
+
+> **Vocabulary canon.** Enum values (Status, Severity, verdict, gate names,
+> filename grammar, required sections, etc.) are defined once in
+> `docs/design/controlled-vocabulary.md § 4.1`–`§ 4.13`. The tables below
+> mirror that canon for reader convenience; on any discrepancy the canon
+> wins. CI-drift gates fail builds where the two diverge.
 
 ## Doc Types
 

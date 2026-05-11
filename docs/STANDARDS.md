@@ -2,10 +2,17 @@
 
 > **Canonical source of truth for all agents (Claude, Gemini) and humans working on orchestra.**
 > When any agent's internal doc-standards file conflicts with this file, this file wins.
-> Last Updated: 2026-05-06
+> Last Updated: 2026-05-11
 >
 > **Note:** This is the orchestra-development workspace STANDARDS. It mirrors `orchestra/docs/STANDARDS.md`
 > in the orchestra plugin repo. Edit either path; sync via `bash orchestra-dev/sync-orchestra-dev.sh`.
+
+> **Vocabulary canon.** Enum values (Status, Severity, verdict, gate names,
+> filename grammar, required sections, etc.) are defined once in
+> `docs/design/controlled-vocabulary.md § 4.1`–`§ 4.13`. The tables below
+> mirror that canon for reader convenience; on any discrepancy the canon
+> wins. `cli.lint` L1/L2/L3/L4/L5 source enums from the canon via
+> `cli.vocabulary` (see BUG-016 migration).
 
 ---
 

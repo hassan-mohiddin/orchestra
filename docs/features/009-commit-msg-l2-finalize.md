@@ -5,7 +5,7 @@
 > **DRI:** Hassan Mohiddin
 > **Type:** Feature LLD
 > **Status:** Draft
-> **Iteration:** 3
+> **Iteration:** 4
 
 ## Glossary
 
@@ -100,7 +100,7 @@ Anchored line-start + line-end → exact line match; multiple lines via MULTILIN
 - [ ] **A13.** **pre-commit.sh shell wrapper:** since LLD-008/009 ship together, single canonical content. Shebang + `# orchestra` fingerprint in line 2 (RAW_FINGERPRINT per LLD-010 A4) + `python -m cli.lint --pre-commit` invocation. L2-detect runs inside `cli.lint --pre-commit` (per A1); no shell-side wrapper change. Test T13 renamed to **T13-pre** to avoid ID collision with LLD-010 T13 (template content assertions: shebang + fingerprint + cli.lint invocation).
 - [ ] **A14.** BUG-011 closes via this LLD ship. **Precursor commit already landed** (`0bd866d` 2026-05-11): BUG-011 r1 Changelog row reconciled from erroneous "Status: Draft → Implemented" to correct "Status: Draft → Investigating"; new r2 Changelog row documents the fix. BUG-011 frontmatter `Status: Investigating` (NOT canon-frozen) — full edit permitted; narrow-change discipline does not apply. **This LLD's ship triggers**: flip BUG-011 frontmatter `Status: Investigating → Fix Applied` (whitelist edit; permitted on canon-frozen-transition) + append closing Changelog row citing this LLD's impl-commit-sha. Status flip + Changelog append are both whitelist actions — no supersession required.
 - [ ] **A15.** Plugin version: 1.6.2 → 1.7.0 (combined ship after LLD-008 + 009 + 010 all pass).
-- [ ] **A16.** Pytest target: LLD-008 r5 baseline (**165**, corrected from r4's 163 per LLD-008 r5 Changelog — added T5e + T8) + LLD-009 new tests (**48 distinct test functions**) = **≥213**. Enumeration: T1a-e=5; T2a-f=6; T3a-h=8; T4a-h=8 (added T4g + T4h for staged-attestation trust source per codex r2 CRITICAL); T5a-c=3; T6=1; T7a-c=3; T8=1; T9a-c=3; T10a-d=4; T10b-strict-a/b/c=3 (NEW per A10b ORCHESTRA_STRICT); T11=1; T12=1; T13-pre=1 → 48. All three numbers (this A16 line, § Testing § new test matrix total, CHANGELOG.md entry) cite 48 / ≥213. Combined v1.7.0 target after LLD-010 ships.
+- [ ] **A16.** Pytest target: LLD-008 r6 baseline (**166**, updated from r5's 165 per LLD-008 r6 Changelog — added T5f for ORCHESTRA_INIT_STRICT) + LLD-009 new tests (**50 distinct test functions**) = **≥216**. Enumeration: T1a-e=5; T2a-f=6; T3a-h=8; T4a-h=8; T5a-c=3; T6=1; T7a-c=3; T8=1; T9a-c=3; T10a-f=6 (added T10e + T10f for CI-deny + Bypass: mandatory per plan-r1 codex HIGH#4); T10b-strict-a/b/c=3; T11=1; T12=1; T13-pre=1 → 50. All three numbers cite 50 / ≥216. Combined v1.7.0 target after LLD-010 ships = 243.
 - [ ] **A17.** CHANGELOG.md v1.7.0 entry (LLD-009 portion) describes: L2-detect / L2-finalize split, tiered rule (BUG-011 close), pending-file format, ORCHESTRA_BYPASS, pre-stage-check entrypoint, index-vs-worktree fix.
 
 ### Deliverables
@@ -583,17 +583,19 @@ Before `git add` on a canon-frozen-eligible doc:
 | T9a | A9 | --pre-stage-check: working-tree-clean draft passes |
 | T9b | A9 | --pre-stage-check: missing Addresses: → fail |
 | T9c | A9 | --pre-stage-check: Critical bypass attempt → fail |
-| T10a | A10 | ORCHESTRA_BYPASS=1 skips enforcement + writes audit log |
-| T10b | A10 | Audit log line format `<ts>\t<HEAD-sha-or-INITIAL>\t<user@host>\t<subject>` tab-separated |
-| T10c | A10 | Commit otherwise unaffected by bypass |
+| T10a | A10 | Valid bypass: CI unset + Bypass: annotation present → skip + log + exit 0 |
+| T10b | A10 | Audit log line format `<ts>\t<HEAD-sha-or-INITIAL>\t<user@host>\t<subject>\t<reason>` tab-separated 5 cols |
+| T10c | A10 | Commit otherwise unaffected by valid bypass |
 | T10d | A10 | Initial commit (no HEAD) → `INITIAL` literal in sha column |
+| T10e | A10 | CI=true → ORCHESTRA_BYPASS REJECTED with explicit error + denied-attempt audit log entry + exit non-zero (codex plan-r1 HIGH#4 CI-deny) |
+| T10f | A10 | Bypass: annotation missing → ORCHESTRA_BYPASS REJECTED with explicit error + exit non-zero (codex plan-r1 HIGH#4 mandatory annotation) |
 | T11 | A11 | commit-msg without msg-file arg → fail-closed |
 | T12 | A12 | commit-msg.sh template content assertions (shebang + `# orchestra` fingerprint + Refs:-line + L2-finalize invocation) |
 | T13-pre | A13 | pre-commit.sh template content (shebang + `# orchestra` fingerprint + cli.lint invocation) |
 
-Total: **43 distinct test functions** across 13 test groups.
+Total: **50 distinct test functions** across 13 test groups (added T4g/T4h r3 + T10b-strict-a/b/c r3 + T10e/T10f r4).
 
-Pytest target post-LLD-009-ship: 163 (LLD-008 r4 baseline) + 43 (LLD-009) = **≥206**.
+Pytest target post-LLD-009-ship: 166 (LLD-008 r6 baseline) + 50 (LLD-009 r4) = **≥216**.
 
 ## Related Documents
 
@@ -620,5 +622,6 @@ Pytest target post-LLD-009-ship: 163 (LLD-008 r4 baseline) + 43 (LLD-009) = **�
 | Date | Change |
 |---|---|
 | 2026-05-11 | r1 LLD filed post-grilling-session (6 Q&A locked: pending format / overwrite-truncate / git show :0:path + reject-merge / fail-closed + ORCHESTRA_BYPASS / pre-stage skill checklist / path-explicit Addresses). Carries forward codex r1 high #2 (hook-ordering) + codex r2 high #1 + #3 (commit-msg arg + index-vs-worktree) fixes from prior LLD-008 r2 attempts. Status: Draft. Awaiting iteration 1 spec-review. |
+| 2026-05-11 | r3 → r4 cascading edit per plan-r1 codex HIGH#4 + user interview-gate direction: A10 ORCHESTRA_BYPASS strengthened with trust-boundary controls — CI-deny (refuse when `CI` env-var present); mandatory `Bypass: <reason>` annotation in commit message body (promoted from advisory). New tests T10e (CI-deny) + T10f (Bypass: missing → reject). Audit log gains 5th column for `<reason>`. Test count 48 → 50; pytest baseline 213 → 216 (also picks up LLD-008 r6 baseline shift 165 → 166). r4 spec-review deferred — plan r2 spec-review covers cascading change per user direction. Status: Draft. |
 | 2026-05-11 | r2 spec-review verdicts: orchestra pass (5 Minor; no Critical/Important); codex needs-attention (1 CRITICAL + 2 HIGH — fresh architectural surface). r2 → r3 fixes inline per user interview-gate direction: A4 attestation trust source switched from working-tree to staged content via `git show :0:<path>` (codex r2 CRITICAL — closes trust-boundary break where unstaged severity-downgrade could pass L2-finalize); A4 path-traversal check switched from `str().startswith()` to `Path.is_relative_to` (codex r2 HIGH#3 — closes prefix confusion attack `/docs/reviews_evil/`); A10b `ORCHESTRA_STRICT=1` opt-in stricter mode added (codex r2 HIGH#2 partial — opt-in fail-closed via commit-msg-time recompute; default fail-open preserved per LLD-008 mechanical-backstop contract); test matrix +5 functions (T4g/T4h + T10b-strict-a/b/c) → 48 total; pytest baseline 206 → 213 (LLD-008 r5 baseline 165 + 48 = 213). Per user interview-gate direction: Minor orchestra findings deferred to v1.7.1 (D1-D3 verifiability classification; mixed line/function anchors; 3a/3b sub-numbering; pre-commit.sh inline content). Status: Draft. r3 final iteration before impl per user direction. |
 | 2026-05-11 | r1 spec-review verdicts: orchestra fail (15 findings; 2 Critical); sonnet needs-attention (14 findings; 4 HIGH). Triple-converged Critical (gate-order YAML flattening). r1 → r2 fixes inline (Status: Draft permits full edit): gate-name added to `Addresses:` format + FINDING_REF_RE + helper signature (Critical, sonnet F1, orchestra evidence #1); BUG-011 reconciliation precursor committed at `0bd866d` + A14 updated to reflect (Critical, sonnet F9); pending-file separator changed to TAB (Important, orchestra evidence #3); worktree-safe path via `git rev-parse --git-path` (sonnet F2); FINDING_REF_RE anchored under `docs/reviews/` + path-traversal A4 guard (Important, orchestra evidence #2, sonnet F11); unlink missing_ok=True (Important, orchestra evidence #4); audit log drops future-commit-sha; uses HEAD-or-INITIAL (Important, orchestra evidence #5, sonnet F6); pytest count reconciled to 43 functions / ≥206 target (Important, orchestra consistency #1); commit-msg.sh canonical content owned in LLD-009 (Important, orchestra consistency #2); --amend --no-edit corrected (Minor, orchestra consistency #3, sonnet F4); fail-open semantics justified (Important, orchestra completeness #2); A3 inline-not-wrapper rewrite clarified (Important, orchestra completeness #3); Changelog row exemplar provided (Important, orchestra completeness #4); A14 BUG-011 status flip path documented (Minor, orchestra completeness #5); `_verify_changelog_row_per_finding` now NEW-rows-only (sonnet F5); pass `new_body`/`prior_body` not full text (sonnet F14); Critical-and-Important both reported (sonnet F10); dedupe `(path, gate, finding_n)` for anti-copy-paste-inflation (sonnet F13); TOCTOU acknowledged (sonnet F7); `--pre-stage-check` requires committed attestation (sonnet F8); T13 renamed T13-pre to avoid LLD-010 collision (sonnet F11 LLD-010 r1). Status: Draft. Awaiting r2 spec-review. |

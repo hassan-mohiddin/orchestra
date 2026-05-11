@@ -1,0 +1,104 @@
+schema_version: '1.0'
+doc_subject:
+  path: docs/plans/2026-05-11-v17-implementation.md
+  content_hash: sha256:6372043ac557004c6ebdf0ce7f37278432f4d4b2bd738778981e94bafaef0782
+  iteration: 1
+reviewer:
+  identifier: subagent:general-purpose+spec-review-v1
+  invoked_at: '2026-05-11T00:00:00Z'
+  context_isolation: fresh_subagent
+gates:
+  completeness:
+    verdict: conditional_pass
+    findings:
+    - severity: Minor
+      location: "Phase 0 \xA7 Pre-impl test-quality audit"
+      problem: Phase 0 produces output `docs/plans/2026-05-11-test-quality-audit.md`
+        but no acceptance criteria stated for audit output content beyond 'one-line
+        summary per test file'; no gating relation to Phase 1 start (time-box 30min
+        only).
+    - severity: Minor
+      location: "Phase 1 \xA7 Slice 1.7"
+      problem: "Test-first description 'Initially might fail' is vague; baseline assertion\
+        \ of >=165 is deterministic if Phase 1 slices 1.1-1.6 complete \u2014 phrasing\
+        \ should be 'passes after slices 1.1-1.6 land' not 'might fail'."
+    justification: Two clarity-tier findings; rest of gate passes. Findings localized
+      to slice wording.
+  evidence:
+    verdict: conditional_pass
+    findings:
+    - severity: Minor
+      location: "Phase 1 \xA7 Slice 1.2"
+      problem: "Slice notes 'Fingerprint comment `# orchestra` in line 2 of both shell\
+        \ templates' but does not cite LLD-010 A4 RAW_FINGERPRINT contract that consumes\
+        \ this \u2014 cross-LLD coupling implicit, should explicitly link to LLD-010\
+        \ A4 / EXPECTED_ENTRYPOINTS."
+    - severity: Minor
+      location: "Acceptance gate \xA7 BUG status line"
+      problem: 'Item ''BUG-006 + BUG-010 + BUG-011 Status: Fix Applied'' is imprecise
+        for BUG-010: already canon-frozen Fix Applied; Part 3 closure is a Changelog-row
+        append (whitelist-only), not a Status flip. Slice 5.4 handles this correctly
+        but acceptance summary blurs distinction.'
+    justification: Two cross-cite / wording findings; gate passes substantively.
+  clarity:
+    verdict: conditional_pass
+    findings:
+    - severity: Minor
+      location: "Goal \xA7 header + Changelog row"
+      problem: 'Goal section and Changelog claim ''22 vertical slices'' but detailed
+        enumeration totals 33 slices (Phase 1: 7, Phase 2: 11, Phase 3: 8, Phase 4:
+        2, Phase 5: 5). Either header count is wrong or slice grouping is implicit
+        but undocumented.'
+    - severity: Minor
+      location: "Risks + mitigations table \xA7 strict-ordering row"
+      problem: Risk mitigation states 'Phase 2/3 cannot start until Phase 1 milestone
+        green' implying strict sequential, but Phase 3 only depends on Phase 1's SKILL_TEMPLATES_DIR
+        (LLD-008), not on Phase 2 (LLD-009 L2-finalize). Phase 2 and Phase 3 could
+        run in parallel after Phase 1; plan's sequential framing is conservative but
+        unjustified.
+    justification: Two clarity findings; readable as execution checklist otherwise.
+  consistency:
+    verdict: conditional_pass
+    findings:
+    - severity: Minor
+      location: "Goal \xA7 Pytest target arithmetic"
+      problem: "Plan baseline lineage '150 baseline' matches LLD-008 r5 A10 + LLD-009\
+        \ A16 (165 corrected from r4's 163) + LLD-010 A11 (213->240). Arithmetic correct\
+        \ (150+15+48+27=240) but cross-doc baseline lineage (150 vs LLD-009 citing\
+        \ 165 / LLD-010 citing 213) is not surfaced in the plan as a single audit-trail\
+        \ line \u2014 risks confusion if reviewer cross-checks LLD A16/A11 against\
+        \ plan goal."
+    - severity: Minor
+      location: "Phase 5 \xA7 Slice 5.3"
+      problem: "Slice says 'Whitelist edit on canon-frozen-eligible `Status` field\
+        \ for each LLD (currently Draft, no canon-frozen restriction)' \u2014 parenthetical\
+        \ contradicts 'whitelist edit on canon-frozen-eligible' framing. Draft ->\
+        \ Implemented is a full edit on a Draft doc (Draft permits full edit). 'Whitelist'\
+        \ framing applies only AFTER doc enters a canon-frozen status. Mixes two regimes."
+    justification: Two consistency findings; cross-LLD test counts arithmetic-correct
+      otherwise.
+overall_verdict: conditional_pass
+required_followup:
+- 'Reconcile slice count: either fix Goal/Changelog to ''33 slices'' or define explicit
+  slice-grouping rule reducing to 22.'
+- "Phase 1 Slice 1.7 wording \u2014 replace 'Initially might fail' with deterministic\
+  \ phrasing tied to Phase 1 sub-completion."
+- "Acceptance gate \xA7 BUG status item \u2014 distinguish BUG-006/011 Status flip\
+  \ (Investigating->Fix Applied) from BUG-010 Changelog-only append."
+- "Risks table \u2014 clarify Phase 3 only requires Phase 1 (SKILL_TEMPLATES_DIR),\
+  \ not Phase 2; permit parallelization if desired."
+- "Phase 5 Slice 5.3 \u2014 rephrase to avoid labeling Draft -> Implemented transition\
+  \ as 'whitelist edit on canon-frozen-eligible'."
+- "Phase 1 Slice 1.2 \u2014 add explicit cross-cite to LLD-010 A4 RAW_FINGERPRINT\
+  \ for `# orchestra` line-2 requirement."
+notes: "Plan well-structured + satisfies LLD vs Plan no-overlap discipline. Slices\
+  \ specify WHAT test (citing T-IDs T1/T4a-e/T5e/T8/T10b-strict-a-c/T-INT-010) + WHAT\
+  \ impl module + verify command without restating LLD design.\nCross-LLD dependency\
+  \ tracking clear (SKILL_TEMPLATES_DIR from LLD-008 -> LLD-009/LLD-010). Phase ordering\
+  \ enforces.\nAll r5/r3/r3 architectural fixes accounted for: symlink (1.6), attestation-staged\
+  \ (2.2), transactional --apply (3.4), hybrid verify (3.3), ORCHESTRA_STRICT (2.7).\n\
+  Plateau-heuristic-bypass per user direction \"ship without 4th review\" explicitly\
+  \ in Risks; v1.7.1 deferred-Minor list captured.\nVerdict conditional_pass on 7\
+  \ Minor \u2014 wording inconsistencies (slice count, BUG-010 framing, Slice 1.7,\
+  \ Slice 5.3) that do not affect executability. No Critical/Important. Plan ship-ready\
+  \ with minor copy-edits.\n"

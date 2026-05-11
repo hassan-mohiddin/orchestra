@@ -1,0 +1,105 @@
+schema_version: '1.0'
+doc_subject:
+  path: docs/features/009-commit-msg-l2-finalize.md
+  content_hash: sha256:2bae41a5ba49176abe8d337dae7675d88f93b77bfcaa25c34503be9fefece8db
+  iteration: 2
+reviewer:
+  identifier: subagent:general-purpose+spec-review-v1
+  invoked_at: '2026-05-11T00:00:00Z'
+  context_isolation: fresh_subagent
+gates:
+  completeness:
+    verdict: pass
+    findings:
+    - severity: Minor
+      location: "Success Criteria \xA7 Deliverables"
+      problem: D1/D2/D3 listed as Deliverables but lack Acceptance-item-style verifiability.
+        Either elevate to A-items with content assertions, or explicitly mark as doc-deliverables
+        not gated by pytest.
+    justification: 'All required sections present (Glossary 11 terms, Problem with
+      hook-ordering diagram, Success Criteria 17 A-items + 3 D-items, Scope in/out
+      lists, Design with full pseudocode for is_narrow_change + 2 helpers + lint_commit_msg_finalize
+      + pre_stage_check + commit-msg.sh, 18 Edge Cases incl. 3a/3b/17/18, Security,
+      13-group/43-function test matrix, Related Documents, Changelog). r1 critical
+      fixes verified present: gate-name in Addresses format; BUG-011 reconciliation
+      precursor 0bd866d landed and cited; TAB separator; worktree-safe git rev-parse
+      --git-path; FINDING_REF_RE anchored docs/reviews/ + A4 path-traversal guard;
+      unlink missing_ok=True; audit log HEAD-or-INITIAL no future sha; pytest 43/>=206;
+      commit-msg.sh canonical content; --amend --no-edit corrected; A3 inline rewrite
+      clarified; A5 changelog exemplar; A14 BUG-011 Investigating->Fix Applied path;
+      new_body/prior_body; Critical+Important both reported; dedupe (path, gate, finding_n);
+      TOCTOU acknowledged; --pre-stage-check committed attestation requirement; T13->T13-pre.'
+  evidence:
+    verdict: pass
+    findings:
+    - severity: Minor
+      location: "Related Documents \xA7 cli/lint.py:71-73 line-anchor"
+      problem: Line-anchored citation cli/lint.py:71-73 may drift; doc switches to
+        function-anchor citations elsewhere but retains line-numbered anchors for
+        CANON_FROZEN_STATUSES and regex-constants 128-130. Mixed style invites future
+        drift.
+    justification: 'Every claim cited: hook-ordering diagram traces canonical git
+      sequence; codex r2 high #3 cited as motivation for index-vs-worktree fix; FINDING_REF_RE
+      divergence from BUG-011 r1 explicitly justified; pending-file TAB rationale
+      tied to git ls-files --stage separator; cli/lint.py line anchors verified correct;
+      LLD-008 r4 baseline 163 corrected from r3 161; BUG-011 precursor commit 0bd866d
+      citable; attestation-schema-v1.0.json''s 4-gate enumeration matches FINDING_REF_RE
+      gate group; path-traversal defense double-layered. r1 evidence Critical (path-traversal)
+      and Important (unlink, audit-log HEAD sha, fail-open justification) all addressed
+      with concrete pseudocode.'
+  clarity:
+    verdict: pass
+    findings:
+    - severity: Minor
+      location: "Edge Cases \xA7 3a/3b sub-numbering"
+      problem: "Edge case numbering uses 3a/3b sub-numbers \u2014 cosmetic clarity\
+        \ nit. Optional: renumber 3a->4, 3b->5 and bump remainder; OR leave as-is\
+        \ and document the sub-numbering convention in a one-line note."
+    justification: Glossary defines all 11 ambiguous terms. Hook flow diagram visualizes
+      pre-commit->commit-msg ordering. Pseudocode contracts inline. Author UX section
+      provides copy-pasteable SKILL.md checklist. Changelog row exemplar provides
+      concrete fixture. Fail-open explicitly disambiguated as pre-commit is the gate;
+      commit-msg is the enforcer. A3 inline-not-wrapper clarified with two-path single-function
+      explanation. Fresh reader can map each acceptance to pseudocode + test ID.
+  consistency:
+    verdict: pass
+    findings:
+    - severity: Minor
+      location: "Success Criteria \xA7 A16 vs \xA7 Testing"
+      problem: "Two separate pytest-target statements both correct but redundant;\
+        \ CHANGELOG.md entry not yet authored \u2014 third location asserts in absentia.\
+        \ Acceptable; flagging for post-impl verification tracking."
+    - severity: Minor
+      location: "Success Criteria \xA7 A13 + \xA7 Testing T13-pre"
+      problem: T13-pre tests pre-commit.sh template but LLD-008 A2 enumerates pre-commit.sh
+        under skills/commit/templates/; ownership of pre-commit.sh content between
+        LLD-008 and LLD-009 not as crisp as commit-msg.sh. LLD-009 A12 inlines commit-msg.sh
+        content; A13 makes similar claim for pre-commit.sh but doesn't reproduce inline.
+        Mild contract gap.
+    justification: "LLD-008 r4 baseline 163 confirmed; LLD-009 A16 cites 163 + 43\
+      \ = >=206. LLD-010 A11 cites 206 baseline + 24 = >=230 \u2014 numerically consistent\
+      \ across all three LLDs. SKILL_TEMPLATES_DIR contract from LLD-008 referenced\
+      \ consistently. attestation-schema-v1.0.json's gate enum matches FINDING_REF_RE\
+      \ gate group and ALLOWED_GATES. LLD-006-r4 narrow-change rule remains foundation;\
+      \ LLD-009 explicitly extends. BUG-011 status flip Investigating->Fix Applied\
+      \ via whitelist edit aligns with LLD-006-r4 whitelist semantics. r1 Changelog\
+      \ row reconciliation precursor 0bd866d verified landed. fingerprint contract\
+      \ with LLD-010 A4 satisfied. FINDING_REF_RE supersedes BUG-011 r1 draft regex;\
+      \ tests not yet written so no migration needed. T13->T13-pre rename consistent\
+      \ with LLD-010 T-INT-010."
+overall_verdict: pass
+required_followup:
+- 'OPTIONAL pre-ship: inline pre-commit.sh canonical content the way commit-msg.sh
+  is inlined.'
+- 'POST-IMPL: verify CHANGELOG.md v1.7.0 entry cites 43/>=206 to match A16 three-place-consistency
+  claim.'
+- 'OPTIONAL: convert mixed line-anchor/function-anchor citations to all function-anchors.'
+- 'OPTIONAL post-impl: clarify D1/D2/D3 as either A-item-graded or explicitly doc-only
+  not pytest-gated.'
+notes: 'r2 successfully discharges all r1 Critical findings. All Important r1 findings
+  discharged. Path-traversal defense-in-depth. Cross-LLD contract consistency strong.
+  Four Minor findings are polish-tier; none blocks ship. Status: Draft permits full
+  edit. Recommend addressing Minor #2 (inline pre-commit.sh) before flipping Status:
+  Implemented post-impl-ship.
+
+  '

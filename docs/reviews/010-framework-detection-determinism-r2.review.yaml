@@ -1,0 +1,82 @@
+schema_version: '1.0'
+doc_subject:
+  path: docs/features/010-framework-detection-determinism.md
+  content_hash: sha256:740563ebf055dc2ca4b86189da55551e6d8be78307dd97e6fde4f2f9b402f1b9
+  iteration: 2
+reviewer:
+  identifier: subagent:general-purpose+spec-review-v1
+  invoked_at: '2026-05-11T00:00:00Z'
+  context_isolation: fresh_subagent
+gates:
+  completeness:
+    verdict: pass
+    findings: []
+    justification: 'All required sections present (Glossary, Problem Statement, Success
+      Criteria with 13 A-items + 3 D-items, Scope in/out, Design with Mermaid + code
+      blocks, Edge Cases 1-11, Security, Testing matrix 24 rows, Related Documents,
+      Changelog). r1 completeness #1 (A4 widened scope) addressed in A4 + T4f. r1
+      completeness #2 (T-INT-010 fixture spec) addressed in A13. T-INT-010 rename
+      closes collision identified in r1 sonnet F11. Pytest count 24 / >=230 consistent
+      across A11, table, total line.'
+  evidence:
+    verdict: pass
+    findings: []
+    justification: 'All Critical r1 findings resolved: pass_filenames inversion reverted
+      (Glossary rewritten with pre-commit.com citation; defect #2 removed; snippet
+      content false; snippet IMPORTANT comment rewritten); canonical durable-write
+      pattern in --apply Design; _emit_tailored_snippet removed; A3b XOR partial-config
+      hard-fail added; A8 placement rule with ownership-comment requirement; UserConfigParseError
+      raised + A3 + --apply hard-fail; subprocess capture_output + first-20-lines
+      stderr; T13 -> T-INT-010 rename; active default_install_hook_types directive;
+      A4 widened case-insensitive full-file fingerprint; pytest target reconciled
+      24 / >=230. All claims cited (pre-commit.com URL; cross-refs to LLD-008 r4 SKILL_TEMPLATES_DIR
+      and LLD-009 r2 T13-pre rename verified).'
+  clarity:
+    verdict: conditional_pass
+    findings:
+    - severity: Minor
+      location: "Design \xA7 Mermaid diagram"
+      problem: Mermaid flowchart still does not depict the partial-config (XOR) branch
+        added in A3b. r1 clarity finding flagged this; r2 added A3b acceptance + edge
+        case 2 update + Design pseudocode _orchestra_ids_state but did not update
+        the diagram. Add a partial state? decision node OR replace with three-way
+        branch (none|partial|full).
+    - severity: Minor
+      location: "Success Criteria \xA7 A12"
+      problem: "A12 CHANGELOG.md description text reads snippet correctness (pass_filenames:\
+        \ true for commit-msg) \u2014 this is the INVERTED claim from r1 that was\
+        \ REFUTED and reverted in r2. Actual r2 snippet sets pass_filenames: false\
+        \ on both hook ids. A12 is a stale relic of r1 wording. Fix to pass_filenames:\
+        \ false on both hooks or equivalent."
+    justification: 'Doc largely implementable by a fresh reader: Design section provides
+      concrete Python with imports, constants, exception class, functions per acceptance
+      flow; snippet content shown verbatim; test matrix maps T-IDs 1:1 to A-items
+      with description + injection point (T5d explicitly mocks os.replace). Two minor
+      inconsistencies (diagram understates decision space; A12 stale pass_filenames=true
+      wording) but neither blocks implementation.'
+  consistency:
+    verdict: pass
+    findings: []
+    justification: 'Self-consistent with corrected pass_filenames semantics throughout.
+      Cross-LLD consistency verified: LLD-008 r4 defines SKILL_TEMPLATES_DIR; LLD-010
+      imports via from cli.install_hooks import SKILL_TEMPLATES_DIR. LLD-008 A8 placement
+      rule honored. LLD-009 r2 baseline 206; LLD-010 r2 adds 24 = 230. T13-pre (LLD-009)
+      and T-INT-010 (LLD-010) names distinct. T-INT-010 fixture exercises canon-frozen
+      body change semantics consistent with LLD-009 L2-finalize rejection contract.
+      Plugin version 1.6.2 -> 1.7.0 consistent. Auto-uninstall pointer at D2 single-source.
+      BUG-006 reconciliation row in A9 acknowledges r1 stale filename.'
+overall_verdict: conditional_pass
+required_followup:
+- 'Update Mermaid diagram to depict the partial-config (XOR) hard-fail branch: insert
+  a decision node orchestra ids state? (none|partial|full) with three outgoing arms.'
+- 'Fix A12 CHANGELOG.md description: replace pass_filenames: true for commit-msg with
+  pass_filenames: false on both hook ids to align with r2 reverted semantics.'
+notes: "LLD-010 r2 is a substantial recovery from r1 fail verdict. All 2 r1 Critical\
+  \ findings (pass_filenames inversion + Problem Statement defect #2) decisively resolved\
+  \ with citations and explicit refutation language. All 6 r1 Important findings addressed\
+  \ in r2 acceptance items + design pseudocode + test matrix. r1 sonnet Lows 8-11\
+  \ all closed. Two residual Minor clarity findings (diagram missing XOR branch; A12\
+  \ stale pass_filenames wording) \u2014 both localized, do not block r2 -> Implemented.\
+  \ Recommend single-pass r3 inline-fix of two Minor findings then flip Status: Draft\
+  \ -> Implemented combined-ship with LLD-008 r4 + LLD-009 r2 -> orchestra v1.7.0.\
+  \ Architectural shape sound and ready for implementation against 24-test matrix.\n"

@@ -1,0 +1,90 @@
+schema_version: '1.0'
+doc_subject:
+  path: docs/features/008-commit-skill.md
+  content_hash: sha256:66bd6ff3e03b88cc9fd939c4beeda4149aaee89637fd08466ebabbe9bf69dea1
+  iteration: 4
+reviewer:
+  identifier: subagent:general-purpose+spec-review-v1
+  invoked_at: '2026-05-11T00:00:00Z'
+  context_isolation: fresh_subagent
+gates:
+  completeness:
+    verdict: pass
+    findings: []
+    justification: 'All r3 findings addressed in r4: A10 recount (13 functions, baseline
+      163) reconciles with LLD-009 A16 (which now cites 163). A5 --force precedence
+      documented explicitly + T4e added. A6 framework-aware behavior clarified (combined
+      ship eliminates interleave window) + T5d added. A8 Quick Reference treatment
+      specified (lines 109-128, Gates 1-3 bullets retained, 4+5 collapsed). A12 BUG-010
+      close path documented via Changelog row with exemplar. Out-of-Scope BUG count
+      corrected to 4. All Required sections (Glossary, Problem Statement, Success
+      Criteria, Scope, Design, Edge Cases, Security, Testing, Related Documents, Changelog)
+      present and filled.'
+  evidence:
+    verdict: pass
+    findings: []
+    justification: 'Cited line ranges spot-verified against current source: cli/lint.py:71-73
+      CANON_FROZEN_STATUSES confirmed; cli/lint.py:77-80 REFS_ELIGIBLE_PREFIXES confirmed;
+      cli/lint.py:36-52 _load_extract_mermaid confirmed; cli/install_hooks.py:48 force-bypass
+      branch confirmed; cli/install_hooks.py interactive prompt path lines 53-75 confirmed.
+      BUG-010 Status: Fix Applied confirmed validating A12 canon-frozen + Changelog-append-only
+      treatment. LLD-009 A16 cites baseline 163 (matches LLD-008 A10). Pytest baseline
+      arithmetic 107+37+6=150 retained; +13 = 163.'
+  clarity:
+    verdict: conditional_pass
+    findings:
+    - severity: Minor
+      location: "Design \xA7 cli.install_hooks non-interactive bootstrap"
+      problem: Pseudocode signature `def install_one_hook(repo_root, hook_name, on_conflict=None,
+        force=False, ...):` differs from current source signature which uses `input_fn=input`
+        parameter (for test injection). Pseudocode omits input_fn; implementer must
+        infer it is retained. State explicitly that input_fn=input parameter is preserved
+        for test injection.
+    - severity: Minor
+      location: "Design \xA7 cli.install_hooks non-interactive bootstrap"
+      problem: Pseudocode interactive prompt formatting differs from current implementation
+        which uses two print() calls + input_fn(>) on a separate line. Not load-bearing
+        for correctness but implementer may interpret pseudocode as instruction to
+        change prompt UX. Clarify whether prompt UX preserved verbatim or rewritten.
+    justification: Two clarity-tier findings noted; rest of gate passes. Findings
+      localized to Design pseudocode signature alignment.
+  consistency:
+    verdict: conditional_pass
+    findings:
+    - severity: Minor
+      location: "Success Criteria \xA7 A3"
+      problem: 'A3 enumerates 11 files retained in cli/templates/ but does not include
+        a verification command or test assertion that this enumeration matches actual
+        cli/templates/ contents post-move. T2 only asserts the 2 hook files removed
+        + precommit-yaml-patch.txt remains; doesn''t assert the other 10. Risk: enumeration
+        drifts from reality.'
+    - severity: Minor
+      location: "Success Criteria \xA7 A8 + Design \xA7 Migration"
+      problem: A8 cites SCALE-side documentation-gate.md Quick Reference at currently
+        lines 109-128. Line number citation is fragile (any prior edit shifts line
+        numbers). Cite by section header (## Quick Reference) rather than line range.
+    - severity: Minor
+      location: "Design \xA7 references/ governance"
+      problem: "Each reference file metadata includes Skill-Status (skill-internal\
+        \ enum). Value Current still token-overlaps with canon-frozen-status Current.\
+        \ If future tool does value-based scanning regardless of field name, Current\
+        \ still collides. Document explicitly that L2 detection is field-name-keyed\
+        \ (Status not Skill-Status) \u2014 confirms safety of token reuse."
+    justification: Two clarity-tier findings noted; rest of gate passes. Findings
+      localized to Design pseudocode signature alignment.
+overall_verdict: conditional_pass
+required_followup:
+- Clarify install_one_hook pseudocode signature retains input_fn=input parameter for
+  test injection.
+- State whether interactive prompt UX is preserved verbatim or intentionally rewritten.
+- Add a test assertion (or T2 extension) that cli/templates/ post-move contains exactly
+  the 11 enumerated files.
+- Replace fragile line-number citation in A8 (Quick Reference lines 109-128) with
+  section-header reference.
+- Document that L2 canon-frozen detection is field-name-keyed (Status not Skill-Status).
+notes: "Cross-judge convergence (r3 orchestra + sonnet): all 8 substantive r3 findings\
+  \ addressed inline in r4 per Changelog row 2026-05-11. Spot-verified each fix. Plateau\
+  \ check: r3->r4 fixes are textually verifiable; this is not a plateau. r4 residual\
+  \ findings (5 Minor) are documentation-polish only \u2014 none block implementation.\
+  \ Recommend Hassan flip Status: Draft -> Implemented after addressing 5 minor follow-ups\
+  \ inline (whitelist-eligible since still Draft).\n"

@@ -5,7 +5,7 @@
 > **DRI:** Hassan Mohiddin
 > **Type:** Feature LLD
 > **Status:** Draft
-> **Iteration:** 4
+> **Iteration:** 5
 
 ## Glossary
 
@@ -52,7 +52,7 @@ This LLD (008) addresses ONLY the well-converged parts of the original scope. Ho
 - [ ] **A3.** Hook templates relocated `cli/templates/{pre-commit.sh,commit-msg.sh}` → `skills/commit/templates/`. `cli/templates/` retains 11 init-related artifacts (mkdocs.yml, AGENTS.md.template, llms.txt.template, standards-default-7.md, attestation-template.yaml, docs-index.md, mkdocs_hooks.py, orchestra-lint.yml, requirements-docs.txt, tags.md, precommit-yaml-patch.txt). `precommit-yaml-patch.txt` stays — different purpose (BUG-007 yaml-checker `--unsafe`). → test T2 (presence assertions on both directories).
 - [ ] **A4.** `cli.install_hooks` reads templates from `skills/commit/templates/` (precedent: `cli/lint.py:36-52 _load_extract_mermaid` loads from `skills/design-docs/scripts/extract_mermaid.py`). Existing tests `tests/test_install_hooks.py` + `tests/test_cli_install_hooks.py` updated for new path → test T3.
 - [ ] **A5.** `cli.install_hooks` adds `--on-conflict={skip,replace,append}` flag with `default=None` (argparse sentinel; choices restricted to the 3 values when flag is supplied). When flag supplied: non-interactive; honored verbatim. When flag absent AND `sys.stdin.isatty()` returns True: existing interactive prompt path retained. When flag absent AND non-TTY: silent default `skip`. **`--force` precedence:** `--force` flag (existing in `cli/install_hooks.py:48`) takes precedence over `--on-conflict`: if both passed, `--force` wins and existing hook is replaced unconditionally; `--on-conflict` value is ignored. Documented in `cli.install_hooks --help`. Tests T4a (`--on-conflict=skip` leaves untouched), T4b (`--on-conflict=replace` overwrites differing), T4c (`--on-conflict=append` concatenates), T4d (non-TTY + flag absent defaults to skip; argparse sentinel `None` triggers TTY check → non-TTY → skip), T4e (`--force` + `--on-conflict=skip` → force wins, hook replaced).
-- [ ] **A6.** `cli.init` invokes `cli.install_hooks.main(["--pre-commit", "--commit-msg", "--on-conflict=skip"])` after init operations (BUG-010 Part 3). Idempotent. Non-blocking in CI. **Framework-aware:** since LLD-008/009/010 ship together as v1.7.0, no interleave window exists; `cli.install_hooks` framework-detection path (per LLD-010 A3) handles `.pre-commit-config.yaml` presence and emits print-only snippet by default (no `--apply` from `cli.init`). cli.init bootstrap thus never clobbers framework state. Tests T5a (cli.init bootstrap leaves both hooks installed when no framework), T5b (idempotent re-run), T5c (cli.init + non-TTY = no input() blocking AND clean exit code 0, not argparse-error exit 2; asserts stderr empty of argparse usage output), T5d (cli.init + `.pre-commit-config.yaml` present + no `--apply` → bootstrap emits framework snippet print-only; `.git/hooks/{pre-commit,commit-msg}` NOT raw-overwritten).
+- [ ] **A6.** `cli.init` invokes `cli.install_hooks.main(["--all", "--on-conflict=skip"])` after init operations (BUG-010 Part 3). **Note:** uses existing `--all` flag (`cli/install_hooks.py:93`) which installs both pre-commit + commit-msg hooks. `--pre-commit` flag does NOT exist in parser (closes codex r4 high #1 CLI contract mismatch). Idempotent. Non-blocking in CI (bootstrap rc captured; warning emitted; `cli.init` itself returns 0 unless non-bootstrap step fails). **Framework-aware:** since LLD-008/009/010 ship together as v1.7.0, no interleave window exists; `cli.install_hooks` framework-detection path (per LLD-010 A3) handles `.pre-commit-config.yaml` presence and emits print-only snippet by default (no `--apply` from `cli.init`). cli.init bootstrap thus never clobbers framework state. **Result handling (closes codex r4 medium #1):** `cli.init` captures `cli.install_hooks.main(...)` return code; on non-zero rc, emits explicit stderr warning: `WARNING: hook bootstrap returned rc=<N>; hooks may not be installed. Retry: python -m cli.install_hooks --all --on-conflict=replace (or --force).`. Tests T5a (cli.init bootstrap leaves both hooks installed when no framework), T5b (idempotent re-run), T5c (cli.init + non-TTY = no input() blocking AND clean exit code 0, not argparse-error exit 2; asserts stderr empty of argparse usage output), T5d (cli.init + `.pre-commit-config.yaml` present + no `--apply` → bootstrap emits framework snippet print-only; `.git/hooks/{pre-commit,commit-msg}` NOT raw-overwritten), T5e (cli.init + bootstrap mock returns rc=1 → WARNING emitted to stderr; `cli.init` returns 0 — bootstrap is non-blocking but observable).
 - [ ] **A7.** Skill `references/canon-frozen-guard.md` is canonical source. SCALE-side migration (per A8) deletes prior `.claude/rules/canon-frozen-guard.md`. Same for `commit-strategy.md`. `documentation-gate.md` partial-edit in place. Manual verification post-merge.
 - [ ] **A8.** SCALE-side migration commit (separate ship; bundled with orchestra v1.7.0):
   - DELETE `SCALE/.claude/rules/canon-frozen-guard.md` outright.
@@ -65,7 +65,7 @@ This LLD (008) addresses ONLY the well-converged parts of the original scope. Ho
   - UNCHANGED: `interview-gate.md`, `skills-routing.md`, `task-tracking.md`.
   Counts: 2 deletions + 1 partial-edit (rule body + Quick Reference) + 1 registry-append. Test T6 (post-migration SCALE state assertions; runs in SCALE repo per § Testing — Cross-repo test architecture).
 - [ ] **A9.** All 150 existing tests pass post-skill-ship (LLD-008 scope is additive + path moves; lint logic unchanged). Pytest baseline 150 derived from v1.6.2 ship state (107 v1.5.1 + 37 LLD-007 + 6 BUG-009 = 150; documented in `CHANGELOG.md` v1.6.2 entry). → test T7.
-- [ ] **A10.** New tests this LLD: T1 (skill dir presence; 8 expected files), T2 (template paths; both dirs), T3 (install_hooks reads from skill dir), T4a-e (--on-conflict flag + --force precedence), T5a-d (cli.init bootstrap + framework-aware), T6 (SCALE migration assertions; cross-repo per § Testing), T7 (full pytest baseline). Total: 7 unique IDs; **13 distinct test functions** (T4 has 5 sub-tests; T5 has 4; rest 1 each). Pytest target post-LLD-008-ship: 150 + 13 = **≥163**. LLD-009 + LLD-010 each add their own tests; combined v1.7.0 target tracked in those LLDs.
+- [ ] **A10.** New tests this LLD: T1 (skill dir presence; 8 expected files), T2 (template paths; both dirs), T3 (install_hooks reads from skill dir), T4a-e (--on-conflict flag + --force precedence), T5a-e (cli.init bootstrap + framework-aware + non-zero-rc warning), T6 (SCALE migration assertions; in-tmpdir fixture per § Testing), T7 (full pytest baseline), T8 (symlink rejection per Security § / codex r4 high #2). Total: 8 unique IDs; **15 distinct test functions** (T4 has 5 sub-tests; T5 has 5; rest 1 each). Pytest target post-LLD-008-ship: 150 + 15 = **≥165**. LLD-009 + LLD-010 each add their own tests; combined v1.7.0 target tracked in those LLDs.
 - [ ] **A11.** Plugin version: 1.6.2 → 1.7.0 (combined ship after LLD-008/009/010 all pass spec-review).
 - [ ] **A12.** BUG-010 Part 3 (auto-install bootstrap) closes via A6 implementation. BUG-010 is canon-frozen (`Status: Fix Applied`); close requires whitelist-only edit: append Changelog row to BUG-010 documenting Part 3 closure with commit-sha reference + cite to this LLD. Row format example: `| 2026-05-11 | Part 3 (auto-install bootstrap) closed via LLD-008 r4 A6 implementation. Commit-sha: <impl-commit>. Refs: docs/features/008-commit-skill.md |`. No body edit to BUG-010. No supersession needed.
 - [ ] **A13.** CHANGELOG.md v1.7.0 entry describes (LLD-008 portion): skill addition, template relocation, `--on-conflict` flag for non-interactive bootstrap, cli.init bootstrap integration, SCALE rule migration. (LLD-009 + LLD-010 portions described in their own A13.)
@@ -219,7 +219,14 @@ def install_one_hook(repo_root, hook_name, on_conflict=None, force=False, ...):
 ```python
 # end of cli.init.main(), after all init operations:
 import cli.install_hooks
-result = cli.install_hooks.main(["--pre-commit", "--commit-msg", "--on-conflict=skip"])
+result = cli.install_hooks.main(["--all", "--on-conflict=skip"])
+if result != 0:
+    print(
+        f"WARNING: hook bootstrap returned rc={result}; hooks may not be installed. "
+        f"Retry: python -m cli.install_hooks --all --on-conflict=replace (or --force).",
+        file=sys.stderr,
+    )
+# cli.init itself returns 0 unless other init steps failed — bootstrap is non-blocking
 # non-interactive; idempotent; safe in CI/automation
 ```
 
@@ -266,7 +273,23 @@ result = cli.install_hooks.main(["--pre-commit", "--commit-msg", "--on-conflict=
 
 - Skill operates on local files only. No network calls.
 - Hook templates POSIX shell scripts; inspectable; minimal attack surface.
-- `cli.install_hooks` writes only to `.git/hooks/` under repo root. Symlink-traversal protected via `repo_root.resolve()`.
+- `cli.install_hooks` writes only to `.git/hooks/` under repo root. **Symlink protection (per codex r4 high #2)**: `repo_root.resolve()` alone is insufficient — it resolves repo root but NOT the hook destination (`.git/hooks/<hook>` could itself be a symlink pointing outside the repo). Mandatory destination-path symlink check before any hook write:
+
+```python
+hook_path = repo_root / ".git" / "hooks" / hook_name
+# Fail-closed if destination is a symlink — prevents writing outside repo
+if hook_path.is_symlink():
+    raise SecurityError(
+        f"refusing to write to symlinked hook destination: {hook_path} -> {hook_path.readlink()}. "
+        f"Remove the symlink and retry."
+    )
+# Also resolve and verify the parent dir is under repo_root
+resolved_parent = hook_path.parent.resolve()
+if not str(resolved_parent).startswith(str(repo_root.resolve())):
+    raise SecurityError(f"hook destination outside repo boundary: {resolved_parent}")
+```
+
+  Test T8 (new; symlink rejection): create `.git/hooks/pre-commit` as symlink → assert `install_one_hook` raises + does NOT write. Pytest baseline 163 → 164 with this test.
 - No secrets read or written.
 - `--on-conflict=replace` requires explicit invocation (no implicit force-replace from default).
 
@@ -288,8 +311,10 @@ result = cli.install_hooks.main(["--pre-commit", "--commit-msg", "--on-conflict=
 | T5b | A6 | cli.init bootstrap idempotent re-run | yes |
 | T5c | A6 | cli.init + non-TTY = no input() blocking AND clean exit 0 (not argparse-error exit 2); stderr free of argparse usage output | yes |
 | T5d | A6 | cli.init + `.pre-commit-config.yaml` present (no `--apply`) → bootstrap defers to framework-detection print-only; `.git/hooks/{pre-commit,commit-msg}` not raw-overwritten | yes |
+| T5e | A6 | cli.init + bootstrap mock returns rc=1 → WARNING emitted to stderr; cli.init returns 0 (non-blocking but observable) | yes |
 | T6 | A8 | SCALE migration: 2 absent files; doc-gate.md retains Gates 1-3 sections + Quick Reference Gates 1-3 bullets + skill pointer for Gates 4+5; registry entry present | yes |
-| T7 | A9 | Full pytest baseline 150 + 13 new = 163 | baseline |
+| T7 | A9 | Full pytest baseline 150 + 15 new = 165 | baseline |
+| T8 | Security § | Symlink rejection: `.git/hooks/<hook>` exists as symlink → `install_one_hook` raises SecurityError + does NOT write | yes |
 
 ### Existing tests
 
@@ -328,6 +353,8 @@ No new evals.
 - `docs/reviews/008-commit-skill-r2.codex.md` — codex judge-2 r2 review (triggered split)
 - `docs/reviews/008-commit-skill-r3.review.yaml` — orchestra judge-1 r3 attestation (post-split)
 - `docs/reviews/008-commit-skill-r3.sonnet.md` — sonnet judge-2 r3 review (codex unavailable; cited HIGH/MEDIUM/LOW findings drove r4)
+- `docs/reviews/008-commit-skill-r4.review.yaml` — orchestra judge-1 r4 attestation (conditional_pass; 5 Minor)
+- `docs/reviews/008-commit-skill-r4.codex.md` — codex judge-2 r4 review (2 HIGH + 1 MEDIUM; drove r5)
 - SCALE-side `.claude/rules/canon-frozen-guard.md` — migration source (canonicalize then delete)
 - SCALE-side `.claude/rules/commit-strategy.md` — migration source (canonicalize then delete)
 - SCALE-side `.claude/rules/documentation-gate.md` — migration source (Gates 4+5 only)
@@ -345,4 +372,5 @@ No new evals.
 | 2026-05-10 | r1 spec-review verdicts: orchestra conditional_pass (18 findings); codex needs-attention (3 highs). Combined fail. r1 → r2 redesigns A5/A6/A7 + 12 textual fixes. |
 | 2026-05-11 | r2 spec-review verdicts: orchestra conditional_pass (18 findings); codex needs-attention (3 highs in same architectural region: hook-msg-arg / framework-determinism / index-vs-worktree). Combined fail. Iteration plateau detected per Interview Gate § plateau heuristic. User direction: split scope into LLD-008 (narrow) + LLD-009 (commit-msg L2-finalize) + LLD-010 (framework-detection). |
 | 2026-05-11 | r3 NARROWED. Original LLD-008 scope reduced to: skill structure + references migration + cli.install_hooks --on-conflict + cli.init bootstrap + SCALE migration. Hook-coordination + tiered narrow-change moved to LLD-009. Framework-detection moved to LLD-010. A2 reduced from 9 to 8 files (precommit-framework-snippet.yaml moved to LLD-010). A5 simplified to flag-only (framework detection moved to LLD-010). A6 simplified to bootstrap call (no `--bootstrap` mega-flag). A7-A14 collapsed/renumbered. Hook flow diagram simplified. Edge cases pruned (15 → 6). Test matrix reduced (15 IDs → 7 IDs; 21 functions → 11). All architectural complexity moved out of LLD-008 scope. Status: Draft. Awaiting r3 spec-review. |
+| 2026-05-11 | r4 spec-review verdicts: orchestra conditional_pass (5 Minor; no Critical/Important); codex needs-attention (2 HIGH + 1 MEDIUM — fresh architectural surface, no overlap with r3 findings). r4 → r5 fixes inline (Status: Draft permits full edit): A6 `--pre-commit` flag CLI contract mismatch corrected to `--all --on-conflict=skip` (codex r4 HIGH#1); Security § symlink defense expanded with explicit `is_symlink()` lstat check + parent-dir resolve verification + new T8 test (codex r4 HIGH#2); A6 cli.init result-handling specified with explicit WARNING-on-non-zero-rc + new T5e test (codex r4 MEDIUM); A10 test count 13 → 15 (T5e + T8); pytest baseline 163 → 165. Per user interview-gate direction: Minor orchestra findings (5) deferred to v1.7.1 (pseudocode signature `input_fn=input` clarification; prompt UX clarification; T2 11-file enumeration assertion; A8 section-header cite; Skill-Status value-collision note). Status: Draft. r5 final iteration before impl per LLD-007 plateau heuristic + user direction "ship without 4th review". |
 | 2026-05-11 | r3 spec-review verdicts: orchestra conditional_pass (9 findings); sonnet needs-attention (9 findings). Combined: 8 substantive issues to address. r3 → r4 fixes inline: A5 argparse sentinel `default=None` (sonnet F1); A5 `--force` precedence over `--on-conflict` documented (orchestra Minor + sonnet F1); A6 framework-aware (orchestra Important; LLD-008/009/010 ship together so no interleave); A8 documentation-gate Quick Reference Gates 1-3 retained + Gates 4+5 collapsed to pointer (orchestra Minor); A10 test count corrected 11→13; pytest baseline 161→163 (orchestra Important + LLD-009 baseline ripple); A12 BUG-010 close documented via Changelog row (orchestra Important); `SKILL_TEMPLATES_DIR` constant named in Design (sonnet F3 — closes LLD-010 contract gap); references/ field renamed `Skill-Status` to avoid collision (sonnet F6); T6 cross-repo test architecture documented as in-tmpdir fixture (sonnet F7); append ordering for framework users documented as recommend-`--apply`-not-`--on-conflict=append` (sonnet F5); Scope item 2 phrasing tightened (orchestra Minor); '5 deferred BUGs' → '4' (orchestra Minor). Status: Draft. Awaiting r4 spec-review. |

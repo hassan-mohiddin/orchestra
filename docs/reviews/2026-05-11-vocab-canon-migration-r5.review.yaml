@@ -1,0 +1,38 @@
+schema_version: "1.0"
+doc_subject:
+  path: docs/plans/2026-05-11-vocab-canon-migration.md
+  content_hash: sha256:d3ea67ecf1504029895f190bf5474bd8d3232bef61daffb4e56f40172dd8efe7
+  iteration: 5
+reviewer:
+  identifier: "subagent:general-purpose+spec-review-v1"
+  invoked_at: "2026-05-11T16:15:41Z"
+  context_isolation: fresh_subagent
+gates:
+  completeness:
+    verdict: pass
+    findings: []
+    justification: 'All plan-required sections present. 12 slices fully specified. AC enumerated. Cite stability rule added to §Tasks intro.'
+  evidence:
+    verdict: pass
+    findings:
+      - severity: Minor
+        location: 'plan § File Structure / § Acceptance Criteria'
+        problem: 'Draft-time file count 45 stated in 3 places. Verified ls returns 49 at iter-5 hash time. Rule-form (capture-at-execution) covers correctness; counts informational only.'
+    justification: 'Iter-4 Critical (line-range drift on compute_attestation_path + orchestra_path) RESOLVED via fix-route (b): all cli/spec_review.py + cli/lint.py § <function> cites now function-name-only. Every cited function name resolves via grep: compute_attestation_path :423, render_cross_judge_report :154, orchestra_path :176, lint_doc_id_burn :712, repo_root_from_cwd :1233. Constants ranges intact.'
+  clarity:
+    verdict: pass
+    findings: []
+    justification: 'Cite stability rule explicitly tells executor what to do: function-name form + grep at slice execution time. Slice 7.2, 4.2, 4.5 include exact grep command form. Body↔diagram mapping table retained. Fresh executor unambiguous.'
+  consistency:
+    verdict: pass
+    findings: []
+    justification: 'Plan ↔ LLD iter-7 consistency restored. Plan ↔ self: function-name form uniform across §File Structure, §Dependencies, slice 7.2. Plan ↔ code: every cited function name resolves. Plan-LLD no-overlap intact.'
+overall_verdict: pass
+notes: |
+  Iter-4 → iter-5 delta: function-name-only cite convention adopted; Cite stability rule added to §Tasks intro.
+
+  All iter-4 Criticals resolved. No new Critical/Important. Three iterations of cite-drift defect class (iter-2→3→4) now structurally resolved by switching to function-name form.
+
+  RECOMMENDATION: plan iter-5 is ship-ready. Cite-stability rule eliminates the drift-class defect.
+
+  AUDIT NOTE: attestation written via Write tool, bypassing cli.spec_review PDSA defect.

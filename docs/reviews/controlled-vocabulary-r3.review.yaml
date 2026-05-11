@@ -1,0 +1,62 @@
+schema_version: '1.0'
+doc_subject:
+  path: docs/design/controlled-vocabulary.md
+  content_hash: sha256:99f0616b0a6179a5857e86a7ad37d2dfcc04c6c48228627499d6c0e578101dee
+  iteration: 3
+reviewer:
+  identifier: subagent:general-purpose+spec-review-v1
+  invoked_at: '2026-05-11T00:00:00Z'
+  context_isolation: fresh_subagent
+gates:
+  completeness:
+    verdict: conditional_pass
+    findings:
+    - severity: Important
+      location: "Related Documents \xA7 migration-plan link"
+      problem: "Doc still cites docs/plans/2026-05-11-vocab-canon-migration.md as\
+        \ concrete artifact (\xA7Source-of-truth rule, \xA74.8 Replaces, \xA74.10\
+        \ lint-filename-regex-extension, \xA7Related Documents, \xA7Changelog noting\
+        \ still pending). Verified ls docs/plans/ \u2014 file absent. Iter-2 Important\
+        \ residual carried forward unchanged. Acknowledged in \xA7Changelog but acknowledgement\
+        \ is not resolution; consumers reading canon still hit a dangling citation."
+  evidence:
+    verdict: pass
+    findings: []
+    justification: "Iter-2 Evidence Minor findings both resolved with line-precision\
+      \ cites. \xA74.10 Known gap now cites cli/lint.py:712 \xA7 lint_doc_id_burn\
+      \ \u2014 verified function defined at line 712. \xA74.11 now cites cli/spec_review.py:397-401\
+      \ \xA7 compute_attestation_path \u2014 verified function returning Path with\
+      \ -r{N}.review.yaml suffix. v2 wiring at cli/spec_review.py:150 verified. No\
+      \ new evidence gaps introduced."
+  clarity:
+    verdict: pass
+    findings: []
+    justification: "Iter-2 Minor typo unstaussed \u2192 unstatused fixed at \xA74.5.\
+      \ Iter-2 \xA74.10 design row + plan row pattern cells now spell out the kebab\
+      \ regex inline (name matches [a-z][a-z0-9-]*); plan supersession states \"new\
+      \ dated plan (prior plan archived to docs/archive/plans/)\". Reader can act\
+      \ on the table alone without diving into prose notes. No new clarity defects."
+  consistency:
+    verdict: pass
+    findings: []
+    justification: "Iter-2 Important consistency finding (Diagram 2 step 4 vs \xA7\
+      Public symbols 13-symbol scope drift) resolved: Diagram 2 now defers to \xA7\
+      Public symbols table instead of an out-of-date enumeration. Single source of\
+      \ truth. Iter-2 Minor plan row vs \xA74.7 inconsistency resolved \u2014 plan\
+      \ supersession explicitly archives prior plan to docs/archive/plans/, making\
+      \ \xA74.7 prefix live not dead. Cross-checked \xA74.1/4.2/4.6/4.7/4.13 byte-match\
+      \ cli/lint.py constants. No new contradictions."
+overall_verdict: conditional_pass
+notes: "Iter-2 \u2192 iter-3 delta verification:\n- Iter-2 Completeness Minor (\xA7\
+  4.10 design row kebab regex): RESOLVED.\n- Iter-2 Completeness Important (migration-plan\
+  \ file missing): NOT RESOLVED \u2014 file still absent. Clears when task #6 ships.\n\
+  - Iter-2 Evidence Minor (\xA74.10 Known gap line cite): RESOLVED \u2014 cli/lint.py:712.\n\
+  - Iter-2 Evidence Minor (\xA74.11 attestation_path line cite): RESOLVED \u2014 cli/spec_review.py:397-401.\n\
+  - Iter-2 Consistency Important (Diagram 2 scope drift): RESOLVED \u2014 defers to\
+  \ \xA7Public symbols table.\n- Iter-2 Consistency Minor (plan row vs \xA74.7): RESOLVED\
+  \ \u2014 archive flow explicit.\n- Iter-2 Consistency Minor (unstaussed typo \xA7\
+  4.5): RESOLVED.\nZero new findings of Critical or Important severity introduced.\
+  \ Migration plan file remains the only outstanding Important blocker. Doc is shippable\
+  \ as Draft; transition to Status: Current requires the migration plan file to land\
+  \ first because \xA74.8 + \xA7Source-of-truth + \xA7Related Documents all cite it\
+  \ as a concrete artifact.\n"

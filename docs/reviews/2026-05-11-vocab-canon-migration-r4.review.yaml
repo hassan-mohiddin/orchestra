@@ -1,0 +1,54 @@
+schema_version: "1.0"
+doc_subject:
+  path: docs/plans/2026-05-11-vocab-canon-migration.md
+  content_hash: sha256:c09ae0306ed8b9917e49080a0ecaf5158275a4837dadee53dc7319b6681814fc
+  iteration: 4
+reviewer:
+  identifier: "subagent:general-purpose+spec-review-v1"
+  invoked_at: "2026-05-11T17:35:00Z"
+  context_isolation: fresh_subagent
+gates:
+  completeness:
+    verdict: pass
+    findings: []
+    justification: 'All plan-required sections present. 12 slices fully specified.'
+  evidence:
+    verdict: fail
+    findings:
+      - severity: Critical
+        location: 'plan § File Structure / § Dependencies / Slice 7.2'
+        problem: 'compute_attestation_path line-range cite wrong. Plan asserts cli/spec_review.py:399-403 in three places. Verified actual location is cli/spec_review.py:423. cli/spec_review.py was edited during this session by LLD-011 v2 partial wiring (PDSA scaffolding added). Iter-3 corrected 397-401 → 399-403; codebase has since moved again to 423. Fresh executor will edit unrelated code.'
+      - severity: Critical
+        location: 'plan § File Structure modified-files / Slice 7.2'
+        problem: 'Inline-literal cite at cli/spec_review.py:152 wrong. Plan slice 7.2 says delete inline literal at :152. Verified line 152 is unrelated; actual orchestra_path f-string is now at :176, and the call site invoking compute_attestation_path is at :502. Iter-3 corrected :150 → :152; codebase has since moved again.'
+      - severity: Minor
+        location: 'plan § Acceptance Criteria / § File Structure'
+        problem: 'Draft-time file count 45 stated in 3 places. Verified ls returns 47 at iter-4 hash time. Rule-form covers correctness; counts informational only.'
+    justification: 'Iter-3 Critical (rename scope 8 vs 45) resolved cleanly via rule-form. Iter-3 Important (sequencing diagram mismatch) resolved via mapping table. Iter-3 Minor residues (inline comments) resolved. NEW Criticals surface: line-range cites drift again because cli/spec_review.py was edited mid-session. Same-class defect as iter-2 → iter-3 attempted fix.'
+  clarity:
+    verdict: pass
+    findings: []
+    justification: 'Body↔diagram mapping table disambiguates slice 12 numbering. Each slice has files + dependencies + tasks + commit message. Executor can follow without guessing.'
+  consistency:
+    verdict: conditional_pass
+    findings:
+      - severity: Important
+        location: 'plan § File Structure modified-files / § Dependencies / slice 7.2'
+        problem: 'Plan ↔ code consistency broken at compute_attestation_path line-range and at inline-literal cite. LLD §4.11 also cites cli/spec_review.py:397-401 (stale; actual :423). LLD + plan agree on a wrong value, propagating drift across both docs.'
+    justification: 'LLD ↔ plan rename-scope consistency restored at iter-6/iter-4 (rule-form both sides). Plan-LLD no-overlap intact. NEW inconsistency: stale line-range cites in both docs.'
+overall_verdict: fail
+notes: |
+  Iter-3 → iter-4 delta verification:
+  - Iter-3 Critical (rename scope): RESOLVED via rule-form.
+  - Iter-3 Important (sequencing mismatch): RESOLVED via mapping table.
+  - Iter-3 Minor residues: RESOLVED.
+
+  NEW Critical class: cli/spec_review.py line-range cites drifted yet again because the file is being edited concurrently by LLD-011 v2 partial wiring. compute_attestation_path now :423 (was :397, then :399, now :423). orchestra_path inline now :176 (was :150, then :152, now :176). Call site at :502.
+
+  Pattern: line-number cites in plan/LLD go stale faster than re-reviews catch them. Same-class defect every iter.
+
+  Fix-route recommendations for iter-5 (plan) / iter-7 (LLD):
+  (a) Update line numbers to current state (will go stale again with next codebase edit), OR
+  (b) Switch all spec_review.py + lint.py cites to function-name-only ("cli/spec_review.py § compute_attestation_path") — stable across line shifts, slice executor uses grep at slice time.
+
+  AUDIT NOTE: attestation written directly to disk via Write tool, bypassing cli.spec_review PDSA defect.

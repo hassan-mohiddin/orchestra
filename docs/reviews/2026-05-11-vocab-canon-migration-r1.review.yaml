@@ -1,0 +1,141 @@
+schema_version: '1.0'
+doc_subject:
+  path: docs/plans/2026-05-11-vocab-canon-migration.md
+  content_hash: sha256:b27e975ff710839144c4ac374f1e50c4f8e773824011571912eaf93c99c34185
+  iteration: 1
+reviewer:
+  identifier: subagent:general-purpose+spec-review-v1
+  invoked_at: '2026-05-11T00:00:00Z'
+  context_isolation: fresh_subagent
+gates:
+  completeness:
+    verdict: conditional_pass
+    findings:
+    - severity: Important
+      location: "plan \xA7 Header"
+      problem: Required header subsection LLD reference exists (line 8) and Tech stack,
+        Architecture, Goal are present, but rubric-required Header subkey architecture
+        is satisfied only by a 1-line cross-ref to the Design Doc with no inline summary.
+        A fresh reader without the Design Doc handy cannot tell what the architecture
+        actually is from the plan alone.
+    - severity: Important
+      location: "plan \xA7 File Structure"
+      problem: File Structure lists 8 renames but acceptance criterion line 31 says
+        "6 existing attestations renamed". Mismatch leaves the executing agent unsure
+        which count is authoritative. Either fix the AC or the rename list.
+    - severity: Minor
+      location: "plan \xA7 Dependencies"
+      problem: "Rubric requires a dedicated Dependencies section per plan doc-type.\
+        \ Plan embeds dependencies per slice and in \xA7Sequencing summary diagram,\
+        \ but no top-level \xA7Dependencies header exists. Reader must reconstruct\
+        \ from per-slice text."
+    justification: All major plan sections present (Header, File Structure, Tasks,
+      Sequencing, Estimated time, Risk + rollback, Changelog). Acceptance criteria
+      are itemised. Gaps are presentational/count-mismatch, not structural.
+  evidence:
+    verdict: conditional_pass
+    findings:
+    - severity: Critical
+      location: "plan \xA7 Slice 2 task 2.2"
+      problem: "Line 131 cites cli/lint.py:62-72, 75-77, 81-87, 90-96, 137 as inline-literal\
+        \ lines to delete. Verified: 81-84 is REFS_ELIGIBLE_PREFIXES, line 87 alone\
+        \ is WHITELIST_FRONTMATTER_FIELDS. Range 81-87 conflates two distinct constants.\
+        \ Also REQUIRED_SECTIONS at 105-130 is not in deletion list but slice 3 modifies\
+        \ it \u2014 should be migrated to canon import too."
+    - severity: Important
+      location: "plan \xA7 Slice 4 task 4.2"
+      problem: 'Line 189 cites cli/lint.py:712 as L4 anchor. Verified: line 712 is
+        def lint_doc_id_burn. But bare-name rejection happens because FIRST_ITERATION_RE
+        / SUPERSESSION_ITERATION_RE at lines 99-100 / 102-103 require numeric prefix;
+        fix needs new DESIGN_BARE_NAME_RE adjacent. Slice text does not specify where
+        new regex constants live.'
+    - severity: Important
+      location: "plan \xA7 Slice 7 task 7.2"
+      problem: 'Line 259 says "Consolidate with the existing line-150 orchestra_path".
+        Verified line 150. But this string lives in a different function (table-emission),
+        not compute_attestation_path (397-401). Consolidation direction unspecified:
+        should helper call compute_attestation_path() or vice versa?'
+    - severity: Minor
+      location: "plan \xA7 Slice 11 tasks 11.1-11.2"
+      problem: "Cites attestation-schema-v1.0.json:58 for severity and :40, :50 for\
+        \ verdict (all verified). review_gate_names is named at canon \xA74.9 but\
+        \ schema enforces gate names via required[] array at line 31 + property keys,\
+        \ not an enum at single cited line. Slice 11 does not cite a line for review_gate_names\
+        \ drift gate."
+  clarity:
+    verdict: conditional_pass
+    findings:
+    - severity: Important
+      location: "plan \xA7 Slice 3 task 3.1"
+      problem: "Line 163 bullet \"research: missing Metadata / Findings / Recommendations\
+        \ Summary / Sources \u2014 must fail per missing section\" lumps four distinct\
+        \ tests into one bullet without enumerating each as a separate failing test.\
+        \ Vertical-slice TDD demands one test \u2192 one impl. Fresh executor will\
+        \ not know whether to write 1 or 4 tests."
+    - severity: Important
+      location: "plan \xA7 Slice 1 task 1.7"
+      problem: "Line 112 introduces _repo_root reuse from cli/lint.py but Design Doc\
+        \ \xA7Parse contract says \"Same algorithm as cli/lint.py \xA7 _repo_root\
+        \ (reuse, do not duplicate)\". Plan does not specify HOW to reuse \u2014 extract\
+        \ to shared utility, import directly from cli.lint, or copy-paste. This is\
+        \ a design decision plan must resolve."
+    - severity: Minor
+      location: "plan \xA7 Slice 6 task 6.2"
+      problem: "Says \"fix any cross-refs\" but does not enumerate what counts as\
+        \ a fix-target (HANDOFF.md? CLAUDE.md? Other docs?). Git history is excluded\
+        \ by \xA7Risk + rollback but that exclusion only appears later. Fresh executor\
+        \ must duplicate the grep+judgment exercise."
+    - severity: Minor
+      location: "plan \xA7 Slice 12 task 12.4"
+      problem: "Line 371 chains four status flips on single line \u2014 BUG-016 +\
+        \ BUG-014 to Fix Applied, then canon Approved \u2192 Current, all \"after\
+        \ user verifies\". Decompose into ordered sub-steps with explicit gate between\
+        \ each user-confirm and next flip. Conflating them risks executor batching\
+        \ them."
+  consistency:
+    verdict: conditional_pass
+    findings:
+    - severity: Critical
+      location: "plan \xA7 Acceptance criteria + \xA7 File Structure"
+      problem: "AC line 31 says \"6 existing attestations renamed\", but \xA7File\
+        \ Structure lists 8 renames (5 paperwork-debt + controlled-vocabulary r1/r2/r3).\
+        \ LLD \xA74.11 lists 5 + 1 canon r1 = 6. Slice 6 says 8. Three different counts.\
+        \ The 3 controlled-vocabulary attestations did not exist when LLD was drafted;\
+        \ plan needs to reconcile or LLD \xA74.11 needs an update reference."
+    - severity: Important
+      location: "plan \xA7 Slice 11 commit message"
+      problem: "Says \"canon \xA74.3 finding_gravity and \xA74.4 verdict_enum + \xA7\
+        4.9 review_gate_names mirror exactly\". But LLD \xA74.3 Naming note explicitly\
+        \ says schema field name stays severity (not finding_gravity); finding_gravity\
+        \ is axis LABEL only. Commit message wording implies value mapping when none\
+        \ is needed. Risk: future reader misreads as schema rename."
+    - severity: Important
+      location: "plan \xA7 Slice 1 task 1.4 + LLD \xA7 Domain/Module/Endpoint Details"
+      problem: "Cites \"canon Design Doc \xA7Parser implementation as the contract\"\
+        . LLD \xA7Parse contract covers parser implementation but section header is\
+        \ \"Parse contract\", not \"Parser implementation\". Inconsistent header reference\
+        \ may send executor searching for nonexistent section."
+    - severity: Important
+      location: "plan \xA7 Slice 3 LLD-Plan overlap risk"
+      problem: "Enumerates which conditional sections fail vs pass per doc-type. This\
+        \ is design content (which sections are required/conditional) that LLD \xA7\
+        4.8 owns. Plan should reference LLD \xA74.8 and only specify test scaffolding,\
+        \ not re-state the matrix. Per LLD-Plan no-overlap rule. Risk: if LLD \xA7\
+        4.8 changes, plan \xA73 silently drifts."
+    - severity: Minor
+      location: "plan \xA7 Acceptance criteria line 37"
+      problem: "AC says \"All existing tests pass; pyrefly 0 errors; make check clean\"\
+        \ but test count cited in slice 2 task 2.3 is \"259 baseline + new vocab tests\
+        \ passing\". Plan does not state expected new-test count anywhere \u2014 useful\
+        \ for fresh executor to know target."
+overall_verdict: conditional_pass
+notes: "Plan is well-structured and executable in most respects. Two distinct Critical\
+  \ findings raised:\n(1) Rename-count mismatch (6 vs 8) across AC, File Structure,\
+  \ Slice 6, and LLD \xA74.11 \u2014 pick one and propagate.\n(2) Line-range 81-87\
+  \ in slice 2 task 2.2 conflates two distinct constants; WHITELIST_FRONTMATTER_FIELDS\
+  \ is line 87 alone and REFS_ELIGIBLE_PREFIXES ends at line 84. Also REQUIRED_SECTIONS\
+  \ at 105-130 is not in slice 2 deletion list yet slice 3 expands it.\n\nImportant\
+  \ issues center on LLD-Plan overlap (slice 3 enumerates conditional-section matrix\
+  \ LLD owns) and underspecified design choices (1.7 _repo_root reuse mechanism, 7.2\
+  \ consolidation direction, 12.4 status-flip ordering).\n\nEvidence verification:\
+  \ cited line numbers largely accurate; minor precision gaps in 4.2 + 11.\n"

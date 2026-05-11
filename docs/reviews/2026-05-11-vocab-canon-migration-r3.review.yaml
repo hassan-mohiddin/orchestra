@@ -1,0 +1,57 @@
+schema_version: "1.0"
+doc_subject:
+  path: docs/plans/2026-05-11-vocab-canon-migration.md
+  content_hash: sha256:57f8df5fc70ace867b17e8efcc593b9ebc9e3184acb9407f019befdcede65e81
+  iteration: 3
+reviewer:
+  identifier: "subagent:general-purpose+spec-review-v1"
+  invoked_at: "2026-05-11T16:00:47Z"
+  context_isolation: fresh_subagent
+gates:
+  completeness:
+    verdict: pass
+    findings: []
+    justification: 'All plan-required sections present. Iter-2 Completeness Minor (AC test-count undercount) resolved at iter-3 with realistic 80-100 range + per-slice breakdown.'
+  evidence:
+    verdict: fail
+    findings:
+      - severity: Critical
+        location: 'plan § File Structure / Acceptance Criteria / Slice 6'
+        problem: 'Rename scope undercounts by 37. AC and §File Structure claim 8 attestations to rename; LLD §4.11 mirrors same 8. Verified ls docs/reviews/*.review.yaml = 45 files. Slice 6.3 adds test_all_attestations_match_canon asserting EVERY docs/reviews/*.yaml matches REVIEW_DOC_FILENAME_REGEX — will fail at 37 unrenamed files (005-r1, 006-r1..r4, 007-r1..r5, 008-r1..r4, 009/010/012, BUG-009..011, POSTMORTEM-*, RUNBOOK-*, dated plans). Need (a) all-45 rename + LLD §4.11 + plan extended, or (b) historical-carve-out scoping the test.'
+    justification: 'Iter-2 Critical (slice 1.0a + LLD §Parse contract referenced nonexistent _repo_root) RESOLVED at iter-3 via NEW walk-up impl in cli/_shared.py + LLD iter-5 §Parse contract correction. Iter-2 line-range Important findings (compute_attestation_path :397-401 → :399-403; inline :150 → :152) resolved. Iter-2 LLD-ref Important (iter-3 → iter-5 Current) resolved. NEW Critical surfaced by broader docs/reviews/ scan.'
+  clarity:
+    verdict: pass
+    findings:
+      - severity: Minor
+        location: 'plan § File Structure'
+        problem: 'Inline comment at cli/_shared.py line says "extracted utilities (_repo_root)". Iter-3 reframed this as NEW implementation; the body slice 1.0a is correct, but the File Structure inline comment still says "extracted". Cosmetic intra-doc inconsistency.'
+      - severity: Minor
+        location: 'plan § File Structure modified-files block'
+        problem: 'cli/lint.py inline comment still reads "move _repo_root to cli/_shared.py" — residue from iter-2 framing. Slice 1.0a explicitly says no move; cli/lint.py is NOT touched re repo-root. Comment should be rephrased or removed.'
+    justification: 'Iter-2 clarity findings resolved (slice 12.6 whitelist-edit variant specified; slice 11 commit-msg body prepended). Two cosmetic intra-doc residues from the iter-3 reframing.'
+  consistency:
+    verdict: conditional_pass
+    findings:
+      - severity: Important
+        location: 'plan § Sequencing summary'
+        problem: 'Diagram numbering uses 12.1-12.6 in summary but body slice 12 uses 12.1-12.7. Mapping is opaque: diagram-12.1=body-12.3 (LLD Draft→Approved); diagram-12.3=body-12.4 (BUG-014); diagram-12.4=body-12.5 (BUG-016); diagram-12.5=body-12.6; diagram-12.6=body-12.7; diagram-12.2 is intentionally empty. Fresh executor confused. Renumber or add body↔diagram mapping table.'
+    justification: 'Iter-2 Critical (rename count 6 vs 8) resolved at LLD-side via iter-4 (8-file list). Iter-2 Important (filename regex dependency row missing) resolved at iter-3. Plan-LLD no-overlap intact. New Critical at evidence gate (rename scope) cascades into consistency: LLD §4.11 also needs reconciliation.'
+overall_verdict: fail
+notes: |
+  Iter-2 → iter-3 delta verification:
+  - Iter-2 Critical (_repo_root nonexistent in cli/lint.py): RESOLVED. Slice 1.0a now specifies NEW walk-up in cli/_shared.py; LLD iter-5 §Parse contract correction confirms.
+  - Iter-2 Important line-range drifts: RESOLVED (399-403, 152).
+  - Iter-2 Important LLD ref iter-3 → iter-5 Current: RESOLVED.
+  - Iter-2 Important §Dependencies missing :99-103 row: RESOLVED.
+  - Iter-2 Important slice-12 user-confirm gates in diagram: RESOLVED (diagram annotated 12.1-12.6).
+  - Iter-2 Minor AC test count: RESOLVED (80-100 with breakdown).
+  - Iter-2 Minor slice 12.6 narrow-change variant: RESOLVED (whitelist-edit).
+  - Iter-2 Minor slice 11 commit body: RESOLVED.
+
+  NEW Critical: rename scope undercount. 45 *.review.yaml files exist in docs/reviews/; plan + LLD §4.11 only enumerate 8. Slice 6.3 test will fail at 37 unrenamed files. Decision needed: all-45 rename vs historical-carve-out. Affects LLD §4.11 (potential iter-6) + plan §File Structure + plan AC.
+
+  Two Minor residues from iter-3: File Structure inline comments at cli/_shared.py + cli/lint.py rows still say "extracted" / "move _repo_root" — body slice 1.0a is correct, comments should be refreshed to match.
+
+  AUDIT NOTE: attestation written directly to disk via Write tool, bypassing cli.spec_review (PDSA citation-parser defect halts write path; separate BUG to be filed).
+
+  Plan is otherwise execution-ready; the rename-scope Critical is the only blocker.

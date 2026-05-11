@@ -1,0 +1,166 @@
+schema_version: '1.0'
+doc_subject:
+  path: docs/design/controlled-vocabulary.md
+  content_hash: sha256:ef1a259c33f874c52c7e0767cbca9912d6f13150e5e22d2138b89e18e57bd6a2
+  iteration: 1
+reviewer:
+  identifier: subagent:general-purpose+spec-review-v1
+  invoked_at: '2026-05-11T00:00:00Z'
+  context_isolation: fresh_subagent
+gates:
+  completeness:
+    verdict: conditional_pass
+    findings:
+    - severity: Important
+      location: "Architecture \xA7 Diagram 1"
+      problem: "Design Doc required-sections per STANDARDS.md:157-163 mandate \"Domain/Module/Endpoint\
+        \ Details\" \u2014 doc has no such section, only Overview/Architecture/Canonical\
+        \ Tables/Machine-Parseable Contract/Key Decisions/Related/Changelog. This\
+        \ doc is itself a Design Doc and violates the structure it claims to canonize\
+        \ in \xA74.8."
+    - severity: Important
+      location: "Canonical Tables \xA7 4.3 severity_enums"
+      problem: "The page_priority axis defines only P1 (\"24/7 page\") and P3 (\"\
+        ticket\"). P2 is listed in values but never defined \u2014 fresh reader cannot\
+        \ map a P2 fire to behavior."
+    - severity: Minor
+      location: "Canonical Tables \xA7 4.8 required_sections_per_doc_type"
+      problem: policy row lists "Policy Statement, Rules, Changelog" (3 items) but
+        STANDARDS.md:193-198 requires four sections including "Examples or templates".
+        Canon omits Examples.
+    - severity: Minor
+      location: "Canonical Tables \xA7 4.8 required_sections_per_doc_type"
+      problem: plan row lists only "File Structure, Tasks" but STANDARDS.md:200-205
+        requires "Header (goal, architecture, tech stack, LLD reference)" as section
+        1 plus "each task must have Files list, sequencing/dependencies, commit message".
+        Canon under-specifies.
+    - severity: Minor
+      location: "Related Documents \xA7 migration-plan link"
+      problem: "References docs/plans/<future>-vocab-canon-migration.md \u2014 placeholder\
+        \ path with literal <future> token violates \"no TODOs\" (STANDARDS.md:270)\
+        \ and leaves the reader with no actual link to follow."
+  evidence:
+    verdict: conditional_pass
+    findings:
+    - severity: Important
+      location: "Overview \xA7 Why this exists"
+      problem: Claim "at least 12 vocabularies defined in 2+ disconnected locations"
+        lacks an enumerated list or a citation to BUG-016 catalogue. Reader cannot
+        verify the count from this doc alone.
+    - severity: Important
+      location: "Canonical Tables \xA7 4.10 filename_grammar_per_doc_type Known gap"
+      problem: "\"L4 lint currently rejects bare-name design supersession\" \u2014\
+        \ claim made without cite. Should reference specific lint.py function or BUG-014\
+        \ line. BUG-014 is cited in Related Documents but the failure-mode citation\
+        \ in \xA74.10 itself is missing."
+    - severity: Minor
+      location: "Canonical Tables \xA7 4.11 review_doc_filename_convention"
+      problem: Claim "orchestra writes <doc-id>-rN.review.yaml; codex writes <doc-id>-rN.codex.md"
+        lacks a file:line cite (cli/spec_review.py:108-109 cited in Replaces line
+        is unrelated I/O helper, not filename construction).
+    - severity: Minor
+      location: "Key Decisions \xA7 L5 lint check"
+      problem: "Refers to BUG-016 \xA7Regression Prevention as source but does not\
+        \ cite a file:line; reader cannot locate the rationale without opening BUG-016."
+  clarity:
+    verdict: conditional_pass
+    findings:
+    - severity: Important
+      location: "Canonical Tables \xA7 4.3 severity_enums"
+      problem: Doc invents new axis name finding_gravity for the spec-review attestation
+        severity field, but the actual JSON schema field at attestation-schema-v1.0.json:58
+        is named severity. The doc does not state whether finding_gravity is (a) a
+        rename to be applied to the schema or (b) an axis label only, with severity
+        remaining the field name. Ambiguity over a contract surface.
+    - severity: Important
+      location: "Machine-Parseable Contract \xA7 Parser contract"
+      problem: "Says cli/vocabulary.py is \"NEW \u2014 parser\" and will \"read this\
+        \ file at import time, parses the markdown tables under \xA74 by section anchor\"\
+        . No specification of failure mode if a table is missing/malformed, no specification\
+        \ of repo-root resolution, no specification of whether parsing is lazy or\
+        \ eager. A future implementer cannot build this from the doc alone."
+    - severity: Minor
+      location: "Canonical Tables \xA7 4.5 doc_type_enum"
+      problem: "plan, research, investigation, policy are described as having statuses\
+        \ \"either implicit (plans live until executed) or trivial (investigations\
+        \ are scratch)\" but no rule states what L1/L2/L5 lint does when these doc\
+        \ types appear \u2014 silently skipped? Treated as unknown type?"
+    - severity: Minor
+      location: "Canonical Tables \xA7 4.10 filename_grammar_per_doc_type"
+      problem: investigation row gives pattern name.md with no kebab constraint, but
+        every other type uses kebab; STANDARDS.md:25 expects kebab. Reader cannot
+        tell whether Stale_Cache.md or StaleCache.md violates the canon.
+  consistency:
+    verdict: fail
+    findings:
+    - severity: Critical
+      location: "Canonical Tables \xA7 4.8 required_sections_per_doc_type"
+      problem: "feature row omits \"API Changes\" and \"Database Changes\" sections\
+        \ that STANDARDS.md:123-124 lists as required (items 5 and 6 of the Feature\
+        \ LLD section list). The Replaces line claims this row replaces STANDARDS.md:115-222\
+        \ \u2014 but it under-specifies what STANDARDS.md requires today. lint.py:106-109\
+        \ also lacks these sections, so the canon is consistent with the LINT but\
+        \ inconsistent with STANDARDS.md. Pick one source of truth."
+    - severity: Critical
+      location: "Canonical Tables \xA7 4.8 required_sections_per_doc_type"
+      problem: adr row omits "Alternatives Briefly Rejected" which STANDARDS.md:151
+        + standards-default-7.md:103 both require. Same lint-vs-STANDARDS split as
+        feature row.
+    - severity: Critical
+      location: "Canonical Tables \xA7 4.8 required_sections_per_doc_type"
+      problem: "design row lists only \"Overview, Changelog\" but STANDARDS.md:157-163\
+        \ + standards-default-7.md:137-143 require five sections (Overview, Architecture/ER/Deployment\
+        \ Diagrams \u22653, Domain/Module/Endpoint Details, Key Decisions, Changelog).\
+        \ The canon under-specifies the Design Doc shape \u2014 itself a Design Doc\
+        \ \u2014 and silently weakens the contract."
+    - severity: Important
+      location: "Canonical Tables \xA7 4.10 filename_grammar_per_doc_type"
+      problem: postmortem row says "NNN-name.md OR POSTMORTEM-YYYY-MM-DD-name.md"
+        and runbook row says "NNN-name.md OR RUNBOOK-name.md", but (a) STANDARDS.md:20-21
+        specifies ONLY the prefixed forms, (b) standards-default-7.md:14-15 also specifies
+        only prefixed forms, (c) CLAUDE.md filename grammar table specifies ONLY NNN-name(-rN)?.md.
+        Three locations conflict; canon now adds a fourth variant (the dual-pattern
+        union) without retiring the others.
+    - severity: Important
+      location: "Canonical Tables \xA7 4.3 severity_enums runbook page_priority"
+      problem: "STANDARDS.md:61 and standards-default-7.md:43 both name the runbook\
+        \ field Severity: \u2014 canon notes \"field name retained for back-compat;\
+        \ semantic = priority\" \u2014 but does not say whether L2 lint should accept\
+        \ \"Severity: P1\" only, or also \"Priority: P1\". The metadata field name\
+        \ is part of the doc-shape contract; canon leaves it ambiguous."
+    - severity: Important
+      location: "Architecture \xA7 Diagram 2 Enum load path"
+      problem: "Diagram says cli/vocabulary.py is NEW and replaces cli/lint.py \xA7\
+        \ STATUS_ENUMS / CANON_FROZEN_STATUSES / REFS_ELIGIBLE_PREFIXES / ALLOWED_ATTESTATION_PATH_PREFIXES\
+        \ at lint.py:62-96. lint.py:87 (WHITELIST_FRONTMATTER_FIELDS) sits inside\
+        \ that range but is NOT named in the replacement list \u2014 yet \xA74.13\
+        \ claims to replace lint.py:87. Diagram-2 scope and \xA74.13 scope disagree\
+        \ on coverage."
+    - severity: Minor
+      location: "Canonical Tables \xA7 4.11 review_doc_filename_convention"
+      problem: "Existing reviews in repo follow <doc-id>-rN.review.yaml (orchestra)\
+        \ and <doc-id>-rN.codex.md (codex). Canon now mandates <doc-id>-rN.<judge>.review.<ext>\
+        \ for ALL judges including orchestra. The current orchestra naming (no .orchestra\
+        \ infix) will become non-canon the moment this Design Doc lands as Status:Current\
+        \ \u2014 but no transition rule is stated for the 5 paperwork-debt attestations\
+        \ already in docs/reviews/. Migration plan referenced but does not exist."
+overall_verdict: fail
+required_followup:
+- "Resolve Feature/ADR/Design required-sections divergence between \xA74.8 and STANDARDS.md\
+  \ / standards-default-7.md (Critical, Consistency)."
+- Resolve postmortem/runbook filename-grammar dual-pattern vs three other locations
+  single-pattern (Important, Consistency).
+- Define P2 in page_priority axis (Important, Completeness).
+- "Disambiguate finding_gravity axis name vs actual schema field name severity \u2014\
+  \ rename or label (Important, Clarity)."
+- Add cli/vocabulary.py parser contract spec (failure mode, lazy/eager, repo-root
+  resolution) before code migration (Important, Clarity).
+- Cite or remove migration-plan placeholder <future>-vocab-canon-migration.md (Minor,
+  Completeness).
+notes: "Doc verifies cleanly against lint.py constants (\xA74.1, \xA74.2, \xA74.6,\
+  \ \xA74.7, \xA74.9, \xA74.13 are byte-accurate\nmirrors of lint.py:62-96, :137).\
+  \ The structural concern is that \xA74.8 mirrors lint.py rather than\nSTANDARDS.md\
+  \ \u2014 and the design itself markets the canon as the SOURCE that STANDARDS.md\
+  \ transcludes.\nOnce this lands as Status:Current, the under-specification in \xA7\
+  4.8 silently weakens what currently\nis a stricter STANDARDS.md contract. That is\
+  \ the load-bearing issue: ship-blocker until reconciled.\n"

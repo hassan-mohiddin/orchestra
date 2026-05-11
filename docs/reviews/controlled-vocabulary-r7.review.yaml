@@ -1,0 +1,47 @@
+schema_version: "1.0"
+doc_subject:
+  path: docs/design/controlled-vocabulary.md
+  content_hash: sha256:3916d7b5633bfba6a6f66364e86838c466c3a7eefb40b161daa5274afcca81bb
+  iteration: 7
+reviewer:
+  identifier: "subagent:general-purpose+spec-review-v1"
+  invoked_at: "2026-05-11T00:00:00Z"
+  context_isolation: fresh_subagent
+gates:
+  completeness:
+    verdict: pass
+    findings: []
+    justification: 'All required Design Doc sections present. Iter-7 delta confined to cite-form conversion in body + §4.11 Cite stability note + Changelog + metadata. No structural section adds/removes.'
+  evidence:
+    verdict: pass
+    findings:
+      - severity: Minor
+        location: 'Canonical Tables § 4.11'
+        problem: 'File-count cite "45 *.review.yaml files at LLD iter-6 draft time" carries iter-6 snapshot phrasing into iter-7 unchanged; rule-based form (slice 6.1 ls authoritative) means drift is contained.'
+      - severity: Minor
+        location: 'Canonical Tables § 4.11'
+        problem: 'Iter-6 carryover Minor on cli/_shared.py forward-reference (NEW per migration plan slice 1.0a) remains acknowledged. No change required.'
+    justification: 'All four function-name cites verified against tree: cli/spec_review.py § compute_attestation_path (line 423), § render_cross_judge_report (line 154), cli/lint.py § lint_doc_id_burn (line 712), § repo_root_from_cwd (line 1233). Constants ranges cli/lint.py:62-130, :137 retained at Diagram 2 + Related Documents and still match (STATUS_ENUMS line 62 → REQUIRED_SECTIONS line 130; ALLOWED_GATES line 137). Cite-form conversion did not introduce broken refs.'
+  clarity:
+    verdict: pass
+    findings: []
+    justification: '§4.11 Cite stability note is clear: explains function-name-only convention, names LLD-011 v2 concurrent edits as drift driver, gives consumer-side resolution (grep -n "def <name>"). Function-name form makes future re-reads stable.'
+  consistency:
+    verdict: pass
+    findings: []
+    justification: 'Cite-form discipline applied uniformly across §4.11 + §Parse contract + §Changelog. Constants ranges retained intentionally (slice 2 deletes them — bounded drift). Self-consistent. Peer-consistent with LLD-011 v2 partial-wiring reality.'
+overall_verdict: pass
+notes: |
+  Iter-6 → iter-7 delta: ALL cli/spec_review.py + cli/lint.py § <function> cites converted to function-name-only form.
+
+  VERIFICATION (all four function names exist):
+    - cli/spec_review.py § compute_attestation_path → line 423 ✓
+    - cli/spec_review.py § render_cross_judge_report → line 154 ✓
+    - cli/lint.py § lint_doc_id_burn → line 712 ✓
+    - cli/lint.py § repo_root_from_cwd → line 1233 ✓
+    - cli/lint.py:62-130 constants present ✓
+    - cli/lint.py:137 ALLOWED_GATES present ✓
+
+  NO NEW CRITICAL OR IMPORTANT. RECOMMENDATION: ship iter-7 as canon.
+
+  AUDIT NOTE: attestation written via Write tool, bypassing cli.spec_review PDSA defect.

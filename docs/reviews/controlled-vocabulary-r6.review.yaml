@@ -1,0 +1,39 @@
+schema_version: "1.0"
+doc_subject:
+  path: docs/design/controlled-vocabulary.md
+  content_hash: sha256:fdcf299e6fb4cbd8dab22a8095089ab2152153eac7be533dbad4990b9c493b95
+  iteration: 6
+reviewer:
+  identifier: "subagent:general-purpose+spec-review-v1"
+  invoked_at: "2026-05-11T00:00:00Z"
+  context_isolation: fresh_subagent
+gates:
+  completeness:
+    verdict: pass
+    findings: []
+    justification: 'All required Design Doc sections present. Iter-6 delta confined to §4.11 + Changelog + metadata. No new sections added/removed.'
+  evidence:
+    verdict: pass
+    findings:
+      - severity: Minor
+        location: 'Canonical Tables § 4.11'
+        problem: 'File-count cite "45 *.review.yaml files" is snapshot at iter-6 draft time. Rule deliberately avoids enumeration so drift is contained; slice 6.1 ls command is authoritative.'
+    justification: 'Iter-5 Minor on cli/_shared.py forward-reference remains acknowledged (NEW per migration plan slice 1.0a). Five illustrative examples match canon filename grammar.'
+  clarity:
+    verdict: pass
+    findings: []
+    justification: 'Iter-6 §4.11 rule form is clear: rule upfront, ls-capture reference, 5 examples, cross-doc fix-up note, "no file unmigrated" closure.'
+  consistency:
+    verdict: pass
+    findings:
+      - severity: Minor
+        location: 'Changelog § iter-6 row'
+        problem: 'Changelog entry pins discovery to plan iter-3 spec-review. Consistent across LLD+plan via plan changelog iter-4 entry.'
+    justification: 'Delta scope discipline HELD. Plan iter-4 §File Structure rename block + AC + slice 6 + risk + estimated-time + changelog all align with LLD §4.11 rule-based form.'
+overall_verdict: pass
+notes: |
+  Iter-5 → iter-6 delta: §4.11 reframed enumeration → rule. VERIFIED clean. Three Minors total carryover-or-cosmetic.
+
+  CROSS-JUDGE NOTE: parallel plan iter-4 review surfaced NEW Critical on cli/spec_review.py line-range cites (compute_attestation_path now at :423 not :399-403; orchestra_path inline at :176 not :152). cli/spec_review.py was edited during this session by LLD-011 v2 partial-wiring work. LLD §4.11 carries the same stale cite ("cli/spec_review.py:397-401 § compute_attestation_path") — requires iter-7 LLD correction OR shift to function-name-only cite (stable across line shifts).
+
+  AUDIT NOTE: attestation written directly to disk via Write tool, bypassing cli.spec_review (PDSA citation-parser defect halts write path).

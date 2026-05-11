@@ -1,0 +1,101 @@
+schema_version: '1.0'
+doc_subject:
+  path: docs/design/controlled-vocabulary.md
+  content_hash: sha256:a2e773380625f9450c1acad4b4568eb74c4aca4073b8fd5a3ba90f5fffeb2118
+  iteration: 2
+reviewer:
+  identifier: subagent:general-purpose+spec-review-v1
+  invoked_at: '2026-05-11T00:00:00Z'
+  context_isolation: fresh_subagent
+gates:
+  completeness:
+    verdict: conditional_pass
+    findings:
+    - severity: Important
+      location: "Related Documents \xA7 migration-plan link"
+      problem: "Doc cites docs/plans/2026-05-11-vocab-canon-migration.md as a concrete\
+        \ artifact (\xA7Source-of-truth rule, \xA74.8 Replaces, \xA74.10 migration\
+        \ tasks, \xA7Related Documents, \xA7Changelog). File does not exist in docs/plans/\
+        \ (verified ls). Iter-1 finding swapped placeholder <future> token for a dated\
+        \ filename without producing the file. The dangling citation is now worse\
+        \ than the original placeholder because it appears to be a real artifact."
+    - severity: Minor
+      location: "Canonical Tables \xA7 4.10 filename_grammar_per_doc_type"
+      problem: "design row first-iteration pattern reads name.md (bare-name; one-per-component)\
+        \ and supersession reads name-rN.md \u2014 but neither cell states the lowercase-kebab\
+        \ regex constraint that the \xA7Notes paragraph (line 303) makes explicit\
+        \ for investigation. Design bare-names are therefore under-constrained in\
+        \ the table itself; reader must read the prose note to learn the constraint\
+        \ applies."
+  evidence:
+    verdict: conditional_pass
+    findings:
+    - severity: Minor
+      location: "Canonical Tables \xA7 4.10 Known gap"
+      problem: "Known-gap citation now names cli/lint.py \xA7 lint_doc_id_burn and\
+        \ BUG-014, but supplies no line number for the lint function. Iter-1 finding\
+        \ requested a specific line cite; doc upgraded to function-name granularity\
+        \ but not line:line. Reader still must grep the file to verify the claim."
+    - severity: Minor
+      location: "Canonical Tables \xA7 4.11 review_doc_filename_convention"
+      problem: "Claim cli/spec_review.py \xA7 attestation_path is the function joining\
+        \ docs/reviews/ + stem + -r{N}.review.yaml \u2014 iter-1 noted the original\
+        \ line cite was wrong. Iter-2 removed the line number entirely instead of\
+        \ providing the correct one. Reader cannot verify without grepping. Provide\
+        \ cli/spec_review.py:NNN."
+    justification: "Core iter-1 Evidence findings (BUG-016 catalogue cite at \xA7\
+      Overview, BUG-014 cite at \xA74.10) are now resolved. Remaining gaps are line-precision\
+      \ misses, not missing artifacts. Verified \xA74.1 / \xA74.2 / \xA74.6 / \xA7\
+      4.7 / \xA74.13 byte-match cli/lint.py:62-96 + :87, \xA74.4 verdict enum matches\
+      \ attestation-schema-v1.0.json:40, :50. \xA74.3 severity values match STANDARDS.md:57,\
+      \ :60, :61 + attestation-schema-v1.0.json:58."
+  clarity:
+    verdict: pass
+    findings: []
+    justification: "Iter-1 Important clarity findings both resolved: finding_gravity\
+      \ ambiguity now explicitly states \"axis label, NOT a schema field rename\"\
+      \ with \"no schema migration, no code rename\" at \xA74.3 lines 178-179, and\
+      \ \xA7Parser contract at lines 400-421 fully specifies repo-root resolution\
+      \ (walk up 8 levels for .claude-plugin/plugin.json), eager-at-import strategy,\
+      \ and 5 enumerated failure modes. Iter-1 minor findings resolved: \xA74.5 adds\
+      \ Lint behavior block (lines 207-211) specifying L1-L5 behavior on plan/research/investigation/policy;\
+      \ \xA74.10 adds investigation kebab regex constraint at line 303. No new clarity\
+      \ defects introduced."
+  consistency:
+    verdict: conditional_pass
+    findings:
+    - severity: Important
+      location: "Architecture \xA7 Diagram 2 Enum load path"
+      problem: "Diagram 2 step 4 enumerates 7 loader-returned constants but \xA7Public\
+        \ symbols table at lines 386-398 lists 13 symbols (REVIEW_DOC_FILENAME_REGEX,\
+        \ FILENAME_GRAMMAR, TERMINAL_STATE_SUFFIX, VERDICT_ENUM, DOC_TYPE_ENUM, REVIEW_GATE_NAMES\
+        \ additionally). Iter-1 added WHITELIST_FRONTMATTER_FIELDS to diagram but\
+        \ broader scope drift between visual contract (Diagram 2) and textual contract\
+        \ (\xA7Public symbols) persists."
+    - severity: Minor
+      location: "Canonical Tables \xA7 4.10 plan row vs \xA7 4.7"
+      problem: "plan row supersession cell reads \"(no supersession path; new dated\
+        \ plan)\" implying plans never archive \u2014 but \xA74.7 ALLOWED_ATTESTATION_PATH_PREFIXES\
+        \ includes docs/archive/plans/ (line 248) and \xA74.12 terminal_state_suffix_conventions\
+        \ applies to all doc types uniformly. Either plans can be archived (then \xA7\
+        4.10 wording is misleading) or they cannot (then \xA74.7 prefix is dead code).\
+        \ Pick one."
+    - severity: Minor
+      location: "Canonical Tables \xA7 4.5 doc_type_enum"
+      problem: "Lint behavior block (line 207) opens with header \"Lint behavior for\
+        \ unstaussed doc types\" \u2014 typo \"unstaussed\" should be \"unstatused\"\
+        . Iter-2 added this section new; the typo is in the header that frames the\
+        \ entire block. Header text affects searchability for future editors maintaining\
+        \ this rule."
+overall_verdict: conditional_pass
+notes: "Iter-1 \u2192 iter-2 delta verification:\n- Critical #1 (\xA74.8 feature missing\
+  \ API/DB Changes): RESOLVED \u2014 both sections now in feature row.\n- Critical\
+  \ #2 (\xA74.8 adr missing Alternatives): RESOLVED.\n- Critical #3 (\xA74.8 design\
+  \ missing 3 sections): RESOLVED \u2014 design row now lists 5 sections matching\
+  \ STANDARDS.md:157-163. Doc also gained an actual \xA7Domain/Module/Endpoint Details\
+  \ section so it no longer self-violates the contract it canonizes.\nResidual: migration\
+  \ plan file referenced but missing (Completeness Important), Diagram 2 / \xA7Public\
+  \ symbols scope drift persists (Consistency Important), three Minor findings. No\
+  \ new Critical findings introduced. Doc is shippable post-fixes \u2014 the migration-plan\
+  \ file must exist before this Design Doc transitions to Status: Current, because\
+  \ \xA74.8 + \xA7Source-of-truth rule + \xA7Replaces lines all depend on it.\n"

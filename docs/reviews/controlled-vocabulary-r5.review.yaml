@@ -1,0 +1,43 @@
+schema_version: "1.0"
+doc_subject:
+  path: docs/design/controlled-vocabulary.md
+  content_hash: sha256:a5af1daf1da991c4a63bcceb94e1ef3c672a28dd03fd131e5a3e4df793ce1d1e
+  iteration: 5
+reviewer:
+  identifier: "subagent:general-purpose+spec-review-v1"
+  invoked_at: "2026-05-11T00:00:00Z"
+  context_isolation: fresh_subagent
+gates:
+  completeness:
+    verdict: pass
+    findings: []
+    justification: 'All required Design Doc sections present (Overview, Architecture 3 diagrams, Domain/Module/Endpoint Details, Key Decisions, Changelog). Iter-3 and iter-4 findings (migration plan file missing, §4.11 list at 6) resolved at iter-4. Iter-5 deltas (Status flip, §Parse contract correction, Diagram 3 mermaid fix) introduce no completeness gaps.'
+  evidence:
+    verdict: pass
+    findings:
+      - severity: Minor
+        location: 'Domain/Module/Endpoint Details § Parse contract'
+        problem: 'Cite to cli/_shared.py § _repo_root is a forward-reference (NEW, slice 1 of migration plan) — file does not exist at review time. Acceptable for a design doc describing planned implementation. Disambiguation from existing cli/lint.py:1233 § repo_root_from_cwd (verified present, git-aware algorithm) is explicit.'
+    justification: 'Iter-4 Critical from parallel plan review (LLD §Parse contract referenced nonexistent _repo_root in cli/lint.py) is RESOLVED at iter-5: §Parse contract now cites cli/_shared.py § _repo_root (NEW) and explicitly contrasts with cli/lint.py:1233 § repo_root_from_cwd. Re-verified all other line citations.'
+  clarity:
+    verdict: pass
+    findings: []
+    justification: 'Iter-5 Status: Current eliminates the self-contradiction with canon §4.1 design enum that iter-1..4 had. Diagram 3 mermaid syntax fix (quoted dotted-edge labels) is correct mermaid form. §Parse contract correction is unambiguous on what is NEW vs what is existing.'
+  consistency:
+    verdict: pass
+    findings:
+      - severity: Minor
+        location: 'Changelog § iter-5 row'
+        problem: 'Iter-5 entry cites docs/design/orchestra-philosophy-r2.md as precedent for design docs born-Current. Reader cannot verify the convention from this doc alone; primary justification is canon §4.1 enum closure (no Draft for design type) which is self-contained.'
+    justification: 'Delta scope discipline held: only metadata block (Status / Iteration / Version), §Parse contract paragraph, Diagram 3 dotted-edge lines, and Changelog touched at iter-5. Re-verified §4.1-4.13 byte-match cli/lint.py constants (where applicable). LLD §4.11 8-file list matches plan §File Structure rename block at iter-5; further rename-scope inconsistency vs the 45 actual files in docs/reviews/ is raised against the PLAN, not the LLD (LLD §4.11 was intentionally drafted as the migration-time enumeration; LLD iter-6 may need to broaden if user picks the all-45-rename fix route).'
+overall_verdict: pass
+notes: |
+  Iter-4 → iter-5 delta verification:
+  - Iter-4 Critical (from parallel plan iter-2 review): §Parse contract referenced nonexistent _repo_root in cli/lint.py — RESOLVED. §Parse contract now cites cli/_shared.py § _repo_root (NEW) and explicitly disambiguates from cli/lint.py:1233 § repo_root_from_cwd.
+  - Status: Draft → Current — canon §4.1 design enum compliance restored.
+  - Diagram 3 mermaid dotted-edge syntax fixed (quoted labels).
+  - Delta scope discipline: HELD.
+
+  AUDIT NOTE: iter-4 attestation never written to disk (PDSA halted at write time due to citation-parser defect in cli.spec_review v2 partial wiring + Status: Draft violating canon §4.1). Iter-5 attestation written directly to disk via Write tool, bypassing cli.spec_review.
+
+  CROSS-JUDGE NOTE: parallel plan iter-3 review raised a NEW Critical against the plan: 45 *.review.yaml files in docs/reviews/ but plan + LLD §4.11 only enumerate 8. Slice 6.3 test_all_attestations_match_canon will fail for 37 files. Resolution requires either (a) all-45 rename in slice 6 + LLD §4.11 + plan §File Structure all extended, or (b) historical-carve-out policy with test scoped to post-cutover files. Decision affects LLD §4.11 (potential iter-6) — surfaced to user for fix-route grilling.

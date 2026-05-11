@@ -293,21 +293,42 @@ After writing or updating ANY doc, run a spec review before committing. The skil
 the spec-review situation lives in `.claude/skills-registry.md` — workflow files do not name
 the skill directly so plugin changes don't break this rule.
 
-The review evaluates four named gates (see `.claude/skills/design-docs/references/spec-review-gates.md`):
+**v2 (LLD-011, shipped v2.0.0):** spec-review dispatches 6 parallel sub-judges instead of
+a single 4-gate reviewer. The v1 4-gate rubric (Completeness / Evidence / Clarity /
+Consistency) is preserved as the `semantic` sub-judge's rubric. The full ensemble:
 
-1. **Completeness** — all required sections per this document are present and filled
-2. **Evidence** — every claim has a backing artifact (file:line, benchmark, log, citation)
-3. **Clarity** — a fresh reader can act on the doc without needing prior conversation context
-4. **Consistency** — doc agrees with itself, peer docs, and code
+| Sub-judge | Mandatory? | Domain |
+|---|---|---|
+| `structure` | optional | format, required sections, filename grammar, Mermaid |
+| `semantic` | **mandatory** | 4-gate continuity (Completeness / Evidence / Clarity / Consistency) |
+| `gate-compliance` | optional | Gates 1-3 + canon-frozen + lifecycle |
+| `adversarial` | **mandatory** | red-team, blast-radius, invariants, edge cases |
+| `repo-context` | optional | citation validity, impl-doc match, test coverage |
+| `architectural-fit` | optional | Design Doc + ADR consistency |
+
+Mandatory tier: failure of `semantic` or `adversarial` forces `overall_verdict: fail`.
+Optional sub-judges soft-fail (excluded from aggregation, do not block the verdict).
+
+The skill body dispatches all 6 in a single message via parallel Task fanout, then pipes
+the collected sub-judge YAMLs into `cli.spec_review --aggregate-and-write <doc>` which
+runs the mechanical aggregator (dedup by location + fuzzy-hash, max severity, union
+raised_by), computes provenance (`iter_blob_sha` via `git hash-object -w`,
+`iter_commit_sha`), self-referential `attestation_integrity_hash`, validates against
+schema-v2.0, and atomically writes `docs/reviews/<doc-id>-rN.orchestra.review.yaml`.
 
 Process:
 
-1. Run spec review (registry: spec-review situation)
-2. Fix all issues found, naming the failing gate
-3. Re-run until clean (max 3 iterations; surface to user if still failing)
-4. Commit only after spec review passes
+1. Run spec review (registry: spec-review situation → `/orchestra:spec-review <doc>`)
+2. Read the cross-judge comparison report rendered to chat (top-5 findings by severity)
+3. If aggregate findings contain any Critical or Important, AskUserQuestion interview-gate
+   fires before any fixes
+4. Fix all findings, referencing the failing sub-judge id (not the v1 gate name)
+5. Re-run until clean (post-commit 2-iter hard cap; `--override-cap` for iter-3+ with
+   degraded-mode logging)
+6. Commit only after spec review passes
 
-This applies to all doc types: Feature LLDs, Bug Reports, ADRs, Postmortems, Runbooks, Design Docs, Policies.
+This applies to all doc types: Feature LLDs, Bug Reports, ADRs, Postmortems, Runbooks,
+Design Docs, Policies, Plans.
 
 ---
 

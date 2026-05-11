@@ -1,7 +1,30 @@
 # Orchestra Handoff — Session Continuity Pointer
 
-> **Last updated:** 2026-05-11 night — BUG-016 canon-design phase shipped pre-compact.
-> **Last session ended:** Vocab canon Design Doc + migration plan + 10 spec-review attestations committed at `9e4b3e0`. Pre-compact handoff for next session to execute the migration plan.
+> **Last updated:** 2026-05-11 night — LLD-011 spec-review v2 ALL phases shipped + 2-iter dogfood complete. v2.0.0 tag ready (pending status flips + git tag).
+> **Last session ended:** Path C complete (4 code fixes + iter-2 narrow-change + re-dogfood + E10/E21 fixes). HEAD `47e392e` (or later — parallel session shipped L4 canon fix at `b518da1`, L5 strict-enum at `47e392e`). pytest 509 green. pyrefly 0. eval 12/12.
+
+---
+
+## 🚢 v2.0.0 SHIP-READY — LLD-011 spec-review v2 (this session)
+
+**State**: v2 code complete. Plugin metadata bumped 2.0.0 at `c56e85d`. Dogfood passed on LLD-011 itself (iter-1 → iter-2 dropped findings 43 → 27, Critical 9 → 5 with 3 remaining as documented v2.1 backlog trade-offs).
+
+**Attestations**:
+- `docs/reviews/011-spec-review-v2-r1.orchestra.review.yaml` — first v2 dogfood (iter-1, 9 Critical surfaced)
+- `docs/reviews/011-spec-review-v2-r2.orchestra.review.yaml` — iter-2 dogfood (after Path C fixes; 5 Critical, all class-known)
+
+**v2.0.0 remaining work**: status flip on LLD-011 (Approved → Implemented) + plan (Approved → Implemented) + `git tag v2.0.0` + push. All other paperwork (STANDARDS.md spec-review section, .claude/workflow.md, commands/spec-review.md) updated this session.
+
+**v2.1 backlog (documented in §Out of Scope, NOT blocking)**:
+- PyYAML strict YAML 1.2 canonicalizer (current PyYAML 6.x family-pin good enough)
+- Aggregator second-canonical-text preservation on fuzzy_hash collision
+- Mandatory-tier vendor diversification (currently both mandatory sub-judges run on Opus → SPOF)
+- 5-doc depth-metric sample (Plan §Self-application step 4 — only LLD-011 done; defer 4-doc remainder to v2.1 validation)
+- Eval scenarios s1-s5 in `eval/scenarios/spec-review-v2/` (only `spec-review-yaml-schema-roundtrip` shipped; build 4 more post-tag)
+
+---
+
+## 🆕 NEWLY SHIPPED — BUG-016 vocab canon design (parallel session)
 
 This file is the single pointer for picking up orchestra work between sessions. Read this BEFORE acting.
 

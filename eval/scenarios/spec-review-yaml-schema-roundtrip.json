@@ -13,8 +13,8 @@
   ],
   "assert": [
     {"type": "file_contains", "path": "spec.exit", "substring": "0"},
-    {"type": "file_exists", "path": "docs/reviews/099-example-r1.review.yaml"},
-    {"type": "file_contains", "path": "docs/reviews/099-example-r1.review.yaml", "substring": "schema_version: '1.0'"},
-    {"type": "file_contains", "path": "docs/reviews/099-example-r1.review.yaml", "substring": "overall_verdict: pass"}
+    {"type": "file_exists", "path": "docs/reviews/099-example-r1.orchestra.review.yaml"},
+    {"type": "file_contains", "path": "docs/reviews/099-example-r1.orchestra.review.yaml", "substring": "schema_version: '1.0'"},
+    {"type": "file_contains", "path": "docs/reviews/099-example-r1.orchestra.review.yaml", "substring": "overall_verdict: pass"}
   ]
 }

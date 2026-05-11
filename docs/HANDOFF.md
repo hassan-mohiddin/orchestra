@@ -1,7 +1,52 @@
 # Orchestra Handoff — Session Continuity Pointer
 
-> **Last updated:** 2026-05-11 — BUG-016 vocab-canon migration SHIPPED (12/12 slices). LLD-011 spec-review v2 ALL phases shipped + 2-iter dogfood complete (parallel session).
-> **Last session ended:** BUG-016 migration executed. 11 code/test commits + 3 status-flip commits + 1 HANDOFF commit. pytest 515 green. pyrefly 0. cli.lint --pre-commit clean.
+> **Last updated:** 2026-05-11 late night — v2.0.0 TAGGED + PUSHED + RELEASE LIVE. v2.1 milestone + 7 backlog issues filed. BUG-016 vocab-canon migration SHIPPED (12/12 slices). LLD-011 spec-review v2 ALL phases shipped + 2-iter dogfood complete.
+> **Last session ended:** v2.0.0 launch complete. GitHub release: https://github.com/hassan-mohiddin/orchestra/releases/tag/v2.0.0. v2.1 milestone #1 + issues #1-#7 filed. pytest 515 / pyrefly 0 / lint clean / eval 12/12.
+
+---
+
+## 🎯 NEXT (post-compact)
+
+**Pre-v1.7 BUG sweep — bundle as v2.0.1 patch release.**
+
+Onboarding-critical bugs open since v1.4, deferred through v1.5/v1.6/v1.7/v2.0.0. Now that v2.0.0 has shipped, new consumer installs will hit these on day-1. Severity-ordered sequence:
+
+| Order | BUG | Severity | Est | Why first |
+|---|---|---|---|---|
+| 1 | `docs/bugs/BUG-001-init-flow-not-interactive.md` | Critical | ~4h (could be a full day — structural) | `/orchestra:init` improvises instead of firing `AskUserQuestion` prompts; visible to every consumer on first install |
+| 2 | `docs/bugs/BUG-002-gitignore-affects-tracked-files.md` | High | ~2h | silent data-handling defect; same install path as BUG-001 |
+| 3 | `docs/bugs/BUG-004-templates-not-project-aware.md` | Medium | ~3h | AGENTS.md / llms.txt are orchestra-generic, not project-aware |
+| 4 | `docs/bugs/BUG-005-mkdocs-nav-no-auto-detect.md` | Medium | ~2h | mkdocs.yml nav hardcoded; auto-detect from filesystem |
+
+**Bundle target:** v2.0.1 patch release (4 fixes, no API change).
+
+**Discipline:** Each BUG = full iteration loop:
+1. Read BUG doc + reproduce
+2. Hypothesis + fix
+3. Tests
+4. Wait for user-confirm before `fix:` commit
+5. Status flip Investigating → Fix Applied → Verified
+
+**Start with BUG-001.** Read full body + propose attack-surface analysis BEFORE any code change. Authorization needed per-BUG.
+
+---
+
+## 🚀 v2.0.0 LAUNCHED (this session)
+
+**Tag**: `v2.0.0` at `be7cdc0`. Pushed to origin.
+**Release**: https://github.com/hassan-mohiddin/orchestra/releases/tag/v2.0.0
+**v2.1 milestone**: https://github.com/hassan-mohiddin/orchestra/milestone/1
+**v2.1 issues**: #1 PyYAML canon, #2 aggregator second-text, #3 vendor diversification, #4 4-doc depth-metric, #5 eval scenarios s1-s5, #6 HMAC signature, #7 infra sandbox.
+
+**Final gate state at tag**: pytest 515 / pyrefly 0 / cli.lint --pre-commit clean / cli.eval 12/12.
+
+**Local ahead of origin by 2 commits** (parallel session: `697394a` philosophy stub + `ddc4efb` .claude bootstrap). Not v2-blocking; push when convenient.
+
+---
+
+## 🎉 NEWLY SHIPPED — BUG-016 vocab-canon migration (12/12 slices)
+
+**State:** Migration complete. Single controlled-vocabulary canon at
 
 ---
 

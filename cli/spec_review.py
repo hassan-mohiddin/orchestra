@@ -81,6 +81,30 @@ def parse_iteration_from_text(text: str) -> int:
     return int(m.group(1))
 
 
+def iteration_field_present(text: str) -> bool:
+    """True iff the doc body literally contains a `> **Iteration:** N` line.
+
+    Differentiates "explicitly iter-1" from "missing field, defaulted to 1".
+    Used by E13 fail-closed (LLD-011 slice 2.28).
+    """
+    return bool(re.search(r"^>\s+\*\*Iteration:\*\*\s+\d+\s*$", text, re.MULTILINE))
+
+
+def prior_attestations_exist(doc_path: Path, repo_root: Path) -> bool:
+    """True iff at least one `<doc-id>-r*.review.yaml` exists under docs/reviews/.
+
+    Per LLD-011 §E13: if any prior attestation exists for a doc, the doc's
+    Iteration: field must be present and explicit; silent default-to-1 is a
+    loop-cap bypass.
+    """
+    stem = doc_path.stem
+    base = re.sub(r"-r\d+$", "", stem)
+    reviews = repo_root / "docs" / "reviews"
+    if not reviews.exists():
+        return False
+    return any(reviews.glob(f"{base}-r*.review.yaml"))
+
+
 _CODEX_SEVERITY_MAP: dict[str, str] = {
     "critical": "Critical",
     "high": "Important",
@@ -459,6 +483,19 @@ def main(argv=None) -> int:
     doc_bytes = canonical_path.read_bytes()
     doc_text = doc_bytes.decode("utf-8")
     pre_dispatch_hash = "sha256:" + hashlib.sha256(doc_bytes).hexdigest()
+
+    # LLD-011 slice 2.28 (E13) — silent default-to-1 when prior attestations
+    # exist is a loop-cap bypass. Require an explicit Iteration: field.
+    if not iteration_field_present(doc_text) and prior_attestations_exist(canonical_path, repo_root):
+        print(
+            f"error: iteration_missing_with_prior (E13): {canonical_path.name} "
+            "is missing `> **Iteration:** N` but prior attestations exist for "
+            "this doc-id. Add an explicit Iteration: field to the doc metadata "
+            "block (silent default-to-1 is a loop-cap bypass).",
+            file=sys.stderr,
+        )
+        return 1
+
     iteration = parse_iteration_from_text(doc_text)
 
     # F9: anchor attestation path under repo_root

@@ -144,6 +144,66 @@ _FILENAME_GRAMMAR: dict[str, re.Pattern[str]] = {
 }
 
 
+_ITERATION_RE = re.compile(r"^>\s*\*\*Iteration:\*\*\s*(\d+)", re.MULTILINE)
+_DOC_ID_RE = re.compile(r"^(?:BUG-\d+|ADR-\d+|\d+)-[a-z0-9-]+|^[a-z0-9-]+", re.IGNORECASE)
+
+
+def _check_class_audit_attestation(doc_path: Path) -> CheckResult:
+    """Per LLD-011 §Design class-vs-instance — iter-2+ docs must sweep class findings.
+
+    Reads the prior-iteration attestation (if any) at
+    `docs/reviews/<doc-stem>-r<N-1>.review.yaml`. When any iter-1 finding has
+    scope=class, this iter-2 doc must contain an `## Audit Attestation` section
+    documenting the systemic sweep. Missing audit → check fails.
+
+    No prior attestation, iter=1, or zero class findings → check passes.
+    """
+    import yaml
+
+    body = doc_path.read_text()
+    m = _ITERATION_RE.search(body)
+    if not m:
+        return CheckResult(passed=True, detail="no Iteration: marker — no audit required")
+    iteration = int(m.group(1))
+    if iteration <= 1:
+        return CheckResult(passed=True, detail="iter-1: no prior attestation to audit")
+
+    prior_iter = iteration - 1
+    stem = doc_path.stem
+    # Strip any existing -rN suffix to get base id
+    base = re.sub(r"-r\d+$", "", stem)
+    reviews_dir = Path.cwd() / "docs" / "reviews"
+    prior_path = reviews_dir / f"{base}-r{prior_iter}.review.yaml"
+    if not prior_path.exists():
+        return CheckResult(
+            passed=True,
+            detail=f"no prior attestation at {prior_path} — no audit required",
+        )
+
+    try:
+        prior = yaml.safe_load(prior_path.read_text()) or {}
+    except yaml.YAMLError as exc:
+        return CheckResult(passed=False, detail=f"cannot parse prior attestation: {exc}")
+
+    findings = prior.get("findings_aggregated") or []
+    class_findings = [f for f in findings if f.get("scope") == "class"]
+    if not class_findings:
+        return CheckResult(passed=True, detail="no class findings in iter-1 — no sweep required")
+
+    if re.search(r"^#{2,4}\s+Audit Attestation\b", body, re.MULTILINE | re.IGNORECASE):
+        return CheckResult(
+            passed=True,
+            detail=f"audit_attestation section present ({len(class_findings)} class finding(s) swept)",
+        )
+    return CheckResult(
+        passed=False,
+        detail=(
+            f"{len(class_findings)} class finding(s) in iter-{prior_iter} attestation but no "
+            "`## Audit Attestation` section in iter-2 doc body"
+        ),
+    )
+
+
 def _check_glossary(doc_path: Path) -> CheckResult:
     """Glossary completeness — NON-GATING per LLD-011 §PDSA item 4.
 
@@ -353,5 +413,6 @@ def run_pdsa(doc_path: Path) -> PdsaReport:
     report.checks["refs"] = _check_refs(doc_path)
     report.checks["filename_grammar"] = _check_filename_grammar(doc_path)
     report.checks["glossary"] = _check_glossary(doc_path)
+    report.checks["class_audit_attestation"] = _check_class_audit_attestation(doc_path)
 
     return report

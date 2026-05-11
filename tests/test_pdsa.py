@@ -165,6 +165,107 @@ text
     assert report.checks["required_sections"].passed is True
 
 
+def test_citation_validity_pass(tmp_path, monkeypatch) -> None:
+    """Slice 2.4 — citation `<path>:<N>` with N in range → citations.passed=True."""
+    from cli import pdsa
+
+    target = tmp_path / "src" / "foo.py"
+    target.parent.mkdir(parents=True)
+    target.write_text("line1\nline2\nline3\nline4\nline5\n")
+
+    body = f"## Body\nReference: `{target}:3` — see line 3.\n"
+    doc = tmp_path / "random.md"
+    doc.write_text(body)
+
+    monkeypatch.setattr(pdsa, "_invoke_lint", lambda argv: 0)
+    report = pdsa.run_pdsa(doc)
+
+    assert report.checks["citations"].passed is True
+
+
+def test_citation_validity_range_pass(tmp_path, monkeypatch) -> None:
+    """Slice 2.4 — range citation `<path>:<N>-<M>` validates both endpoints."""
+    from cli import pdsa
+
+    target = tmp_path / "src" / "foo.py"
+    target.parent.mkdir(parents=True)
+    target.write_text("\n".join(f"l{i}" for i in range(1, 21)) + "\n")
+
+    body = f"Reference: `{target}:5-10`\n"
+    doc = tmp_path / "random.md"
+    doc.write_text(body)
+
+    monkeypatch.setattr(pdsa, "_invoke_lint", lambda argv: 0)
+    report = pdsa.run_pdsa(doc)
+
+    assert report.checks["citations"].passed is True
+
+
+def test_citation_validity_nonexistent_path(tmp_path, monkeypatch) -> None:
+    """Slice 2.5 — citation points at nonexistent path → citations.passed=False."""
+    from cli import pdsa
+
+    body = "Reference: `nonexistent/path.py:5`\n"
+    doc = tmp_path / "random.md"
+    doc.write_text(body)
+
+    monkeypatch.setattr(pdsa, "_invoke_lint", lambda argv: 0)
+    report = pdsa.run_pdsa(doc)
+
+    assert report.checks["citations"].passed is False
+    assert "nonexistent" in report.checks["citations"].detail
+
+
+def test_citation_validity_out_of_range(tmp_path, monkeypatch) -> None:
+    """Slice 2.5 — citation line N > len(lines) → citations.passed=False."""
+    from cli import pdsa
+
+    target = tmp_path / "src" / "small.py"
+    target.parent.mkdir(parents=True)
+    target.write_text("only one line\n")
+
+    body = f"Reference: `{target}:99`\n"
+    doc = tmp_path / "random.md"
+    doc.write_text(body)
+
+    monkeypatch.setattr(pdsa, "_invoke_lint", lambda argv: 0)
+    report = pdsa.run_pdsa(doc)
+
+    assert report.checks["citations"].passed is False
+    assert "99" in report.checks["citations"].detail or "out of range" in report.checks["citations"].detail.lower()
+
+
+def test_citation_range_inverted_fails(tmp_path, monkeypatch) -> None:
+    """Slice 2.5 — range citation with M < N → citations.passed=False."""
+    from cli import pdsa
+
+    target = tmp_path / "src" / "f.py"
+    target.parent.mkdir(parents=True)
+    target.write_text("\n".join(f"l{i}" for i in range(1, 21)) + "\n")
+
+    body = f"Reference: `{target}:10-5`\n"
+    doc = tmp_path / "random.md"
+    doc.write_text(body)
+
+    monkeypatch.setattr(pdsa, "_invoke_lint", lambda argv: 0)
+    report = pdsa.run_pdsa(doc)
+
+    assert report.checks["citations"].passed is False
+
+
+def test_citation_no_citations(tmp_path, monkeypatch) -> None:
+    """Slice 2.4 — doc with no citations → citations.passed=True (nothing to validate)."""
+    from cli import pdsa
+
+    doc = tmp_path / "random.md"
+    doc.write_text("# Foo\n\nNo references here.\n")
+
+    monkeypatch.setattr(pdsa, "_invoke_lint", lambda argv: 0)
+    report = pdsa.run_pdsa(doc)
+
+    assert report.checks["citations"].passed is True
+
+
 def test_required_sections_unknown_doc_type(tmp_path, monkeypatch) -> None:
     """Slice 2.3 — unknown doc type → required_sections.passed=True (skip check, no spec to enforce)."""
     from cli import pdsa

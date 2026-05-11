@@ -124,6 +124,54 @@ def _extract_section_headings(body: str) -> set[str]:
     return headings
 
 
+_CITATION_RE = re.compile(
+    r"`([^\s`]+\.[A-Za-z0-9]+):(\d+)(?:-(\d+))?`"
+)
+
+
+def _check_citations(doc_path: Path) -> CheckResult:
+    """Validate `<path>:<N>` and `<path>:<N>-<M>` citations in doc body.
+
+    Per LLD-011 §PDSA item 3:
+    - cited_path must exist (relative to repo root or absolute)
+    - 1 <= N <= len(lines)
+    - if M present: 1 <= M <= len(lines) AND M >= N
+    """
+    body = doc_path.read_text()
+    failures: list[str] = []
+
+    for m in _CITATION_RE.finditer(body):
+        cited_path_str, n_str, m_str = m.group(1), m.group(2), m.group(3)
+        cited_path = Path(cited_path_str)
+        if not cited_path.is_absolute():
+            cited_path = (doc_path.parent / cited_path).resolve()
+
+        if not cited_path.exists():
+            failures.append(f"nonexistent path: {cited_path_str}")
+            continue
+
+        try:
+            lines = cited_path.read_text().splitlines()
+        except OSError as exc:
+            failures.append(f"cannot read {cited_path_str}: {exc}")
+            continue
+
+        n = int(n_str)
+        total = len(lines)
+        if not (1 <= n <= total):
+            failures.append(f"{cited_path_str}:{n_str} out of range (file has {total} lines)")
+            continue
+
+        if m_str is not None:
+            mm = int(m_str)
+            if not (1 <= mm <= total and mm >= n):
+                failures.append(f"{cited_path_str}:{n_str}-{m_str} invalid range")
+
+    if failures:
+        return CheckResult(passed=False, detail="; ".join(failures))
+    return CheckResult(passed=True, detail="all citations valid")
+
+
 def _check_required_sections(doc_path: Path) -> CheckResult:
     """Verify each required section name is present as a heading in the doc.
 
@@ -192,5 +240,6 @@ def run_pdsa(doc_path: Path) -> PdsaReport:
     )
 
     report.checks["required_sections"] = _check_required_sections(doc_path)
+    report.checks["citations"] = _check_citations(doc_path)
 
     return report

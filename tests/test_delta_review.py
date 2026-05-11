@@ -269,3 +269,96 @@ def test_pruned_blob_fails_closed(tmp_path):
     with pytest.raises(delta_review.SpecReviewError) as exc_info:
         delta_review.retrieve_iter1_bytes(bogus_sha, tmp_path)
     assert "iter1_blob_pruned" in str(exc_info.value)
+
+
+# ---------------------------------------------------------------------------
+# Slice 2.25 — diff extraction
+# ---------------------------------------------------------------------------
+
+
+def test_compute_diff_basic():
+    """Slice 2.25 — compute_unified_diff returns unified-diff text for changed bytes."""
+    from cli import delta_review
+
+    iter1 = "line 1\nline 2\nline 3\n"
+    iter2 = "line 1\nline 2 CHANGED\nline 3\n"
+    diff = delta_review.compute_unified_diff(iter1, iter2)
+    assert "@@" in diff
+    assert "-line 2" in diff
+    assert "+line 2 CHANGED" in diff
+
+
+def test_compute_diff_empty():
+    """Slice 2.26 — identical iter-1 and iter-2 → empty diff string."""
+    from cli import delta_review
+
+    text = "same content\nno changes\n"
+    diff = delta_review.compute_unified_diff(text, text)
+    assert diff == ""
+
+
+# ---------------------------------------------------------------------------
+# Slice 2.26 — empty-diff no-op decision
+# ---------------------------------------------------------------------------
+
+
+def test_is_noop_iteration_true_for_empty_diff():
+    """Slice 2.26 — empty diff string → is_noop_iteration True."""
+    from cli import delta_review
+
+    assert delta_review.is_noop_iteration("") is True
+
+
+def test_is_noop_iteration_false_for_changes():
+    """Slice 2.26 — non-empty diff → not a no-op."""
+    from cli import delta_review
+
+    assert delta_review.is_noop_iteration("@@ -1,1 +1,1 @@\n-x\n+y\n") is False
+
+
+# ---------------------------------------------------------------------------
+# Slice 2.27 — delta prompt builder
+# ---------------------------------------------------------------------------
+
+
+def test_build_delta_prompt_includes_diff_and_findings():
+    """Slice 2.27 — delta-mode sub-judge prompt embeds diff + iter-1 findings as context."""
+    from cli import delta_review
+
+    diff = "@@ -1,1 +1,2 @@\n-old\n+new line 1\n+new line 2\n"
+    prior_findings = [
+        {
+            "severity": "Important",
+            "location": "Body § X",
+            "problem": "shared problem",
+            "scope": "instance",
+            "raised_by": ["semantic"],
+        }
+    ]
+    prompt = delta_review.build_delta_prompt(
+        judge_id="semantic",
+        diff_text=diff,
+        prior_findings=prior_findings,
+        prior_iteration=1,
+    )
+    assert "delta" in prompt.lower()
+    assert diff in prompt
+    assert "Body § X" in prompt
+    assert "shared problem" in prompt
+    assert "iter-1" in prompt.lower() or "iteration 1" in prompt.lower()
+    assert "semantic" in prompt
+
+
+def test_build_delta_prompt_with_no_prior_findings():
+    """Slice 2.27 — empty prior findings list still produces a valid prompt."""
+    from cli import delta_review
+
+    diff = "@@ -1,1 +1,1 @@\n-x\n+y\n"
+    prompt = delta_review.build_delta_prompt(
+        judge_id="adversarial",
+        diff_text=diff,
+        prior_findings=[],
+        prior_iteration=1,
+    )
+    assert "no prior findings" in prompt.lower() or "0 prior" in prompt.lower()
+    assert diff in prompt

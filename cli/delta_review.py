@@ -17,6 +17,7 @@ Any contract break → SpecReviewError → fail-closed write of a failure attest
 
 from __future__ import annotations
 
+import difflib
 import hashlib
 import re
 import subprocess
@@ -140,3 +141,66 @@ def retrieve_iter1_bytes(blob_sha: str, repo_root: Path) -> bytes:
             f"attestation stored {blob_sha!r}. Object DB integrity violation."
         )
     return bytes_
+
+
+def compute_unified_diff(iter1_text: str, iter2_text: str) -> str:
+    """Unified-diff between two doc revisions. Empty string when texts are identical."""
+    if iter1_text == iter2_text:
+        return ""
+    return "".join(
+        difflib.unified_diff(
+            iter1_text.splitlines(keepends=True),
+            iter2_text.splitlines(keepends=True),
+            fromfile="iter-1",
+            tofile="iter-2",
+        )
+    )
+
+
+def is_noop_iteration(diff_text: str) -> bool:
+    """True when the unified diff is empty (no changes between iter-1 and iter-2).
+
+    No-op iterations skip sub-judge dispatch; the new attestation simply
+    references the prior iteration's verdict per LLD-011 §Design Delta-review.
+    """
+    return diff_text == ""
+
+
+def build_delta_prompt(
+    *,
+    judge_id: str,
+    diff_text: str,
+    prior_findings: list[dict],
+    prior_iteration: int,
+) -> str:
+    """Build a delta-mode prompt for sub-judge `judge_id`.
+
+    Per LLD-011 §Design Delta-review: sub-judges receive
+      1. the unified diff iter-(N-1) → iter-N
+      2. iter-(N-1) findings as context (so duplicate findings can be dropped)
+    Returns the prompt as a single string ready to dispatch.
+    """
+    if prior_findings:
+        findings_block = "\n".join(
+            f"- [{f.get('severity', '?')}] {f.get('location', '?')}: {f.get('problem', '?')}"
+            f" (scope: {f.get('scope', '?')})"
+            for f in prior_findings
+        )
+    else:
+        findings_block = "(no prior findings)"
+
+    return (
+        f"# Delta Review — sub-judge `{judge_id}`\n\n"
+        f"You are reviewing iter-{prior_iteration + 1} of a doc that was previously\n"
+        f"reviewed at iter-{prior_iteration}. Focus your review on the DELTA, not on\n"
+        f"re-discovering already-known issues.\n\n"
+        f"## Unified diff (iter-{prior_iteration} → iter-{prior_iteration + 1})\n\n"
+        f"```diff\n{diff_text}```\n\n"
+        f"## Prior-iteration findings (iter-{prior_iteration})\n\n"
+        f"{findings_block}\n\n"
+        f"## Instructions\n"
+        f"- Identify NEW findings introduced by the diff.\n"
+        f"- Identify prior findings that are NOT addressed by the diff (carry-forward).\n"
+        f"- Do NOT re-raise prior findings that the diff clearly resolves.\n"
+        f"- Use your rubric (rubric-v1) to assess severity.\n"
+    )

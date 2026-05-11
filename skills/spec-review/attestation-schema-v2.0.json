@@ -134,7 +134,7 @@
     },
     "finding": {
       "type": "object",
-      "required": ["severity", "location", "problem"],
+      "required": ["severity", "location", "problem", "scope"],
       "additionalProperties": false,
       "properties": {
         "severity": {"enum": ["Critical", "Important", "Minor"]},

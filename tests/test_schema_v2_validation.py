@@ -132,6 +132,71 @@ def test_version_pinning():
         jsonschema.validate(payload, schema)
 
 
+def test_scope_field_instance_valid():
+    """Slice 2.13 — finding with scope=instance validates."""
+    schema = _load_schema_v2()
+    payload = _minimal_conforming_attestation()
+    payload["findings_aggregated"] = [
+        {
+            "severity": "Important",
+            "location": "Body § X",
+            "problem": "p",
+            "scope": "instance",
+            "raised_by": ["semantic"],
+        }
+    ]
+    jsonschema.validate(payload, schema)
+
+
+def test_scope_field_class_valid():
+    """Slice 2.13 — finding with scope=class validates."""
+    schema = _load_schema_v2()
+    payload = _minimal_conforming_attestation()
+    payload["findings_aggregated"] = [
+        {
+            "severity": "Important",
+            "location": "Body § Y",
+            "problem": "p2",
+            "scope": "class",
+            "raised_by": ["adversarial"],
+        }
+    ]
+    jsonschema.validate(payload, schema)
+
+
+def test_scope_field_invalid_value_rejected():
+    """Slice 2.13 — schema rejects scope outside instance|class enum."""
+    schema = _load_schema_v2()
+    payload = _minimal_conforming_attestation()
+    payload["findings_aggregated"] = [
+        {
+            "severity": "Important",
+            "location": "Body § Z",
+            "problem": "p3",
+            "scope": "global",
+            "raised_by": ["semantic"],
+        }
+    ]
+    with pytest.raises(jsonschema.ValidationError):
+        jsonschema.validate(payload, schema)
+
+
+def test_scope_field_required_on_findings():
+    """Slice 2.13 — finding without scope field is rejected."""
+    schema = _load_schema_v2()
+    payload = _minimal_conforming_attestation()
+    payload["findings_aggregated"] = [
+        {
+            "severity": "Important",
+            "location": "Body § A",
+            "problem": "no scope",
+            "raised_by": ["semantic"],
+        }
+    ]
+    with pytest.raises(jsonschema.ValidationError):
+        jsonschema.validate(payload, schema)
+
+
 def test_version_pinning_rejects_future():
     """Slice 1.5 — schema also rejects forward versions like '3.0' (const, not minimum)."""
     schema = _load_schema_v2()

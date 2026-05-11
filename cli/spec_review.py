@@ -79,6 +79,76 @@ def parse_iteration_from_text(text: str) -> int:
     return int(m.group(1))
 
 
+def compute_overall_verdict_v2(sub_judges: list[dict]) -> dict:
+    """Compute overall_verdict + basis per LLD-011 tiered policy (slices 1.27-1.29).
+
+    Algorithm:
+        1. Bucket sub-judges by status. Failed sub-judges in MANDATORY_SUBJUDGES
+           go to `mandatory_failures`; failed optional sub-judges go to
+           `excluded_sub_judges`. Completed sub-judges go to a `completed` list.
+        2. If `mandatory_failures` non-empty: overall_verdict=fail with reason=
+           mandatory_subjudge_failed. Excluded list preserved for audit.
+        3. Else if no sub-judges completed: overall_verdict=fail with reason=
+           all_subjudges_failed. (Failure-attestation invariant — even when
+           the pipeline produces no aggregated findings, the verdict is still
+           computed and the attestation still persisted.)
+        4. Otherwise: overall_verdict = worst verdict across completed
+           sub-judges (max via VERDICT_RANK). No reason.
+
+    Returns:
+        dict with keys `overall_verdict` and `overall_verdict_basis`.
+    """
+    mandatory_failures: list[str] = []
+    excluded: list[str] = []
+    completed: list[dict] = []
+
+    for sj in sub_judges:
+        sjid = sj["id"]
+        status = sj.get("status", "completed")
+        if status == "completed":
+            completed.append(sj)
+        elif sjid in MANDATORY_SUBJUDGES:
+            mandatory_failures.append(sjid)
+        else:
+            excluded.append(sjid)
+
+    if mandatory_failures:
+        return {
+            "overall_verdict": "fail",
+            "overall_verdict_basis": {
+                "worst_sub_judge_verdict": "fail",
+                "excluded_sub_judges": sorted(excluded),
+                "mandatory_failures": sorted(mandatory_failures),
+                "reason": "mandatory_subjudge_failed",
+            },
+        }
+
+    if not completed:
+        return {
+            "overall_verdict": "fail",
+            "overall_verdict_basis": {
+                "worst_sub_judge_verdict": "fail",
+                "excluded_sub_judges": sorted(excluded),
+                "mandatory_failures": [],
+                "reason": "all_subjudges_failed",
+            },
+        }
+
+    worst = max(
+        (sj["verdict"] for sj in completed),
+        key=lambda v: VERDICT_RANK.get(v, -1),
+    )
+    return {
+        "overall_verdict": worst,
+        "overall_verdict_basis": {
+            "worst_sub_judge_verdict": worst,
+            "excluded_sub_judges": sorted(excluded),
+            "mandatory_failures": [],
+            "reason": None,
+        },
+    }
+
+
 def _compute_attestation_integrity_hash(payload: dict) -> str:
     """SHA-256 over canonical YAML payload with the hash field zeroed (LLD-011 slice 1.23).
 

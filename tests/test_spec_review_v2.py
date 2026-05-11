@@ -71,3 +71,104 @@ def test_skill_md_describes_v2_dispatch():
     assert "attestation_integrity_hash" in body or "integrity hash" in body.lower()
     # Failure-attestation invariant
     assert "failure" in body.lower()
+
+
+def test_parse_codex_findings_severity_counts():
+    """Slice 1.31 — codex .md parser extracts severity counts from typical codex output."""
+    codex_md = """# Codex Adversarial Review
+
+Target: working tree diff
+Verdict: needs-attention
+
+Findings:
+- [critical] First critical issue (path:1)
+  Description here.
+- [high] Some high issue (path:5)
+  Body.
+- [high] Another high issue (path:10)
+  Body.
+- [medium] Medium issue (path:15)
+  Body.
+
+Next steps:
+- ...
+"""
+    counts = spec_review.parse_codex_findings(codex_md)
+    assert counts["Critical"] == 1
+    assert counts["Important"] == 2  # codex `[high]` maps to Important
+    assert counts["Minor"] == 1  # codex `[medium]` maps to Minor
+
+
+def test_parse_codex_findings_no_findings():
+    """Slice 1.31 — parser handles codex output with no findings (all zeros)."""
+    codex_md = """# Codex Adversarial Review
+
+Verdict: pass
+
+Findings: none.
+
+Next steps:
+- ...
+"""
+    counts = spec_review.parse_codex_findings(codex_md)
+    assert counts["Critical"] == 0
+    assert counts["Important"] == 0
+    assert counts["Minor"] == 0
+
+
+def test_parse_codex_findings_unknown_format():
+    """Slice 1.31 — parser tolerates unknown format and returns zero counts (no crash)."""
+    counts = spec_review.parse_codex_findings("totally unrelated content")
+    assert counts["Critical"] == 0
+    assert counts["Important"] == 0
+    assert counts["Minor"] == 0
+
+
+def test_render_cross_judge_report_orchestra_only():
+    """Slice 1.30 — report renders with orchestra alone (no codex)."""
+    orchestra = {
+        "doc_subject": {"path": "docs/features/example.md", "iteration": 1},
+        "findings_aggregated": [
+            {
+                "severity": "Critical",
+                "location": "Body § A",
+                "problem": "p1",
+                "raised_by": ["semantic"],
+            },
+            {
+                "severity": "Important",
+                "location": "Body § B",
+                "problem": "p2",
+                "raised_by": ["adversarial"],
+            },
+        ],
+    }
+    out = spec_review.render_cross_judge_report(orchestra, codex_md=None)
+    assert "Spec-Review v2 Report" in out
+    assert "orchestra" in out
+    # Counts present
+    assert "1" in out  # Critical count
+    # No codex row
+    assert "codex" not in out.lower() or "no codex" in out.lower()
+
+
+def test_render_cross_judge_report_with_codex():
+    """Slice 1.30 — report renders cross-judge counts when codex present."""
+    orchestra = {
+        "doc_subject": {"path": "docs/features/example.md", "iteration": 1},
+        "findings_aggregated": [
+            {
+                "severity": "Critical",
+                "location": "Body § A",
+                "problem": "p1",
+                "raised_by": ["semantic"],
+            }
+        ],
+    }
+    codex_md = "Findings:\n- [critical] X\n- [high] Y\n"
+    out = spec_review.render_cross_judge_report(orchestra, codex_md=codex_md)
+    assert "orchestra" in out
+    assert "codex" in out
+    # Both judges have counts in the table
+    assert "| orchestra |" in out
+    assert "| codex |" in out

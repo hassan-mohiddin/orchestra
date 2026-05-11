@@ -79,6 +79,95 @@ def parse_iteration_from_text(text: str) -> int:
     return int(m.group(1))
 
 
+_CODEX_SEVERITY_MAP: dict[str, str] = {
+    "critical": "Critical",
+    "high": "Important",
+    "important": "Important",
+    "medium": "Minor",
+    "minor": "Minor",
+    "low": "Minor",
+}
+
+
+def parse_codex_findings(md_text: str) -> dict[str, int]:
+    """Tolerantly parse codex .md output for severity counts (LLD-011 slice 1.31).
+
+    Looks for lines matching `- [<severity>] ...` (codex's standard finding format).
+    Maps codex severity vocab (critical/high/medium) to orchestra vocab
+    (Critical/Important/Minor). Unknown format → zero counts (no crash).
+    """
+    counts: dict[str, int] = {"Critical": 0, "Important": 0, "Minor": 0}
+    if not md_text:
+        return counts
+    for m in re.finditer(r"-\s*\[([a-z]+)\]", md_text):
+        sev_raw = m.group(1).lower()
+        sev = _CODEX_SEVERITY_MAP.get(sev_raw)
+        if sev:
+            counts[sev] += 1
+    return counts
+
+
+def render_cross_judge_report(
+    orchestra_attestation: dict, codex_md: str | None
+) -> str:
+    """Render cross-judge comparison report (LLD-011 slice 1.30).
+
+    Markdown table to chat (NOT a persistent file). Counts per peer-judge,
+    cross-judge overlap noted when both present. Top findings inline.
+    """
+    doc_path = orchestra_attestation.get("doc_subject", {}).get("path", "<unknown>")
+    iteration = orchestra_attestation.get("doc_subject", {}).get("iteration", "?")
+    doc_id = Path(doc_path).stem
+    orchestra_counts = {"Critical": 0, "Important": 0, "Minor": 0}
+    for f in orchestra_attestation.get("findings_aggregated", []):
+        sev = f.get("severity")
+        if sev in orchestra_counts:
+            orchestra_counts[sev] += 1
+
+    lines: list[str] = []
+    lines.append(f"## Spec-Review v2 Report — {doc_id}-r{iteration}")
+    lines.append("")
+    lines.append("| Judge | Critical | Important | Minor | File |")
+    lines.append("|---|---|---|---|---|")
+    orchestra_path = f"docs/reviews/{doc_id}-r{iteration}.orchestra.review.yaml"
+    lines.append(
+        f"| orchestra | {orchestra_counts['Critical']} | "
+        f"{orchestra_counts['Important']} | {orchestra_counts['Minor']} | "
+        f"{orchestra_path} |"
+    )
+
+    if codex_md:
+        codex_counts = parse_codex_findings(codex_md)
+        codex_path = f"docs/reviews/{doc_id}-r{iteration}.codex.md"
+        lines.append(
+            f"| codex | {codex_counts['Critical']} | "
+            f"{codex_counts['Important']} | {codex_counts['Minor']} | "
+            f"{codex_path} |"
+        )
+    else:
+        lines.append("")
+        lines.append("(no codex peer-judge file present this iteration)")
+
+    # Top 5 by severity
+    top = sorted(
+        orchestra_attestation.get("findings_aggregated", []),
+        key=lambda f: (-VERDICT_RANK.get(f.get("severity", "Minor"), 0),),
+    )[:5]
+    if top:
+        lines.append("")
+        lines.append("**Top findings (orchestra, by severity):**")
+        for i, f in enumerate(top, 1):
+            sev_short = {"Critical": "C", "Important": "I", "Minor": "M"}.get(
+                f.get("severity", "Minor"), "?"
+            )
+            raised = ",".join(f.get("raised_by", []))
+            lines.append(
+                f"{i}. {sev_short} [{raised}] {f.get('location', '?')} — {f.get('problem', '')}"
+            )
+
+    return "\n".join(lines) + "\n"
+
+
 def compute_overall_verdict_v2(sub_judges: list[dict]) -> dict:
     """Compute overall_verdict + basis per LLD-011 tiered policy (slices 1.27-1.29).
 

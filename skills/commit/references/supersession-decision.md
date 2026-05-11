@@ -86,7 +86,7 @@ One `Addresses:` line per finding. Multiple findings → multiple lines.
 
 ### C. Closing 2 Minor findings via narrow-change
 
-> Change: fix wording per 2 Minor findings in `008-commit-skill-r4.review.yaml`.
+> Change: fix wording per 2 Minor findings in `008-commit-skill-r4.orchestra.review.yaml`.
 > Step 1: whitelist-only? NO (body edit).
 > Step 2: driven by review finding? YES.
 > Step 3: highest severity? Minor.

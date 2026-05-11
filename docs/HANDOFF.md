@@ -119,8 +119,8 @@ All r1 codex findings + all r1+r2 orchestra findings APPLIED inline before commi
 
 **Parallel-session artifacts (uncommitted as of this session, owned by other session):**
 - `docs/design/controlled-vocabulary.md` — vocab canon Design Doc drafted by parallel agent (BUG-016 effort)
-- `docs/reviews/controlled-vocabulary-r1.review.yaml` + `r2` + `r3` — spec-review attestations for vocab canon
-- `docs/reviews/2026-05-11-vocab-canon-migration-r1.review.yaml`
+- `docs/reviews/controlled-vocabulary-r1.orchestra.review.yaml` + `r2` + `r3` — spec-review attestations for vocab canon
+- `docs/reviews/2026-05-11-vocab-canon-migration-r1.orchestra.review.yaml`
 - `docs/plans/2026-05-11-vocab-canon-migration.md`
 - `cli/spec_review.py` + `tests/test_spec_review_v2.py` may have ongoing modifications from Phase 2 slice work — verify before touching.
 
@@ -177,11 +177,11 @@ After Phase 3: dogfood v2 on LLD-011 itself, depth-metric validation on 5-doc sa
 - `.claude/skills-registry.md`
 - `.claude/rules/*.md` (5 rule files)
 - `docs/HANDOFF.md` (this file — has LLD-011 ref edits)
-- `docs/reviews/008-commit-skill-r8.review.yaml`
-- `docs/reviews/BUG-012-v17-1-minor-followups-r1.review.yaml`
-- `docs/reviews/BUG-013-slash-command-naming-inconsistency-r1.review.yaml`
-- `docs/reviews/BUG-014-l4-bare-name-design-supersession-r1.review.yaml`
-- `docs/reviews/orchestra-philosophy-r2.review.yaml`
+- `docs/reviews/008-commit-skill-r8.orchestra.review.yaml`
+- `docs/reviews/BUG-012-v17-1-minor-followups-r1.orchestra.review.yaml`
+- `docs/reviews/BUG-013-slash-command-naming-inconsistency-r1.orchestra.review.yaml`
+- `docs/reviews/BUG-014-l4-bare-name-design-supersession-r1.orchestra.review.yaml`
+- `docs/reviews/orchestra-philosophy-r2.orchestra.review.yaml`
 - `docs/investigations/2026-05-11-workflow-skill-refresh.md`
 
 Decision deferred. Either commit en bloc ("docs: bootstrap orchestra-cwd + v1.7.1 paperwork yamls") or split by concern. Not blocking Phase 2.
@@ -266,8 +266,8 @@ v1.7.1 = paperwork-cleanup + 2 small bug fixes. Decided NOT to do full doc super
 |---|---|---|---|
 | BUG-013 | `docs/reviews/BUG-013-...-r1.review.yaml` | fail | 2 |
 | BUG-014 | `docs/reviews/BUG-014-...-r1.review.yaml` | fail | 2 |
-| philosophy-r2 | `docs/reviews/orchestra-philosophy-r2.review.yaml` | conditional_pass | 1 |
-| LLD-008-r8 | `docs/reviews/008-commit-skill-r8.review.yaml` | conditional_pass | 0 |
+| philosophy-r2 | `docs/reviews/orchestra-philosophy-r2.orchestra.review.yaml` | conditional_pass | 1 |
+| LLD-008-r8 | `docs/reviews/008-commit-skill-r8.orchestra.review.yaml` | conditional_pass | 0 |
 | BUG-012 | `docs/reviews/BUG-012-...-r1.review.yaml` | fail | 0 |
 
 **Decision needed next session:** how to address findings without 5-8 hr supersession spiral. See §Spec-review feedback loop below.

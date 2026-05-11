@@ -1,0 +1,164 @@
+schema_version: '1.0'
+doc_subject:
+  path: docs/features/008-commit-skill-r8.md
+  content_hash: sha256:e4272d1e7f750019af94112b1f35f350bc6c482338ab822948faae46ed86c5af
+  iteration: 8
+reviewer:
+  identifier: subagent:general-purpose+spec-review-v1
+  invoked_at: '2026-05-11T11:59:22Z'
+  context_isolation: fresh_subagent
+gates:
+  completeness:
+    verdict: conditional_pass
+    findings:
+    - severity: Important
+      location: "A2 \xA7 skill-dir file count"
+      problem: A2 says skill directory contains exactly 8 files but skills/commit/templates/
+        on disk contains 3 files (pre-commit.sh, commit-msg.sh, precommit-framework-snippet.yaml
+        shipped per LLD-010). Path-glob assertion T1 will count 9 files not 8. A2
+        contract diverges from actual shipped state and from LLD-010 ownership of
+        framework snippet.
+    - severity: Minor
+      location: "A10 \xA7 test-count"
+      problem: "A10 enumerates T1, T2, T3, T4a-e (5), T5a-g (7), T6, T7, T8 \u2014\
+        \ totals 8 unique IDs and 17 distinct test functions. The Testing section\
+        \ header at line 306 says 7 IDs; 13 distinct functions \u2014 stale numbers\
+        \ not synced to A10 r7 update. Reader sees two contradictory totals in same\
+        \ doc."
+    - severity: Minor
+      location: "Changelog \xA7 r6-to-r7"
+      problem: "Changelog entry for r6-r7 cascading edit cites A10 prose stale numbers\
+        \ corrected (15 to 17; >=165 to >=167) but Testing matrix header at line 306\
+        \ was not synced \u2014 still reads 7 IDs; 13 distinct functions. Implementation\
+        \ sync incomplete."
+  evidence:
+    verdict: conditional_pass
+    findings:
+    - severity: Important
+      location: "Architecture \xA7 CANON_FROZEN_STATUSES cite"
+      problem: Cites cli/lint.py:71-73 for CANON_FROZEN_STATUSES. Actual definition
+        is at cli/lint.py:75-79 (verified via grep). Line drift of 4 lines.
+    - severity: Important
+      location: "A11 \xA7 REFS_ELIGIBLE_PREFIXES cite"
+      problem: Cites cli/lint.py:77-80 for REFS_ELIGIBLE_PREFIXES. Actual definition
+        is at cli/lint.py:81-86. Line drift; cited range does not match.
+    - severity: Important
+      location: "Related Documents \xA7 lint.py cite"
+      problem: "Related Documents cites cli/lint.py:36-52 for _load_extract_mermaid.\
+        \ Actual function body starts at line 40 and runs to line 57. Cited range\
+        \ 36-52 spans both import block end and partway into function \u2014 does\
+        \ not match function definition."
+    - severity: Important
+      location: "Related Documents \xA7 install_hooks.py cite"
+      problem: Cites cli/install_hooks.py:48-75 for interactive prompt path. Actual
+        interactive prompt logic at cli/install_hooks.py:110-135 (input_fn on line
+        129). --force argparse flag at line 390. Cited range 48-75 contains no interactive
+        prompt or --force in current source.
+    - severity: Minor
+      location: "A5 \xA7 install_hooks cite"
+      problem: A5 cites cli/install_hooks.py:48 for existing --force flag location.
+        Actual --force argparse add_argument is at line 390; force kwarg in install_one_hook
+        signature at line 81. Citation does not point to either site.
+  clarity:
+    verdict: conditional_pass
+    findings:
+    - severity: Important
+      location: "Testing \xA7 T5f-duplicate"
+      problem: Test matrix contains two rows both labelled T5f at lines 323 and 325
+        with different test descriptions (line 323 = strict opt-in propagates; line
+        325 = strict opt-in regardless of TTY). Duplicate test ID. The second is almost
+        certainly meant to be T5g or removed; A14 enumerates T5e, T5f, T5g (3 tests).
+        Reader cannot resolve which T5f is canonical.
+    - severity: Minor
+      location: "A6 \xA7 T5a-g enumeration"
+      problem: "A6 acceptance text says T5a-g count is 7 in A10 but A6 body enumerates\
+        \ only T5a, T5b, T5c, T5d, T5e \u2014 5 tests. T5f and T5g are introduced\
+        \ only in A14. The mapping A6 owns T5a-g misleads \u2014 A14 owns T5f and\
+        \ T5g per actual prose."
+    - severity: Minor
+      location: "Testing \xA7 matrix-header"
+      problem: "Testing header reads Phase impl \u2014 new test matrix (7 IDs; 13\
+        \ distinct functions) but actual matrix rows are T1, T2, T3, T4a-e (5), T5a-g\
+        \ (7 including duplicate T5f), T6, T7, T8. Even excluding duplicate, count\
+        \ is 8 IDs / 17 functions. Reader cannot trust either heading or A10."
+  consistency:
+    verdict: conditional_pass
+    findings:
+    - severity: Important
+      location: "A3 \xA7 skill-templates cross-LLD"
+      problem: A3 r8 update claims cli/templates/ retains 10 init-related artifacts
+        (verified on disk). However skills/commit/templates/ on disk contains 3 files
+        (added precommit-framework-snippet.yaml from LLD-010) while A3 still describes
+        only 2-file relocation pre-commit.sh + commit-msg.sh. Cross-LLD interleave
+        with LLD-010 ownership of the snippet not noted in A3.
+    - severity: Minor
+      location: "Scope \xA7 item 4"
+      problem: 'In Scope item 4 says cli.init invokes cli.install_hooks --pre-commit
+        --commit-msg --on-conflict=skip but A6 explicitly states call is cli.install_hooks.main([--all,
+        --on-conflict=skip]) because --pre-commit flag does not exist in parser (closes
+        codex r4 high #1). Scope section was not synced to r4 fix.'
+    - severity: Minor
+      location: "Edge Cases \xA7 Case 1"
+      problem: "Edge Case 1 says manual fallback command is python -m cli.install_hooks\
+        \ --pre-commit --commit-msg --on-conflict=skip \u2014 same stale flag form\
+        \ repeated. Should be --all per A6 r4 correction."
+    - severity: Minor
+      location: "Cross-repo \xA7 baseline"
+      problem: "Cross-repo test architecture paragraph says T6 thus counts toward\
+        \ orchestra pytest baseline 163 \u2014 stale; current baseline per A10 r7\
+        \ is 167. Number not synced after r6/r7 cascading edits bumped baseline 163\
+        \ to 167."
+overall_verdict: conditional_pass
+required_followup:
+- Reconcile A2/Testing file count - either raise skill-dir count to 9 acknowledging
+  LLD-010 ownership of precommit-framework-snippet.yaml under skills/commit/templates/,
+  or move snippet out. Pick one; update A2 + T1 + Architecture diagram + Testing header.
+- Fix duplicate T5f row in Testing matrix (lines 323, 325) - rename one to T5g (matches
+  A14) and delete duplicate.
+- Refresh all cli/lint.py + cli/install_hooks.py line citations. Actual locations
+  - CANON_FROZEN_STATUSES = lint.py:75-79; REFS_ELIGIBLE_PREFIXES = lint.py:81-86;
+  _load_extract_mermaid = lint.py:40-57; --force argparse = install_hooks.py:390;
+  interactive prompt = install_hooks.py:110-135.
+- Sync Testing header and Scope item 4 + Edge Case 1 to r4 CLI contract (--all not
+  --pre-commit --commit-msg) and r7 test counts (8 IDs / 17 functions; baseline >=167).
+notes: 'Doc is in Status: Implemented (r8 supersession of r7). Implementation shipped
+
+  (eb50924 + da7238d per Changelog). Findings mostly contract-correctness drift:
+
+  r7-to-r8 supersession was scoped to A3 enumeration (11 to 10) and skills/spec-review/templates/
+
+  introduction, but multiple stale citations and counter-claims from r3/r4/r5/r6/r7
+
+  cascade were not swept. Most damaging: A2 exact-8-files claim contradicts on-disk
+
+  reality (9 files when LLD-010 snippet counted) - T1 will fail unless glob excludes
+
+  the snippet or A2 is updated. Cross-LLD ownership boundary for precommit-framework-snippet.yaml
+
+  (LLD-010 owns) vs skill-templates dir (LLD-008 owns) not articulated in A2 or A3.
+
+
+  Citation drift systemic - 5 of 6 cli/* line citations stale. Identifiers still
+
+  exist and findable but numeric anchors no longer point to them. Severity Important
+
+  not Critical because content correct, only line pins stale.
+
+
+  Self-contradiction Scope vs A6 on CLI form (--pre-commit --commit-msg vs --all)
+  is
+
+  most concerning consistency defect - survived r4 explicit fix of A6. Edge Case 1
+
+  carries same stale form.
+
+
+  No Critical findings. Doc accurately reflects architectural decisions and closes
+
+  BUG-010 Part 3; r8 supersession itself (attestation-template.yaml move) correctly
+
+  documented and matches on-disk state. Issues entirely in housekeeping that
+
+  accumulated across 8 iterations.
+
+  '

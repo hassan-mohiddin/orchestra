@@ -1,0 +1,120 @@
+schema_version: '1.0'
+doc_subject:
+  path: docs/bugs/BUG-013-slash-command-naming-inconsistency.md
+  content_hash: sha256:d9cc30d2d4dd9582769f8db7472e51dc67be117ba411fab4ad2273f21f587668
+  iteration: 1
+reviewer:
+  identifier: subagent:general-purpose+spec-review-v1
+  invoked_at: '2026-05-11T00:00:00Z'
+  context_isolation: fresh_subagent
+gates:
+  completeness:
+    verdict: fail
+    findings:
+    - severity: Important
+      location: "Header \xA7 metadata"
+      problem: Iteration field absent from header metadata block (rubric requires
+        Iteration in Bug Report header); only present implicitly in Iteration Log
+        section.
+    - severity: Critical
+      location: "Document \xA7 required sections"
+      problem: "Bug Report required sections per 4-gate rubric missing \u2014 no Symptom\
+        \ (uses Observed Behavior), no Reproduction labeled as required (Steps to\
+        \ Reproduce \u2014 acceptable rename), no Test Plan section, no Risk section.\
+        \ Fix Description present but Fix Design naming differs; Test Plan and Risk\
+        \ are entirely absent."
+    - severity: Important
+      location: "Fix Description \xA7 Phase 2"
+      problem: "Phase 2 step asks to verify design-docs/SKILL.md auto-invokes design-docs/init\
+        \ on first-time detection (currently delegates per skill body \u2014 confirm\
+        \ behavior); this is a TBD/unverified step embedded in the fix without a tracked\
+        \ followup ref."
+  evidence:
+    verdict: fail
+    findings:
+    - severity: Critical
+      location: "Observed Behavior \xA7 table"
+      problem: Claims about how each SKILL.md name field surfaces as slash commands
+        lack file:line citations to the SKILL.md frontmatter (e.g., skills/init/SKILL.md:N
+        showing name orchestra-init). Load-bearing factual claims uncited.
+    - severity: Important
+      location: "Root Cause \xA7 item 1"
+      problem: Claim that other skills declare bare names (commit, spec-review, design-docs)
+        and Claude Code auto-namespaces under plugin lacks citation to Claude Code
+        plugin namespacing docs or behavior reference.
+    - severity: Important
+      location: "Observed Behavior \xA7 sub-skill anomaly"
+      problem: Currently NOT exposed (per user observation I dont see that at all)
+        relies on user verbal report rather than verifiable evidence (e.g., autocomplete
+        dump, screenshot path, or commands/*.md inventory).
+    - severity: Minor
+      location: "Environment \xA7 version"
+      problem: orchestra v1.7.0 commit b074d7e cited without verification path (git
+        log line or tag ref).
+  clarity:
+    verdict: conditional_pass
+    findings:
+    - severity: Important
+      location: "Fix Description \xA7 Phase 1"
+      problem: "Add naming convention to docs/design/orchestra-philosophy.md \xA7\
+        \ Skill artifact layout (or new section) \u2014 the (or new section) leaves\
+        \ the target section ambiguous; reader cannot determine where to write without\
+        \ re-deciding."
+    - severity: Minor
+      location: "Observed Behavior \xA7 table"
+      problem: Checkmark and X symbols used without legend; meaning inferable but
+        not declared.
+    - severity: Minor
+      location: "Regression Prevention \xA7 lint check"
+      problem: "BUG-013 v1.7.1+ follow-up phrasing self-references the current BUG\
+        \ number \u2014 ambiguous whether the lint check is in-scope for this BUGs\
+        \ fix or deferred."
+  consistency:
+    verdict: fail
+    findings:
+    - severity: Critical
+      location: "Related Documents \xA7 BUG-012 reference"
+      problem: "Cross-reference to BUG-012-v17-1-minor-followups.md asserts BUG-013\
+        \ is standalone Medium \u2014 but the Changelog entry says Target fix v1.7.1\
+        \ or v1.8 which overlaps BUG-012s v1.7.1 minor-followups scope; contradiction\
+        \ between NOT this BUGs home claim and shared v1.7.1 target."
+    - severity: Important
+      location: "Observed Behavior \xA7 table vs Expected Behavior \xA7 table"
+      problem: "Observed-table row for spec-review references commands/spec-review.md\
+        \ (slash-shim file) alongside SKILL.md, but Expected-table omits the shim\
+        \ file \u2014 inconsistent treatment of whether commands/*.md files are part\
+        \ of the naming surface."
+    - severity: Important
+      location: "Fix Description \xA7 Phase 2 vs Expected Behavior"
+      problem: "Expected Behavior asserts sub-skill init invocations are INTERNAL\
+        \ composition never exposed as user-facing slash. But Phase 2 says verify\
+        \ SKILL.md auto-invokes init on first-time detection \u2014 implies the invariant\
+        \ is not yet established in code, contradicting Expected Behaviors declarative\
+        \ assertion."
+    - severity: Minor
+      location: "Header \xA7 Status field vs Iteration Log"
+      problem: "Header Status Investigating but Iteration Log r1 also says Status\
+        \ Investigating \u2014 redundant; Fix Description proposes concrete 3-phase\
+        \ fix which is past investigation stage (should be Fix Proposed or similar)."
+overall_verdict: fail
+required_followup:
+- Add Iteration field to header metadata
+- Add Test Plan section per Bug Report rubric
+- Add Risk section per Bug Report rubric
+- Rename Observed Behavior to Symptom or document deviation from rubric
+- Add file:line citations to SKILL.md frontmatter for each surfaced name
+- Resolve BUG-012 vs BUG-013 scope overlap (v1.7.1 target)
+- Clarify commands/*.md slash-shim treatment in Expected Behavior
+notes: 'Doc reads as coherent description of a real UX problem, but fails Bug Report
+
+  rubric completeness (missing Test Plan + Risk + Iteration header), fails evidence
+
+  gate (no file:line citations for load-bearing SKILL.md name claims), and has
+
+  internal/peer-doc consistency contradictions around sub-skill exposure and
+
+  BUG-012 scope. Overall verdict fail due to Critical findings in Completeness
+
+  and Consistency gates.
+
+  '

@@ -1,0 +1,177 @@
+schema_version: '1.0'
+doc_subject:
+  path: docs/plans/2026-05-11-lld-012-v18-implementation.md
+  content_hash: sha256:daa251e6d95a559373b379b503c3fb593d9abb2e46eb76a1e3fe92b211d3900f
+  iteration: 2
+reviewer:
+  identifier: subagent:general-purpose+spec-review-v1
+  invoked_at: '2026-05-11 16:20:42+00:00'
+  context_isolation: fresh_subagent
+gates:
+  completeness:
+    verdict: conditional_pass
+    findings:
+    - severity: Important
+      location: "File Structure \xA7 Files created"
+      problem: No slice adds anthropic to pyproject.toml dependencies, yet Phase 6
+        (slice 6.6) + Phase 3 (slice 3.2) both depend on the Anthropic Python SDK
+        for count_tokens and compact_20260112. Without slice to add dep, Phases 3.2
+        and 6.6 cannot run. Missing implementation step.
+    - severity: Important
+      location: "Phase 3 \xA7 Slice 3.2"
+      problem: 'Slice 3.2 plans to call Anthropic count_tokens API but plan never
+        specifies how SDK gets installed, how ANTHROPIC_API_KEY is provisioned for
+        hook runtime. Missing slice: hook-runtime API-key-missing handling.'
+    - severity: Minor
+      location: "Phase 9 \xA7 Slice 9.6"
+      problem: "Slice 9.6 lacks commit reference \u2014 says 'git tag v1.8.0 on the\
+        \ slice 9.5 commit' but slice 9.5 (LLD Status flip) is doc commit, whereas\
+        \ conventional release-tagging tags after HANDOFF + version-bump commits.\
+        \ Plan does not justify ordering choice."
+  evidence:
+    verdict: fail
+    findings:
+    - severity: Critical
+      location: "Phase 7 \xA7 Edit perimeter"
+      problem: "Plan cites force-mode overwrite branch at cli/spec_review.py 540-545.\
+        \ Actual location at HEAD c56e85d is cli/spec_review.py 701-706. The cited\
+        \ range 540-545 is in unrelated v2 self-application function. Stale citation\
+        \ regression \u2014 Phase 7 implementer reading the cite will edit wrong function\
+        \ and break v2 aggregator."
+    - severity: Critical
+      location: "Acceptance / exit criteria \xA7 Pytest baseline"
+      problem: 'Plan states baseline 321 + ~25 = ~346. Verified at HEAD c56e85d via
+        .venv/bin/python -m pytest --collect-only: 412 tests collected, not 321. LLD-011
+        Phase 2 has shipped substantial work since plan authored (rubric-freeze, 2-iter
+        cap, failure-attestation, --aggregate-and-write, vocab canon). Estimate 346
+        is now under by ~90+ tests.'
+    - severity: Important
+      location: line 98
+      problem: 'Plan cites canonicalize_doc_path at cli/spec_review.py 402-422. Verified:
+        function definition starts at cli/spec_review.py:408. Cited start line 402
+        is 6 lines off. Same off-by-citation appears at line 357 (Phase 7 Edit perimeter).'
+    - severity: Important
+      location: "Header \xA7 Parallel-session note"
+      problem: "Header asserts 'LLD-011 Phase 2 is running concurrently' and 'v1.8\
+        \ ships on top of either v1 or v2 spec-review surface'. Verified at HEAD:\
+        \ run_pdsa imported, PDSA gate + --aggregate-and-write v2 write path already\
+        \ integrated. LLD-011 Phase 2 has SHIPPED. The 'either v1 or v2' framing is\
+        \ moot \u2014 v2 is the live surface."
+    - severity: Important
+      location: "Risk register \xA7 cli/spec_review.py concurrent modification row"
+      problem: "Mitigation says rebase from main to capture LLD-011 Phase 2 edits.\
+        \ But Phase 2 has already landed. Risk Register row should be re-cast as historical\
+        \ or removed. Real risk: Phase 7 edits a branch downstream of PDSA gate +\
+        \ v2 aggregator dispatch logic \u2014 interactions with _detect_schema_version\
+        \ v1-freeze branch must be considered. Plan does not mention this real interaction."
+    - severity: Minor
+      location: "Phase 6 \xA7 Slice 6.2"
+      problem: Tie-break rules reference points to 'LLD-012 lessons_lint step 3 tie-break'.
+        LLD-012 actually documents tie-break under Design lessons_lint and auto-promotion.
+        Citation approximately right but section header is 'lessons_lint and auto-promotion'
+        not 'lessons_lint step 3'.
+  clarity:
+    verdict: conditional_pass
+    findings:
+    - severity: Important
+      location: "File Structure \xA7 Files modified \xA7 marketplace.json row"
+      problem: "Clarifying note inserted in iter-1 contradicts itself. Sentence 1\
+        \ says bump is 'independent' of plugin.json's bump. Sentence 3 says both files\
+        \ 'end at 1.8.0 post-slice-9.3' \u2014 aligned. Fresh reader cannot tell whether\
+        \ slice does one bump or two coordinated bumps. Suggest row simplify."
+    - severity: Important
+      location: "Phase 5 \xA7 Slice 5.1"
+      problem: 'Slice 5.1 says write SKILL.md body describing three slash commands.
+        LLD-012 SC-6 states each command is declared in SKILL.md frontmatter commands:
+        list. Q4 default says match commands/spec-review.md pattern (separate-file).
+        Plan resolves Q4 toward separate-file but never reconciles with LLD SC-6''s
+        frontmatter commands list. Fresh reader cannot tell which shape ships.'
+    - severity: Minor
+      location: "Phase 1 \xA7 Slice 1.7"
+      problem: Slice 1.7 test name tests/test_state_dir_gitignore.py is mentioned
+        in Slice description but test file path is not in Files created table at lines
+        62-77. Adding test files inline without listing in file-structure table makes
+        slice's test inventory drift from canonical file table.
+  consistency:
+    verdict: fail
+    findings:
+    - severity: Critical
+      location: "Header \xA7 Architecture overview"
+      problem: Bullet asserts overwrite fail-closed applies to malformed existing
+        file. But at HEAD cli/spec_review.py 690-700, existing-version-detection branch
+        ALREADY refuses ALL v1 attestation overwrites (frozen-historical per LLD-011
+        slice 1.7), regardless of malformed-ness. Phase 7 targets force-mode branch
+        at line 701, which only fires when --force NOT passed. With --force passed,
+        current code bypasses both refuses and proceeds. Phase 7's force-mode fail-closed
+        must edit a code path that DOES NOT EXI...
+    - severity: Important
+      location: "Phase 7 \xA7 Slice 7.2"
+      problem: "Files modified row says 'Force-mode overwrite path fail-closed on\
+        \ malformed existing'. Phase 7 Edit perimeter says modifies 'if out_path.exists()\
+        \ and not args.force:' else-branch. But that condition's else-branch fires\
+        \ when out_path.exists() AND args.force \u2014 force IS passed. Plan's prose\
+        \ intent is 'when --force passed AND existing file is malformed YAML, refuse'.\
+        \ Plan does not show where in if/elif ladder this fits relative to lines 690-700\
+        \ (v1.0 freeze) and 701-706 (no-force-exists refusal)."
+    - severity: Important
+      location: "Out-of-scope reminders \xA7 Skill SKILL.md compression"
+      problem: Inconsistency with LLD-012 Out of Scope, which lists 'Skill SKILL.md
+        compression' but does NOT enumerate which skills are excluded. Plan's enumeration
+        (commit, design-docs, init, spec-review) is plan-side specification not in
+        LLD. Per LLD vs Plan boundary, plan should not introduce design decisions.
+        If future skill added, plan's list is stale.
+    - severity: Important
+      location: "Open questions \xA7 Q4"
+      problem: Q4 default contradicts LLD-012 SC-6. Plan picks one resolution; LLD
+        specifies different one. Per LLD vs Plan boundary plan should not silently
+        override LLD. Either supersede LLD-012 to -r3 or change Q4 default to interview
+        Hassan.
+    - severity: Minor
+      location: "Acceptance / exit criteria \xA7 SC-9"
+      problem: "SC-9 acceptance row introduces NEW classification (tooling-presence\
+        \ vs file-content gates) not in LLD-012. While intent is reasonable, this\
+        \ is plan-level taxonomy decision \u2014 LLD-012 itself does not split SCs\
+        \ into these two classes. Should be punted to LLD."
+overall_verdict: fail
+required_followup:
+- "Critical: Fix Phase 7 line citation (540-545 \u2192 701-706 actual location at\
+  \ HEAD c56e85d); reconcile with LLD-011 slice 1.7 v1.0 freeze branch at lines 690-700."
+- "Critical: Update pytest baseline 321 \u2192 412 (live state at HEAD c56e85d); revise\
+  \ estimate."
+- "Critical: Reconcile Phase 7 scope with LLD-011 slice 1.7 v1.0 freeze \u2014 codex\
+  \ finding 4's force-mode overwrite scenario does not exist as described at HEAD;\
+  \ clarify or supersede."
+- 'Important: Add explicit slice to add anthropic to pyproject.toml; specify ANTHROPIC_API_KEY
+  provisioning for hook runtime.'
+- 'Important: Reconcile slash-command surface contradiction (LLD-012 SC-6 frontmatter
+  commands list vs plan Q4 separate commands/*.md files). Either supersede LLD or
+  interview.'
+- 'Important: Update Header parallel-session note + Risk Register cli/spec_review.py
+  row to reflect LLD-011 Phase 2 SHIPPED state; recast concurrent-modification risk
+  as historical.'
+- "Important: Fix canonicalize_doc_path citation 402-422 \u2192 408-422."
+- "Important: Clarify marketplace.json row \u2014 independent vs aligned wording is\
+  \ contradictory."
+- 'Important: Reconcile Slice 5.1 SKILL.md body vs LLD SC-6 frontmatter commands:
+  list.'
+- 'Minor: Add tests/test_state_dir_gitignore.py to Files created table.'
+- 'Minor: Move SC-9 tooling-presence vs file-content gate taxonomy decision to LLD
+  or drop from plan.'
+- 'Minor: Plan Out-of-scope skill-compression enumeration is plan-side design decision;
+  punt to LLD.'
+notes: "Iter-1 fixes landed at the level of inline text but several regenerated stale\
+  \ facts:\n(a) Phase 7 cited line range 540-545 wrong \u2014 actual force-mode branch\
+  \ at line 701-706.\n(b) Pytest baseline 321 already stale at HEAD \u2014 live count\
+  \ is 412.\n(c) canonicalize_doc_path cited 402-422 is 6 lines off start (correct\
+  \ start line 408).\n(d) Parallel-session framing for LLD-011 Phase 2 is materially\
+  \ obsolete \u2014 Phase 2 has shipped.\nMost consequential issue is Phase 7 (Critical/Consistency):\
+  \ LLD-011 slice 1.7 introduced v1.0-attestation frozen-historical refuse that fires\
+  \ BEFORE force-mode branch. Codex finding 4's force-mode overwrite of v1 malformed\
+  \ file is now code path that does not exist as described.\nPlan-vs-LLD inconsistency\
+  \ on slash-command shape is second most material.\nNo anthropic dependency declaration\
+  \ anywhere \u2014 pyproject.toml lacks dep and venv lacks install.\nMany iter-1\
+  \ fixes did land correctly (Slice 1.7 TDD discipline note, Slice 2.6 canon-frozen-guard\
+  \ reference, SC-2 SC-14 acceptance expansion, Slice 9.2 rollback scope, Q3 phase-level\
+  \ gate promotion, Phase 5 cross-phase test-file sharing note, workflow.md/skills-registry.md\
+  \ boundary-fence rule). Regression risk narrowly concentrated in stale-citation\
+  \ and stale-baseline class.\n"

@@ -1,0 +1,130 @@
+schema_version: '1.0'
+doc_subject:
+  path: docs/bugs/BUG-012-v17-1-minor-followups.md
+  content_hash: sha256:0268aa81c49467e20d87c7e90b3b4bf5c5006b15235b92dfd0bc3d16bcf11beb
+  iteration: 1
+reviewer:
+  identifier: subagent:general-purpose+spec-review-v1
+  invoked_at: '2026-05-11T12:01:58Z'
+  context_isolation: fresh_subagent
+gates:
+  completeness:
+    verdict: conditional_pass
+    findings:
+    - severity: Minor
+      location: "Header \xA7 frontmatter"
+      problem: Header lacks Iteration field. Rubric requires Iteration 4 in frontmatter
+        when iteration>1. Iteration only inferable from Iteration Log r4 entry on
+        line 72, forcing fresh reader to scroll to bottom to determine doc state.
+    - severity: Minor
+      location: "Regression Prevention \xA7 thinness"
+      problem: 'Section thin for aggregate tracker with 4 iterations. Two bullets
+        only address checklist verification and cross-ref to BUG-013. Missing: how
+        canon-frozen-guard / tiered narrow-change discipline that surfaced BUG-014
+        will be prevented from recurring; how deferred-Minor leakage between releases
+        is prevented systemically.'
+  evidence:
+    verdict: fail
+    findings:
+    - severity: Important
+      location: "Related Documents \xA7 line 81"
+      problem: Cites docs/features/008-commit-skill.md but actual on-disk file is
+        docs/features/008-commit-skill-r8.md. Unsuffixed path does not exist. Iteration
+        Log r4 line 72 acknowledges supersession r7-to-r8 but Related Documents still
+        points at superseded bare-name path. Broken cross-reference.
+    - severity: Important
+      location: "Post-ship cleanup \xA7 item 4"
+      problem: "Claims tests/scale_migration_helper.py exists and tools/migrate_scale_rules.py\
+        \ imports from it. On-disk verification: tests/scale_migration_helper.py does\
+        \ NOT exist; only tools/scale_migration_core.py and tools/migrate_scale_rules.py\
+        \ exist. Defect as written is non-reproducible \u2014 either already fixed\
+        \ and not crossed-out, or path is wrong."
+    - severity: Minor
+      location: "Environment \xA7 commit-lineage"
+      problem: 'Cites commit 20132da as post-cleanup and tag v1.7.0 at 6a4ea94. Verified:
+        tag v1.7.0 = 6a4ea94; 20132da is one commit after 6a4ea94. Relationship 20132da-is-newer-than-tag
+        not stated; fresh reader could read this as tag-on-20132da.'
+    - severity: Minor
+      location: "Iteration Log \xA7 r2 entry"
+      problem: 'Closes Plan Minor #2 via Phase J but does not cite commit SHA for
+        Phase J landing. r2 entry cites commit a1932bd only for test-quality audit
+        (Plan #2 different from cross-doc lineage Plan #1). Phase J commit SHA absent.'
+  clarity:
+    verdict: conditional_pass
+    findings:
+    - severity: Important
+      location: "Post-ship cleanup \xA7 numbering"
+      problem: 'Numbered list starts at item #3 (cli/lint.py split) with no #1 or
+        #2. Iteration Log r2/r3 references Post-ship cleanup #1/#2/#3/#5/#6 implying
+        items #1 and #2 exist somewhere. Either numbering is wrong here or Iteration
+        Log references are wrong. Fresh reader cannot determine which items are open.'
+    - severity: Minor
+      location: "Regression Prevention \xA7 bullet-2"
+      problem: "States BUG-013 (test-quality audit) handles item Plan r2/r3 #2 independently.\
+        \ Verified: BUG-013 subject is Slash-command naming inconsistency, not test-quality\
+        \ audit. Test-quality audit lives in docs/plans/2026-05-11-test-quality-audit.md\
+        \ (commit a1932bd) \u2014 already cited on line 58. Cross-reference to wrong\
+        \ BUG ID."
+    - severity: Minor
+      location: "Fix Description \xA7 lld-cite"
+      problem: Refers to LLD-006-r4 narrow-change whitelist and tiered narrow-change
+        without inline cite to LLD-006 r4 section or LLD-008/009 where tiered defined.
+        Fresh reader has to context-switch to find conventions.
+  consistency:
+    verdict: fail
+    findings:
+    - severity: Important
+      location: "Related Documents \xA7 line 81 vs Post-ship cleanup item 5"
+      problem: "Item #5 says LLD-008 r7-to-r8 supersession. File moved \u2014 confirming\
+        \ canonical LLD-008 is now r8. Yet Related Documents still cites bare-name\
+        \ 008-commit-skill.md (line 81). This is the exact pattern BUG-014 was filed\
+        \ to fix. Aggregate tracker contains the supersession-stale reference it is\
+        \ tracking."
+    - severity: Minor
+      location: "Iteration Log \xA7 r4 vs cleanup-items"
+      problem: 'r4 says Remaining open: LLD-008 #3 (T2 test enumeration) + Post-ship
+        cleanup #1/#2/#3 = 4 items. But cleanup section as numbered shows open items
+        #3 and #4 (since #5 and #6 are closed); #1 and #2 do not exist. Count of 4
+        items does not match list (1 LLD-008 #3 + 2 cleanup = 3, not 4).'
+    - severity: Minor
+      location: "Related Documents \xA7 review-iterations"
+      problem: 'Cites review-yaml versions r4/r2/r2/r3 but LLD-008 is at r8 (per item
+        #5), LLD-009 at r6, LLD-010 at r4, plan at r4. Review iteration numbers do
+        not match latest doc iteration numbers; fresh reader cannot tell whether these
+        are most recent reviews or stale snapshots.'
+overall_verdict: fail
+required_followup:
+- Fix Related Documents line 81 path - 008-commit-skill.md to 008-commit-skill-r8.md.
+- Resolve Post-ship cleanup numbering - renumber items to start at 1, or surface missing
+  items 1/2 that Iteration Log r2/r3 reference.
+- Verify or correct Post-ship cleanup 4 claim about tests/scale_migration_helper.py
+  - file does not exist on disk; defect may be already-fixed or path wrong.
+- Correct Regression Prevention line 77 BUG-013 cross-ref - BUG-013 is slash-command-naming
+  not test-quality audit.
+- Add Iteration 4 to header frontmatter per rubric requirement.
+- Reconcile Iteration Log r4 item count 4 items vs list-derived count of 3.
+- Decide whether Related Documents review-yaml paths should track latest iteration
+  numbers or stay at most-recently-attested-iteration; document convention inline.
+notes: 'Aggregate tracker doc reviewed at iteration 4. Strikethrough closure-tracking
+  convention works well for fresh-reader scanability.
+
+  Two Important Evidence findings (broken Related Docs path + non-reproducible cleanup
+  4) and one Important Clarity finding
+
+  (Post-ship cleanup numbering 3-6 with no 1/2 but Iteration Log references 1/2) push
+  overall verdict to fail.
+
+  The Related Docs bare-name to r8 supersession-stale cite is particularly notable:
+  BUG-012 itself surfaced BUG-014
+
+  (L4 bare-name supersession rejection), and BUG-012 contains the exact stale-cite
+  pattern BUG-014 is meant to fix.
+
+  This is a real consistency defect to close in v1.7.1.
+
+  Completeness and Clarity pass conditionally; closure narrative is strong. Findings
+  remediable in one tiered narrow-change
+
+  batch (no behavioral impact, doc-paperwork only).
+
+  '

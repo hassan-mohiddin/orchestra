@@ -1,0 +1,126 @@
+schema_version: '1.0'
+doc_subject:
+  path: docs/design/orchestra-philosophy-r2.md
+  content_hash: sha256:207fd654710b56e6b26375aae8b2b042103fc75d0f9926701ab936de790904ee
+  iteration: 2
+reviewer:
+  identifier: subagent:general-purpose+spec-review-v1
+  invoked_at: '2026-05-11T11:57:10Z'
+  context_isolation: fresh_subagent
+gates:
+  completeness:
+    verdict: conditional_pass
+    findings:
+    - severity: Important
+      location: "Header \xA7 Doc ID"
+      problem: Doc ID is bare orchestra-philosophy but filename is orchestra-philosophy-r2.md.
+        Design Doc bare-name convention says Doc ID is bare; supersession workflow
+        requires filename of active revision to carry -rN. The relationship between
+        Doc ID and filename is not explained in header, leaving fresh reader unsure
+        whether r2 supersedes r1 in-place or coexists.
+    - severity: Minor
+      location: "Header \xA7 Version"
+      problem: Header carries both Iteration 2 and Version 1.1. Design Docs are living
+        and use Iteration per supersession workflow; Version field is undocumented
+        in required schema and its meaning (plugin version? doc semver?) not stated.
+  evidence:
+    verdict: pass
+    findings:
+    - severity: Minor
+      location: "Problem We Solve \xA7 Doc-driven dev gap"
+      problem: Citations are author + year + org but no URLs. Industry Citations section
+        at line 364 later includes more detail; cross-link from Problem section to
+        that anchor would let a fresh reader verify without scrolling.
+  clarity:
+    verdict: conditional_pass
+    findings:
+    - severity: Important
+      location: "Solution Architecture \xA7 Hierarchy table"
+      problem: Workflow row says Status v2.0 but diagram shows Workflow as central
+        composer with most child nodes also v2.0. Fresh reader cannot tell what is
+        live TODAY vs aspirational. Doc claims v1.7.0 shipped per Changelog line 410,
+        but diagram does not annotate post-v1.7.0 reality vs future. Add current-as-of-v1.7.0
+        labels or Today-vs-Tomorrow split.
+    - severity: Important
+      location: "Mode System \xA7 Team mode"
+      problem: Mid-project transition cites python -m cli.migrate --solo-to-team (v1.2)
+        but Changelog confirms v1.2 shipped cli.migrate. Fresh reader cannot tell
+        from this section whether cli.migrate is live now or v1.2-deferred. The (v1.2)
+        parenthetical reads like a future version marker. Replace with (shipped in
+        v1.2) or remove.
+    - severity: Minor
+      location: "Formal Vocabulary \xA7 subset-rename mode"
+      problem: subset-rename and full-custom modes referenced as if defined elsewhere
+        but doc never explains where modes come from, how user opts in, or which doc/skill
+        defines them. Fresh reader hits undefined term.
+    - severity: Minor
+      location: "Roadmap Vision \xA7 gantt chart"
+      problem: Gantt shows v1.0 through v2.0 but skips v1.4 entirely without explanation
+        in chart itself. Fact that v1.4 was burnt is documented in Changelog line
+        408 but not surfaced in roadmap section where readers look for version sequence.
+  consistency:
+    verdict: conditional_pass
+    findings:
+    - severity: Critical
+      location: "Key Decisions \xA7 ADR-004"
+      problem: ADR-004 path is Deferred to v1.5+ workflow skill (LLD-011) but no LLD-011
+        file exists on disk in docs/features/ (only 008 and 009 verified). Either
+        LLD-011 has not been filed yet (reference should say future LLD not LLD-011
+        specifically) or file is missing. Inconsistency between cited LLD number and
+        on-disk artifact.
+    - severity: Important
+      location: "Roadmap Vision \xA7 v1.5 section"
+      problem: "Doc says v1.5 is positioning shift with plugin scan + registry generation,\
+        \ but Changelog shows v1.5.0 shipped 2026-05-10 with content scoped to LLD-006-r4\
+        \ (archive conventions, lifecycle reject, attestation paths, doc-id-burn)\
+        \ \u2014 NOT plugin scan or registry generation. Shipped v1.5 does not match\
+        \ roadmap v1.5 description."
+    - severity: Important
+      location: "Roadmap Vision \xA7 v2.0 section vs Changelog v1.7.0"
+      problem: Roadmap shows v2.0 as orchestra:workflow skill + README rewrite + relaunch
+        coming after v1.5. But Changelog line 410 records v1.7.0 already shipped with
+        /orchestra:commit. Roadmap omits v1.6.x and v1.7.0 entirely. Fresh reader
+        sees v1.5 to v2.0 in roadmap but Changelog shows v1.5 to v1.5.1 to v1.7.0.
+        Roadmap section is stale relative to Changelog.
+    - severity: Important
+      location: "Solution Architecture \xA7 Hierarchy table"
+      problem: "Table says Workflow status = v2.0, but Changelog shows /orchestra:commit\
+        \ shipped in v1.7.0 \u2014 a commit-discipline skill, arguably the first workflow-skill\
+        \ shipped piece. Hierarchy table does not reflect commit-skill exists, and\
+        \ Anti-pitch says Not a workflow framework. Contradicts Hierarchy table which\
+        \ lists Workflow as orchestra-owned layer."
+    - severity: Minor
+      location: "Key Decisions \xA7 ADR-002 ADR-003 ADR-005"
+      problem: "Three ADRs marked Implemented with note (no separate ADR filed). Per\
+        \ project convention ADRs are RECORDED architectural decisions; ADR row pointing\
+        \ to no ADR exists is category error \u2014 these are LLD-captured decisions,\
+        \ not ADRs. Either file ADRs or rename row from ADR-NNN to Decision-NNN. Verified:\
+        \ only ADR-001 file exists on disk."
+    - severity: Minor
+      location: "Header \xA7 Supersedes"
+      problem: "Supersedes points to docs/archive/design/orchestra-philosophy.md (verified\
+        \ exists). But Changelog row at line 411 describes r1-to-r2 as unblocked pre-existing\
+        \ lint blockers \u2014 maintenance fix, not substantive content change. r2\
+        \ versions in this project convention are usually for meaningful design shifts."
+overall_verdict: conditional_pass
+required_followup:
+- Update Roadmap Vision section to reflect actual v1.5.0/v1.5.1/v1.7.0 ship state;
+  split roadmap into Shipped and Planned.
+- Reconcile Hierarchy table Workflow row status with v1.7.0 commit-skill ship.
+- Either file ADR-002/003/005 separately or rename Key Decisions column to make clear
+  these are LLD-captured decisions, not ADRs. ADR-004 LLD-011 reference must be verified.
+- Clarify bare-name + supersession-filename relationship in header.
+- Define or cross-link subset-rename and full-custom modes in Formal Vocabulary section.
+- Mark live-vs-future status on diagram nodes and on Mode System cli.migrate reference.
+notes: "Doc is well-written for vision and positioning. Principal failure mode: this\
+  \ Design Doc is LIVING (Iteration 2, Status Current) but Roadmap section reads like\
+  \ it was last meaningfully updated at v1.3 \u2014 gantt and v1.5/v2.0 narrative\
+  \ do not reflect shipped reality (v1.5.0 = LLD-006-r4 archive conventions, not plugin\
+  \ scan; v1.7.0 commit-skill shipped). Per Gate 5 / Design Doc decay rule, every\
+  \ feature ship should sync relevant Design Doc \u2014 this doc's Roadmap was not\
+  \ synced through v1.5.0/v1.7.0 ships.\n\nVerified on disk: cli/migrate.py, cli/viewer.py,\
+  \ cli/lifecycle.py, cli/lint.py, cli/install_hooks.py all present. docs/archive/design/orchestra-philosophy.md\
+  \ present. docs/features/008-commit-skill-r8.md and docs/features/009-commit-msg-l2-finalize.md\
+  \ present. docs/adr/ contains only ADR-001. No LLD-011 file exists.\n\nVerdict:\
+  \ conditional_pass \u2014 content is correct and citations sound; inconsistencies\
+  \ localized to Roadmap and Key Decisions table.\n"

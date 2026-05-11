@@ -1,0 +1,112 @@
+schema_version: '1.0'
+doc_subject:
+  path: docs/bugs/BUG-014-l4-bare-name-design-supersession.md
+  content_hash: sha256:1b5c4c6d4458162c5db5c4dbc3fcc0e111a8c24e1d05ad0c225d74501b414dac
+  iteration: 1
+reviewer:
+  identifier: subagent:general-purpose+spec-review-v1
+  invoked_at: '2026-05-11T11:54:57Z'
+  context_isolation: fresh_subagent
+gates:
+  completeness:
+    verdict: fail
+    findings:
+    - severity: Important
+      location: "Header \xA7 metadata"
+      problem: Header metadata block has no Iteration field. Rubric requires Iteration
+        in header; only an Iteration Log section exists with r1 entry. Reader cannot
+        tell current iteration from header alone.
+    - severity: Critical
+      location: "Document \xA7 missing-sections"
+      problem: Bug Report rubric requires Test Plan and Risk sections. Neither is
+        present. Regression Prevention exists but does not enumerate test cases as
+        a Test Plan, and there is no Risk section assessing blast radius / rollback
+        of the proposed fix.
+    - severity: Minor
+      location: "Environment \xA7 commit"
+      problem: "Environment lists orchestra v1.7.0 (commit TBD) \u2014 placeholder\
+        \ unfilled. Same TBD appears in Observed Behavior (TBD-impl-sha). Reader cannot\
+        \ pin the exact commit where the bug reproduces."
+  evidence:
+    verdict: conditional_pass
+    findings:
+    - severity: Important
+      location: "Root Cause \xA7 regex-citation"
+      problem: Regex snippets quoted in Root Cause are not cited with file:line. cli/lint.py:99-100
+        contains FIRST_ITERATION_RE and SUPERSESSION_ITERATION_RE; doc should anchor
+        to line numbers, not just function name, so a reader can verify without grep.
+    - severity: Important
+      location: "Fix Description \xA7 Option-A-code"
+      problem: Proposed fix returns empty list for design bare-name matches, silently
+        bypassing the supersession r-suffix monotonicity check that the existing m_super
+        branch enforces (cli/lint.py:763-769, max_r collision rule). No evidence is
+        shown that bare-name design supersession is exempt from r-collision protection;
+        appears to drop a real invariant without justification.
+    - severity: Minor
+      location: "Fix Description \xA7 Option-B"
+      problem: "Option B claim treat design like plans/archive \u2014 not L4-eligible\
+        \ lacks evidence; cli/lint.py:706 explicitly includes design in canon-type\
+        \ loop, contradicting an implicit assumption that design is currently treated\
+        \ like plans."
+  clarity:
+    verdict: conditional_pass
+    findings:
+    - severity: Important
+      location: "Fix Description \xA7 Option-A-code"
+      problem: Pseudocode uses bare variable name without showing it is new_doc_path.name;
+        reader copying the snippet into lint_doc_id_burn must infer the binding. Also
+        unclear where in function ordering the design-type branch goes relative to
+        m_first / m_super computation at cli/lint.py:726-727.
+    - severity: Minor
+      location: "Regression Prevention \xA7 LLD-reference"
+      problem: "Action item says update LLD-006-r4 narrow change OR supersession workflow\
+        \ \u2014 the OR leaves ambiguous which section gets the edit. Reader cannot\
+        \ execute without a decision."
+  consistency:
+    verdict: fail
+    findings:
+    - severity: Critical
+      location: "Expected Behavior \xA7 grammar-claim"
+      problem: "Expected Behavior states design uses bare-name (no leading digit).\
+        \ LLD-006-r4 sec Eligible (006-...-r4.md:240) defines eligibility as id-name(-rN).md\
+        \ including design type \u2014 i.e., LLD requires NNN prefix. BUG-014 contradicts\
+        \ canon LLD-006-r4 without acknowledging conflict; reader would silently override\
+        \ canon."
+    - severity: Important
+      location: "Related Documents \xA7 BUG-012-link"
+      problem: Doc references BUG-012 sec 6 supersession as the triggering context
+        but does not pin which commit in BUG-012 captures this. BUG-012-v17-1-minor-followups.md
+        exists but has no sec 6 verified here. Without anchor, the trigger event is
+        unverifiable.
+    - severity: Important
+      location: "Regression Prevention \xA7 test-path"
+      problem: Proposed test path tests/test_lint_doc_id_burn.py is not verified to
+        exist or be the right home; existing lint tests may live elsewhere. Doc does
+        not cite a peer test file to confirm naming convention.
+overall_verdict: fail
+required_followup:
+- Add Iteration field to header metadata block.
+- Add Test Plan and Risk sections per Bug Report rubric.
+- Resolve conflict with LLD-006-r4 sec Eligible grammar (either amend LLD-006-r4 to
+  admit design bare-name, or amend BUG-014 to use NNN-name convention).
+- Justify or remove the empty-list short-circuit; if monotonicity does apply to design
+  supersession, the fix must call the m_super branch logic, not skip it.
+- Fill TBD commit SHAs once impl lands; until then mark as Open and do not commit
+  fix referencing this BUG.
+- Verify tests/test_lint_doc_id_burn.py path against existing test layout; cite peer
+  test file.
+notes: "Cross-references verified against orchestra/cli/lint.py:\n- FIRST_ITERATION_RE\
+  \ at line 99 \u2014 matches doc claim.\n- SUPERSESSION_ITERATION_RE at line 100\
+  \ \u2014 matches doc claim.\n- lint_doc_id_burn at line 712 \u2014 matches doc claim.\n\
+  - _infer_doc_type_dir at line 703 returns design for design-path docs (confirms\
+  \ design IS L4-eligible today; Option B premise is shakier than doc admits).\n-\
+  \ m_super branch lines 729-770 enforces r-suffix monotonicity; Option A empty-list\
+  \ return would skip this for design type.\nCross-reference to docs/features/006-archive-and-supersession-conventions-r4.md\
+  \ verified \u2014 file exists.\nLine 240 of that LLD pins eligibility grammar as\
+  \ id-name optionally rN .md including design type \u2014 direct conflict with BUG-014\
+  \ bare-name design-doc framing.\nLine 524 of LLD-006-r4 describes supersession as\
+  \ NNN-name-rN.md exempt from burn \u2014 again presumes NNN prefix for design.\n\
+  This is the load-bearing consistency problem: BUG-014 proposes a fix that diverges\
+  \ from canon LLD-006-r4 without filing a follow-up to amend LLD-006-r4 or an ADR\
+  \ documenting the design-doc-as-bare-name decision. Fixing this BUG without canon\
+  \ alignment would create a doc/code disagreement.\n"

@@ -1,116 +1,88 @@
-# design-docs:init — 3-prompt flow scripts
+# design-docs:init — AskUserQuestion canonical option text
 
-These are the canonical prompt texts the skill emits during init.
+This file is the source of truth for the option text passed to the
+`AskUserQuestion` tool. The skill body (`SKILL.md`) instructs Claude to
+invoke `AskUserQuestion` three times, in order; the question / header /
+option payload for each call lives here. Copy verbatim.
+
+Per BUG-001 Path C: the skill body MUST drive the prompts via
+`AskUserQuestion`. Descriptive markdown is not enough — improvisation slips
+in. These payloads are the deterministic source.
 
 ## Q1: Mode
 
-```
-=== Step 1 of 3: Mode ===
+- **question**: `Are you the only decision-maker on this project, or working with 2+ senior engineers?`
+- **header**: `Mode`
+- **multiSelect**: `false`
+- **options**:
+  - **label**: `solo (Recommended)`
+    **description**: `Single decision-maker. ADR OKR Alignment field optional. No reviewer-assignment workflow. Industry threshold per Pragmatic Engineer.`
+  - **label**: `team`
+    **description**: `2+ senior engineers. ADR OKR Alignment field MANDATORY (lint-enforced). Spec review can assign reviewers. Plugin manifest (v1.5+) supports per-team conflict resolution.`
 
-Are you the only decision-maker on this project, or working with 2+ senior
-engineers?
-
-  [1] solo (default)
-      - Single decision-maker
-      - ADR `OKR Alignment` field optional
-      - No reviewer-assignment workflow
-      - Faster paths: skip team-coordination steps
-
-  [2] team
-      - 2+ senior engineers (industry threshold per Pragmatic Engineer)
-      - ADR `OKR Alignment` field MANDATORY (lint-enforced)
-      - Spec review can assign reviewers
-      - Plugin manifest (v1.5+) supports per-team conflict resolution
-
-Choose [1/2] (default: 1):
-```
-
-Validation: input must be `1`, `2`, or empty (defaults to `1`).
+Answer mapping → CLI flag:
+- `solo` → `--mode solo`
+- `team` → `--mode team`
 
 ## Q2: Doc types
 
-```
-=== Step 2 of 3: Doc types ===
+- **question**: `How do you want orchestra to handle doc types?`
+- **header**: `Doc types`
+- **multiSelect**: `false`
+- **options**:
+  - **label**: `default-7 (Recommended)`
+    **description**: `Use the canonical 7 types as-is: Feature LLD (docs/features/NNN-name.md), Bug Report (docs/bugs/BUG-NNN-name.md), ADR (docs/adr/ADR-NNN-name.md), Design Doc (docs/design/<component>.md), Postmortem (docs/postmortems/POSTMORTEM-YYYY-MM-DD-name.md), Runbook (docs/runbooks/RUNBOOK-name.md), Plan (docs/plans/YYYY-MM-DD-name.md).`
+  - **label**: `subset-rename`
+    **description**: `Drop unused types and/or rename to formal alternatives. Whitelist: Tech Spec, Engineering Design, Spec, Design Brief, Decision Record, Architecture Decision, Incident Report, Operations Runbook, Implementation Plan, Engineering Plan, Postmortem, Retrospective. Informal renames rejected. RFC NOT in whitelist (orchestra philosophy: ADR-only).`
+  - **label**: `full-custom`
+    **description**: `Define your own doc types with required sections, status enum, and naming pattern. Invariants enforced regardless: Changelog section MANDATORY; Status enum >= 3 states (with terminal state); Naming pattern in NNN-kebab.md / YYYY-MM-DD-kebab.md / kebab.md.`
 
-How do you want orchestra to handle doc types?
+Answer mapping → CLI flag:
+- `default-7` → `--preset default-7`
+- `subset-rename` → `--preset subset-rename` then enter subset-rename wizard
+- `full-custom` → `--preset full-custom` then enter full-custom wizard
 
-  [1] default-7 (recommended)
-      Use the canonical 7 types as-is:
-        - Feature LLD     (docs/features/NNN-name.md)
-        - Bug Report      (docs/bugs/BUG-NNN-name.md)
-        - ADR             (docs/adr/ADR-NNN-name.md)
-        - Design Doc      (docs/design/<component>.md, living)
-        - Postmortem      (docs/postmortems/POSTMORTEM-YYYY-MM-DD-name.md)
-        - Runbook         (docs/runbooks/RUNBOOK-name.md)
-        - Plan            (docs/plans/YYYY-MM-DD-name.md)
-
-  [2] subset-rename
-      Drop unused types and/or rename to formal alternatives.
-      Whitelist: Tech Spec, Engineering Design, Spec, Design Brief,
-      Decision Record, Architecture Decision, Incident Report,
-      Operations Runbook, Implementation Plan, Engineering Plan,
-      Postmortem, Retrospective.
-      Informal renames rejected (no "doc", "thing", "writeup", "note").
-      RFC NOT in whitelist (orchestra philosophy: ADR-only across both modes).
-
-  [3] full-custom
-      Define your own doc types with required sections, status enum, and
-      naming pattern. Invariants enforced regardless:
-        - Changelog section MANDATORY
-        - Status enum ≥3 states (must include terminal state)
-        - Naming pattern in: NNN-kebab.md / YYYY-MM-DD-kebab.md / kebab.md
-        - Path validated against ^[a-z][a-z0-9-]*$ (no traversal)
-
-Choose [1/2/3] (default: 1):
-```
-
-If user picks [2]: enter subset-rename wizard (toggle/rename per default type).
-If user picks [3]: enter full-custom wizard (one type at a time, 6 sub-questions).
+(Wizard sub-flows still authored in legacy descriptive form; both will
+graduate to AskUserQuestion-driven sub-prompts in a follow-up — see the
+v2.1 backlog. For the v2.0.1 hot path, `default-7` is the supported answer.)
 
 ## Q3: Add-ons
 
-```
-=== Step 3 of 3: Optional add-ons ===
+- **question**: `Install the optional add-on files (CI workflow, AGENTS.md, llms.txt)?`
+- **header**: `Add-ons`
+- **multiSelect**: `false`
+- **options**:
+  - **label**: `yes (Recommended)`
+    **description**: `Adds .github/workflows/orchestra-lint.yml (CI gate that runs cli.lint --range main..HEAD on every PR, catches orphan fix:/feat: commits, broken metadata, mermaid errors), AGENTS.md (cross-tool AI agent context — Linux Foundation Agentic AI Foundation spec), llms.txt (LLM-readable navigation index — llmstxt.org spec).`
+  - **label**: `no`
+    **description**: `Skip. You can run init with --force later to add them.`
 
-Install these helpful files alongside the core scaffolding?
-
-  - .github/workflows/orchestra-lint.yml
-        CI gate that runs `python -m cli.lint --range main..HEAD` on every PR.
-        Catches orphan fix:/feat: commits, broken metadata, mermaid errors.
-
-  - AGENTS.md
-        Cross-tool AI agent context (Linux Foundation Agentic AI Foundation spec).
-        Tells Claude/Gemini/Cursor/Copilot etc. about your doc layout.
-
-  - llms.txt
-        LLM-readable navigation index (llmstxt.org spec from Jeremy Howard).
-        Lists key docs for AI agents to consume.
-
-Install? [y/n] (default: y):
-```
-
-Validation: input must be `y`, `n`, or empty (defaults to `y`).
+Answer mapping → CLI flag:
+- `yes` → `--addons yes`
+- `no` → `--addons no`
 
 ## v1.0 migration prompt (only if v1.0 config detected)
 
-```
-v1.0 orchestra config detected at .claude/settings.local.json.
+Fires BEFORE Q1, only if `.claude/settings.local.json` contains a v1.0
+`orchestra` config block.
 
-The orchestra block contains:
-  mode: <value>
-  doc_paths: <values>
-  spec_review_skill: <value>
+- **question**: `v1.0 orchestra config detected at .claude/settings.local.json. Migrate to v1.1 schema (.claude/orchestra.json)?`
+- **header**: `v1.0 migration`
+- **multiSelect**: `false`
+- **options**:
+  - **label**: `Migrate (Recommended)`
+    **description**: `Copy fields (mode + doc_paths + spec_review_skill) to v1.1 schema. v1.0 block left in place (non-destructive).`
+  - **label**: `Keep v1.0`
+    **description**: `Continue reading from settings.local.json — works but no v1.1 features.`
 
-Migrate to v1.1 schema (.claude/orchestra.json)? [y/n]:
+On `Migrate`: detected v1.0 values are still surfaced in the Q1/Q2/Q3
+AskUserQuestion descriptions ("currently solo per v1.0 config — confirm?")
+but the user MUST still answer each question. Never auto-fill.
 
-[y] Generate .claude/orchestra.json from v1.0 fields (preserves v1.0 block).
-[n] Keep using v1.0 config (orchestra continues to read from
-    settings.local.json — works but no v1.1 features available).
-```
+## Final summary (chat message after CLI completes)
 
-## Final summary
-
-After all prompts complete:
+After `python -m cli.init --mode <a1> --preset <a2> --addons <a3>` succeeds,
+emit (as plain chat output, not via AskUserQuestion):
 
 ```
 === orchestra:design-docs:init complete ===

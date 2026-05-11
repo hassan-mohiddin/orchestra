@@ -17,6 +17,7 @@ Any contract break → SpecReviewError → fail-closed write of a failure attest
 
 from __future__ import annotations
 
+import hashlib
 import re
 import subprocess
 from pathlib import Path
@@ -91,3 +92,51 @@ def load_prior_attestation(
         )
 
     return data
+
+
+def verify_integrity(attestation: dict) -> None:
+    """Re-compute the attestation_integrity_hash and compare with stored value.
+
+    Raises SpecReviewError("integrity_hash_mismatch: ...") on mismatch. Pass-
+    through return on match. Wrapper around `cli.spec_review._verify_attestation_integrity_hash`
+    to keep delta-review failure modes centralized.
+    """
+    # Local import avoids circular at module load (spec_review imports pdsa
+    # which has no delta_review dep, but delta_review depends on spec_review's
+    # provenance helpers — defer to call time).
+    from cli import spec_review
+
+    if not spec_review._verify_attestation_integrity_hash(attestation):
+        raise SpecReviewError(
+            "integrity_hash_mismatch: stored attestation_integrity_hash does not "
+            "match recomputed hash. Iter-1 attestation has been tampered with or "
+            "corrupted; aborting delta-review."
+        )
+
+
+def retrieve_iter1_bytes(blob_sha: str, repo_root: Path) -> bytes:
+    """Retrieve iter-1 doc bytes via `git cat-file -p <blob_sha>` and cross-check.
+
+    Per LLD-011 slices 2.22-2.24:
+      - subprocess error (blob unknown / pruned) → SpecReviewError(iter1_blob_pruned)
+      - retrieved bytes re-hashed via git hash-object → must equal stored SHA;
+        mismatch → SpecReviewError(blob_sha_mismatch)
+    """
+    from cli import spec_review
+
+    try:
+        bytes_ = spec_review._retrieve_doc_bytes_by_blob_sha(blob_sha, repo_root)
+    except subprocess.CalledProcessError as exc:
+        raise SpecReviewError(
+            f"iter1_blob_pruned: git cat-file failed for {blob_sha}: {exc}"
+        ) from exc
+
+    # Cross-check: SHA-1 of git-blob = "blob <len>\0<bytes>"
+    header = f"blob {len(bytes_)}\0".encode()
+    recomputed = hashlib.sha1(header + bytes_).hexdigest()
+    if recomputed != blob_sha:
+        raise SpecReviewError(
+            f"blob_sha_mismatch: retrieved bytes hash to {recomputed!r} but "
+            f"attestation stored {blob_sha!r}. Object DB integrity violation."
+        )
+    return bytes_

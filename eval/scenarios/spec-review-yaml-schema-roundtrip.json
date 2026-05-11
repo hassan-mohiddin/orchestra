@@ -4,7 +4,7 @@
   "setup": [
     "git init --quiet --initial-branch=main",
     "mkdir -p docs/features",
-    "printf '# Feature: example\\n\\n> **Iteration:** 1\\n\\n## Body\\n\\nHello.\\n' > docs/features/099-example.md"
+    "printf '# 099 Feature Example\\n\\n> **Doc ID:** 099-example\\n> **Date:** 2026-05-11\\n> **Status:** Draft\\n> **Iteration:** 1\\n\\n## Problem Statement\\nbody.\\n## Success Criteria\\nbody.\\n## Scope\\nbody.\\n## Design\\nbody.\\n## API Changes\\nbody.\\n## Database Changes\\nbody.\\n## Edge Cases & Error Handling\\nbody.\\n## Security Considerations\\nbody.\\n## Testing Strategy\\nbody.\\n## Related Documents\\nbody.\\n## Changelog\\nbody.\\n' > docs/features/099-example.md"
   ],
   "exercise": [
     {

@@ -56,43 +56,19 @@ def _load_extract_mermaid():
     return module
 
 # ---------------------------------------------------------------------------
-# Doc-type lifecycle enums (must match STANDARDS.md)
+# Canon-sourced vocabularies (BUG-016 slice 2)
 # ---------------------------------------------------------------------------
+# Canon: docs/design/controlled-vocabulary.md § 4.1, 4.2, 4.6, 4.7, 4.9, 4.13.
+# REQUIRED_SECTIONS (canon §4.8) is still defined inline below — slice 3 will
+# move it to canon-sourced once conditional-section handling lands.
 
-STATUS_ENUMS: dict[str, set[str]] = {
-    "feature": {"Draft", "Proposed", "Approved", "In Progress", "Implemented", "Verified",
-                "Rejected", "Superseded"},
-    "bug": {"Investigating", "Root Cause Found", "In Progress", "Fix Applied", "Verified",
-            "Rejected", "Superseded"},
-    "adr": {"Draft", "Proposed", "Approved", "Implemented", "Superseded", "Rejected"},
-    "postmortem": {"Draft", "Reviewed", "Action Items Tracked", "Closed",
-                   "Rejected", "Superseded"},
-    "runbook": {"Current", "Outdated", "Deprecated", "Rejected", "Superseded"},
-    "design": {"Current", "Outdated", "Deprecated", "Rejected", "Superseded"},
-}
-
-# v1.5 LLD-006-r4 — canon-frozen statuses (Refs:-eligible subset)
-CANON_FROZEN_STATUSES: set[str] = {
-    "Approved", "Implemented", "Verified", "Fix Applied", "Current",
-}
-
-# v1.5 LLD-006-r4 — Refs: must point under one of these prefixes.
-# Plans, archive, investigations, reviews are NOT Refs:-eligible.
-REFS_ELIGIBLE_PREFIXES: tuple[str, ...] = (
-    "docs/features/", "docs/bugs/", "docs/adr/",
-    "docs/design/", "docs/postmortems/", "docs/runbooks/",
-)
-
-# v1.5 LLD-006-r4 — narrow-change frontmatter whitelist
-WHITELIST_FRONTMATTER_FIELDS: set[str] = {"Status", "Iteration", "Superseded by"}
-
-# v1.5 LLD-006-r4 — attestation path-mutation guard (two-locations rule)
-ALLOWED_ATTESTATION_PATH_PREFIXES: tuple[str, ...] = (
-    "docs/features/", "docs/bugs/", "docs/adr/", "docs/design/",
-    "docs/postmortems/", "docs/runbooks/", "docs/plans/",
-    "docs/archive/features/", "docs/archive/bugs/", "docs/archive/adr/",
-    "docs/archive/design/", "docs/archive/postmortems/", "docs/archive/runbooks/",
-    "docs/archive/plans/",
+from cli.vocabulary import (  # noqa: E402
+    ALLOWED_ATTESTATION_PATH_PREFIXES,
+    CANON_FROZEN_STATUSES,
+    REFS_ELIGIBLE_PREFIXES,
+    REVIEW_GATE_NAMES as ALLOWED_GATES,
+    STATUS_ENUMS,
+    WHITELIST_FRONTMATTER_FIELDS,
 )
 
 # v1.5 LLD-006-r4 — filename pattern recognition
@@ -133,8 +109,8 @@ CONVENTIONAL_PREFIX_RE = re.compile(r"^(fix|feat)(\([^)]+\))?:")
 REFS_LINE_RE = re.compile(r"^Refs:\s+(\S+)", re.MULTILINE)
 METADATA_BLOCK_RE = re.compile(r"^>\s+\*\*([^:*]+):\*\*\s+(.+)$", re.MULTILINE)
 
-# v1.7 LLD-009 r6 — tiered narrow-change attestation citation regex
-ALLOWED_GATES: tuple[str, ...] = ("completeness", "evidence", "clarity", "consistency")
+# v1.7 LLD-009 r6 — tiered narrow-change attestation citation regex.
+# ALLOWED_GATES sourced from canon §4.9 via cli.vocabulary import above.
 FINDING_REF_RE = re.compile(
     r"^Addresses:\s+(docs/reviews/[^\s]+\.review\.yaml)\s+gate\s+"
     r"(completeness|evidence|clarity|consistency)\s+finding\s+(\d+)\s+"

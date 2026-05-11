@@ -191,6 +191,82 @@ def test_gate_skips_empty_findings():
     assert spec_review.should_fire_interview_gate([]) is False
 
 
+import pytest
+
+
+@pytest.mark.real_pdsa
+def test_pdsa_blocks_dispatch(tmp_path, monkeypatch, capsys):
+    """Slice 2.12 — PDSA failure halts main() before sub-judge dispatch.
+
+    Contract: when PDSA reports `passed=False`, main() emits the YAML report
+    to stderr, returns non-zero, and never invokes dispatch_subagent.
+    """
+    from cli import pdsa, spec_review
+
+    docs = tmp_path / "docs" / "features"
+    docs.mkdir(parents=True)
+    (docs / "008-foo.md").write_text(
+        "# foo\n\n> **Iteration:** 1\n\n## Body\n\nbody.\n"
+    )
+
+    reviews = tmp_path / "docs" / "reviews"
+    reviews.mkdir(parents=True)
+
+    monkeypatch.setattr(spec_review, "_resolve_repo_root", lambda: tmp_path)
+    # PDSA lint fails → PDSA report.passed False
+    monkeypatch.setattr(pdsa, "_invoke_lint", lambda argv: 1)
+
+    dispatched: list[str] = []
+    def fake_dispatch(prompt: str) -> str:
+        dispatched.append(prompt)
+        return ""
+    monkeypatch.setattr(spec_review, "dispatch_subagent", fake_dispatch)
+
+    rc = spec_review.main(["docs/features/008-foo.md"])
+
+    assert rc != 0
+    assert dispatched == [], "dispatch_subagent must NOT run after PDSA fail"
+    err = capsys.readouterr().err
+    assert "pdsa" in err.lower()
+
+
+def test_pdsa_passes_dispatch_proceeds(tmp_path, monkeypatch):
+    """Slice 2.12 — PDSA passing allows main() to proceed to dispatch."""
+    from cli import pdsa, spec_review
+
+    docs = tmp_path / "docs" / "features"
+    docs.mkdir(parents=True)
+    (docs / "008-foo.md").write_text(
+        "# foo\n\n> **Iteration:** 1\n\n## Body\n\nbody.\n"
+    )
+
+    reviews = tmp_path / "docs" / "reviews"
+    reviews.mkdir(parents=True)
+
+    monkeypatch.setattr(spec_review, "_resolve_repo_root", lambda: tmp_path)
+    # PDSA lint passes
+    monkeypatch.setattr(pdsa, "_invoke_lint", lambda argv: 0)
+    # Stub required_sections + filename_grammar etc. to all-pass for unknown doc layout
+    # by monkeypatching run_pdsa to return clean report.
+    def fake_run_pdsa(doc_path):
+        report = pdsa.PdsaReport(doc_path=doc_path)
+        report.checks["lint"] = pdsa.CheckResult(passed=True, detail="ok")
+        return report
+    monkeypatch.setattr(spec_review, "run_pdsa", fake_run_pdsa)
+
+    dispatched: list[str] = []
+    def fake_dispatch(prompt: str) -> str:
+        dispatched.append(prompt)
+        # Short-circuit: return invalid YAML so we return early after dispatch
+        return "not yaml at all"
+    monkeypatch.setattr(spec_review, "dispatch_subagent", fake_dispatch)
+
+    spec_review.main(["docs/features/008-foo.md"])
+
+    # Key assertion: dispatch happened (PDSA didn't block)
+    assert len(dispatched) == 1
+
+
 def test_render_cross_judge_report_with_codex():
     """Slice 1.30 — report renders cross-judge counts when codex present."""
     orchestra = {

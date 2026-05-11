@@ -25,6 +25,8 @@ from pathlib import Path
 import jsonschema
 import yaml
 
+from cli.pdsa import run_pdsa
+
 SCHEMA_PATH = (
     Path(__file__).parent.parent
     / "skills"
@@ -480,6 +482,16 @@ def main(argv=None) -> int:
             f"error: {out_path} already exists. Use --force to overwrite.",
             file=sys.stderr,
         )
+        return 1
+
+    # LLD-011 slice 2.12 — PDSA gate. Mechanical checks run before sub-judge
+    # dispatch. PDSA fail → emit YAML report to stderr, halt without writing
+    # an attestation (PDSA findings live in the lint/PDSA log layer, not in
+    # attestation YAML per LLD-011 §PDSA).
+    pdsa_report = run_pdsa(canonical_path)
+    if not pdsa_report.passed:
+        print("error: pdsa_failed: dispatch halted by pre-dispatch self-audit.", file=sys.stderr)
+        print(pdsa_report.to_yaml(), file=sys.stderr)
         return 1
 
     schema = json.loads(SCHEMA_PATH.read_text())

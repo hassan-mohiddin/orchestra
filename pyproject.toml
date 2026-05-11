@@ -77,3 +77,6 @@ addopts = [
     "--strict-markers",
     "--strict-config",
 ]
+markers = [
+    "real_pdsa: run the real PDSA pipeline (opts out of autouse stub in conftest.py)",
+]

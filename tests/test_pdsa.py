@@ -478,6 +478,58 @@ def test_glossary_default_pass(tmp_path, monkeypatch) -> None:
     assert report.checks["glossary"].gating is False
 
 
+def test_pdsa_report_yaml_format(tmp_path, monkeypatch) -> None:
+    """Slice 2.11 — PdsaReport.to_yaml() emits per-check pass/fail YAML."""
+    import yaml as yaml_mod
+
+    from cli import pdsa
+
+    doc = tmp_path / "random.md"
+    doc.write_text("# Title\n")
+
+    monkeypatch.setattr(pdsa, "_invoke_lint", lambda argv: 0)
+    report = pdsa.run_pdsa(doc)
+
+    yaml_text = report.to_yaml()
+    parsed = yaml_mod.safe_load(yaml_text)
+
+    assert parsed["doc_path"] == str(doc)
+    assert parsed["passed"] is True
+    assert "checks" in parsed
+    # All 7 named checks present
+    for check_id in [
+        "lint",
+        "required_sections",
+        "citations",
+        "placeholders",
+        "refs",
+        "filename_grammar",
+        "glossary",
+    ]:
+        assert check_id in parsed["checks"], f"missing {check_id} in YAML report"
+        assert "passed" in parsed["checks"][check_id]
+        assert "gating" in parsed["checks"][check_id]
+
+
+def test_pdsa_report_yaml_fail_surfaces_detail(tmp_path, monkeypatch) -> None:
+    """Slice 2.11 — failing check's detail is in YAML."""
+    from cli import pdsa
+    import yaml as yaml_mod
+
+    doc = tmp_path / "random.md"
+    doc.write_text("Reference: `nope/x.py:5`\n")
+
+    monkeypatch.setattr(pdsa, "_invoke_lint", lambda argv: 0)
+    report = pdsa.run_pdsa(doc)
+
+    yaml_text = report.to_yaml()
+    parsed = yaml_mod.safe_load(yaml_text)
+
+    assert parsed["passed"] is False
+    assert parsed["checks"]["citations"]["passed"] is False
+    assert "nope" in parsed["checks"]["citations"]["detail"]
+
+
 def test_required_sections_unknown_doc_type(tmp_path, monkeypatch) -> None:
     """Slice 2.3 — unknown doc type → required_sections.passed=True (skip check, no spec to enforce)."""
     from cli import pdsa

@@ -306,6 +306,24 @@ class PdsaReport:
         """True only when every GATING check passed. Non-gating fails are warnings."""
         return all(c.passed for c in self.checks.values() if c.gating)
 
+    def to_yaml(self) -> str:
+        """Per LLD-011 §PDSA — emit a YAML report listing pass/fail per check."""
+        import yaml
+
+        data = {
+            "doc_path": str(self.doc_path),
+            "passed": self.passed,
+            "checks": {
+                cid: {
+                    "passed": c.passed,
+                    "gating": c.gating,
+                    "detail": c.detail,
+                }
+                for cid, c in self.checks.items()
+            },
+        }
+        return yaml.safe_dump(data, sort_keys=False)
+
 
 def _invoke_lint(argv: list[str]) -> int:
     """Shell into cli.lint.main with argv. Returns exit code."""

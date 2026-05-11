@@ -1,0 +1,35 @@
+# orchestra commit-discipline integration for pre-commit.com framework.
+# (Owner: orchestra:commit skill; canonical placement under skills/commit/templates/
+#  per LLD-010 A8 placement rule. Distinct from cli/templates/precommit-yaml-patch.txt
+#  which is the BUG-007 yaml-checker --unsafe patch — different purpose.)
+#
+# Add to your .pre-commit-config.yaml (or invoke `cli.install_hooks --apply` for
+# auto-merge).
+#
+# This snippet adds TWO hooks under a `local` repo entry:
+#   - orchestra-lint        (pre-commit stage;  runs cli.lint --pre-commit)
+#   - orchestra-commit-msg  (commit-msg stage; runs cli.lint --commit-msg-finalize $1)
+#
+# pass_filenames notes:
+#   - pre-commit stage:  pass_filenames: false → no filename args; cli.lint reads `git diff --cached`.
+#   - commit-msg stage:  pass_filenames: false → no matched-files appended; git's NATIVE
+#     commit-msg hook contract always injects msg-file as $1 regardless of this setting
+#     (per pre-commit.com docs). Setting `false` here keeps the entry clean (only $1 = msg-file).
+
+default_install_hook_types: [pre-commit, commit-msg]
+
+repos:
+  - repo: local
+    hooks:
+      - id: orchestra-lint
+        name: orchestra commit-discipline (L1+L3+L4+L2-detect)
+        entry: python -m cli.lint --pre-commit
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+      - id: orchestra-commit-msg
+        name: orchestra commit-msg discipline (L2-finalize + Refs:-line)
+        entry: python -m cli.lint --commit-msg-finalize
+        language: system
+        pass_filenames: false
+        stages: [commit-msg]

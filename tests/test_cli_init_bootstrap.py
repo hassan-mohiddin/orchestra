@@ -50,13 +50,12 @@ def test_cli_init_non_tty_no_input_blocking(tmp_repo: Path, monkeypatch) -> None
     assert rc == 0
 
 
-@pytest.mark.xfail(reason="LLD-010 framework detection deferred to Phase 3", strict=False)
 def test_cli_init_framework_present_no_apply_defers_to_print_only(tmp_repo: Path) -> None:
     """T5d — `.pre-commit-config.yaml` present + no --apply → framework branch print-only."""
     (tmp_repo / ".pre-commit-config.yaml").write_text("repos: []\n")
     rc = cli_init.main(["--repo", str(tmp_repo)])
     assert rc == 0
-    # Phase 3: bootstrap should detect framework and NOT raw-overwrite hooks
+    # Phase 3: framework branch hit; raw hooks NOT installed
     assert not (tmp_repo / ".git" / "hooks" / "pre-commit").exists()
 
 

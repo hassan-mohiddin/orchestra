@@ -11,6 +11,7 @@ EXPECTED_FILES = (
     "SKILL.md",
     "templates/pre-commit.sh",
     "templates/commit-msg.sh",
+    "templates/precommit-framework-snippet.yaml",  # LLD-010 Phase 3
     "references/commit-strategy.md",
     "references/canon-frozen-guard.md",
     "references/refs-line-rules.md",
@@ -24,7 +25,7 @@ def test_skill_dir_has_expected_files() -> None:
     assert not missing, f"missing skill files: {missing}"
 
 
-def test_skill_dir_file_count_exactly_eight() -> None:
+def test_skill_dir_file_count_exactly_nine() -> None:
     found = sorted(p.relative_to(SKILL_ROOT).as_posix()
                    for p in SKILL_ROOT.rglob("*") if p.is_file())
     assert found == sorted(EXPECTED_FILES), (

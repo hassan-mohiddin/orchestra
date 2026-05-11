@@ -1,0 +1,836 @@
+schema_version: '2.0'
+doc_subject:
+  path: docs/features/011-spec-review-v2.md
+  content_hash: sha256:6a81ca4d4cfa38c87978fd09a8912622dfaa6fb98d982785bd3f7ac7649a99e6
+  iter_commit_sha: ef4cef22f474c2a9d0cc7d403cd5aab354923896
+  iter_blob_sha: d597803ce3be0346e59ee23a2e3a836c0b8339d3
+  iteration: 1
+peer_judge:
+  id: orchestra:spec-reviewer
+  invoked_at: '2026-05-11T16:33:08Z'
+  context_isolation: fresh_subagent_per_subjudge
+sub_judges:
+- id: structure
+  model: claude-sonnet-4-6
+  mandatory: false
+  rubric_version: structure-v1
+  status: completed
+  verdict: pass
+  findings: []
+  justification: 'Feature LLD required sections all present (Problem Statement, Success
+
+    Criteria, Scope, Design, API Changes, Database Changes, Edge Cases &
+
+    Error Handling, Security Considerations, Testing Strategy, Related
+
+    Documents, Changelog). Metadata complete. Filename matches LLD-006-r4
+
+    Feature LLD grammar. Mermaid flowchart present in Design. Heading
+
+    hierarchy consistent; tables well-formed. No structural defects.
+
+    '
+- id: semantic
+  model: claude-opus-4-7
+  mandatory: true
+  rubric_version: semantic-v1
+  status: completed
+  verdict: conditional_pass
+  findings:
+  - severity: Important
+    location: "Success Criteria \xA7 Loop iter-1 pass rate"
+    problem: Depth metric acceptance criterion requires >=80% overlap on Critical+Important
+      but does not define the timeline / process for measuring this on the 5-doc sample
+      (when, by whom, recorded where). Without a measurement protocol the criterion
+      is unfalsifiable.
+    scope: instance
+    raised_by:
+    - semantic
+  - severity: Important
+    location: "Success Criteria \xA7 Pytest baseline preserved"
+    problem: Says 259-test baseline stays green; add >=20 new tests. But Testing Strategy
+      lists 11 new test files plus existing v1.0 regression tests. Precise expected
+      total ambiguous and unverifiable without enumeration.
+    scope: instance
+    raised_by:
+    - semantic
+  - severity: Important
+    location: "Design \xA7 PDSA item 3 (Citation validity)"
+    problem: PDSA citation check reads cited files but the doc never reconciles this
+      with its pre-dispatch is doc-only framing in Design dispatch protocol. Fresh
+      reader following Design alone cannot infer this.
+    scope: class
+    raised_by:
+    - semantic
+  - severity: Important
+    location: "Design \xA7 Schema v2.0 (notes field)"
+    problem: 'Schema fragment shows notes field as optional but Out-of-scope + Iter-cap
+      + E18 + Delta-review all reference logged as degraded mode in attestation notes.
+      Contract is ambiguous: when must notes be populated?'
+    scope: instance
+    raised_by:
+    - semantic
+  - severity: Important
+    location: "Design \xA7 Cross-judge report format"
+    problem: Report example shows 6/6 completed for sub-judges but no specification
+      of what format is emitted when codex is NOT run. Fresh reader cannot tell what
+      the report looks like in the orchestra-only common case.
+    scope: instance
+    raised_by:
+    - semantic
+  - severity: Important
+    location: "Design \xA7 Aggregator (overall_verdict computation)"
+    problem: Mapping between codex severity vocabulary (Critical/High/Medium) and
+      orchestra schema (Critical/Important/Minor) is not specified anywhere in Design
+      or Cross-judge report, despite being load-bearing for the cross-judge overlap
+      metric.
+    scope: class
+    raised_by:
+    - semantic
+  - severity: Important
+    location: "Success Criteria \xA7 Iter-3 attempts blocked"
+    problem: AC claims override fires iter-3 interview-gate but the AC doesn't capture
+      that the override can resolve without iter-3 ever running, which is the intended
+      common case.
+    scope: instance
+    raised_by:
+    - semantic
+  - severity: Important
+    location: "Design \xA7 Class-vs-instance fix protocol"
+    problem: Sub-judge cast lists only repo-context and architectural-fit as having
+      Grep tool access. Mandatory sub-judges (semantic, adversarial) have Read only.
+      How does a Read-only sub-judge perform the re-grep verification on a class finding
+      it raised? Closure protocol contradicts tool scoping.
+    scope: class
+    raised_by:
+    - semantic
+  - severity: Minor
+    location: "Problem Statement \xA7 Defect 1 table"
+    problem: Table cites per docs/HANDOFF.md lines 60-80 but provides no verification
+      path; numeric percentages in contribution column stated without methodology.
+    scope: instance
+    raised_by:
+    - semantic
+  - severity: Minor
+    location: "Design \xA7 Schema v2.0 (peer_judge.context_isolation)"
+    problem: Field value fresh_subagent_per_subjudge recorded but its valid enum /
+      acceptable values are not specified anywhere in the schema.
+    scope: instance
+    raised_by:
+    - semantic
+  - severity: Minor
+    location: "Edge Cases & Error Handling \xA7 E10"
+    problem: 'iter-2 no-op case attestation contents not specified: does iter-2 require
+      re-dispatch of sub-judges or copy their outputs? The hash and provenance interaction
+      in the no-op case is not specified.'
+    scope: instance
+    raised_by:
+    - semantic
+  - severity: Minor
+    location: "Testing Strategy \xA7 Eval scenarios"
+    problem: Lists 5 eval scenarios (s1-s5) but Success Criteria depth metric requires
+      5 sample docs; whether s3 enumerates 5 sub-cases or runs as single aggregate
+      test is unspecified.
+    scope: instance
+    raised_by:
+    - semantic
+- id: gate-compliance
+  model: claude-sonnet-4-6
+  mandatory: false
+  rubric_version: gate-compliance-v1
+  status: completed
+  verdict: conditional_pass
+  findings:
+  - severity: Important
+    location: "Changelog \xA7 2026-05-11 status-flip Draft -> Approved entry"
+    problem: Status flipped Draft -> Approved without an orchestra spec-review pass
+      on iter-1 (orchestra v1 explicitly skipped per Changelog). Gate 3 requires spec
+      review on every doc before commit; codex substitution is documented and justified,
+      but the canonical orchestra-side Gate 3 attestation for the iter-1 Approved
+      state is absent.
+    scope: instance
+    raised_by:
+    - gate-compliance
+  - severity: Minor
+    location: "Changelog table \xA7 entry ordering"
+    problem: Changelog entries not in consistent chronological/iteration order - iter-4
+      spec-review entry appears above iter-3 and iter-2 entries, breaking either oldest-first
+      or newest-first convention.
+    scope: instance
+    raised_by:
+    - gate-compliance
+- id: adversarial
+  model: claude-opus-4-7
+  mandatory: true
+  rubric_version: adversarial-v1
+  status: completed
+  verdict: fail
+  findings:
+  - severity: Critical
+    location: "Design \xA7 Delta-review on iter 2"
+    problem: git hash-object -w writes loose blobs to user's .git/objects/ on every
+      iter-1 dispatch - silent write side-effect on a nominally read-only review;
+      fails on read-only checkouts, worktrees with non-writable .git, or non-git working
+      trees, with no fallback path specified.
+    scope: class
+    raised_by:
+    - adversarial
+  - severity: Critical
+    location: "Design \xA7 Delta-review + Edge Cases \xA7 E5"
+    problem: git default gc.pruneExpire is 2 weeks, not >=14 days, typically months;
+      any iter-2 >=2 weeks after iter-1 with intervening auto-gc loses the blob and
+      forces --override-cap, conflating two distinct recovery semantics.
+    scope: instance
+    raised_by:
+    - adversarial
+  - severity: Critical
+    location: "Design \xA7 PDSA item 3 (Citation validity)"
+    problem: 'PDSA executes Path(file).read_text() on every file:line cite with no
+      allowlist or canonicalization; a doc containing Refs: /etc/passwd:1 or ../../../etc/shadow:1-3
+      causes PDSA itself to read those files - inconsistent with S3 canonicalization
+      claim and broader than scoped-roots trust boundary.'
+    scope: class
+    raised_by:
+    - adversarial
+  - severity: Critical
+    location: "Design \xA7 Schema v2.0 attestation_integrity_hash + Security \xA7\
+      \ S8"
+    problem: SHA-256 over canonical YAML payload with this field zeroed specifies
+      neither the YAML canonicalization algorithm (key ordering, quoting, whitespace,
+      line endings, anchor/alias handling) nor what zeroed means (empty string, null,
+      omitted); two yaml-lib versions produce different bytes for the same logical
+      payload, breaking integrity guarantee.
+    scope: class
+    raised_by:
+    - adversarial
+  - severity: Critical
+    location: "Security \xA7 S1 output-quarantine credential regex"
+    problem: Credential-detection regex list is narrowly hardcoded and misses Stripe
+      sk_live_/pk_live_, GitHub ghp_/gho_/ghs_, GitLab glpat-, JWT eyJ.*, OAuth refresh
+      tokens, internal API keys, DB connection URIs; a sub-judge paraphrasing non-AWS
+      secrets bypasses output-quarantine entirely.
+    scope: class
+    raised_by:
+    - adversarial
+  - severity: Critical
+    location: "Design \xA7 Aggregator + Edge Cases \xA7 E14"
+    problem: fuzzy_hash collision documented as acceptable but aggregator takes max
+      severity AND picks canonical text from alphabetically-first sub_judge id - so
+      a Critical from adversarial colliding with an unrelated Important from semantic
+      at the same normalized location collapses to one entry, silently suppressing
+      semantic's distinct problem statement; unbounded loss of Critical signal.
+    scope: class
+    raised_by:
+    - adversarial
+  - severity: Critical
+    location: "Design \xA7 Aggregator + Schema findings.location"
+    problem: Sub-judge-emitted findings.location flows through normalize_location
+      (whitespace/case only) into the persisted attestation and chat report with no
+      path-shape rejection; a prompt-injected sub-judge can emit location=/etc/passwd:1
+      or location with embedded markdown propagating verbatim to the user's chat report.
+    scope: class
+    raised_by:
+    - adversarial
+  - severity: Critical
+    location: "Edge Cases \xA7 E17b + Scope item 14"
+    problem: Both mandatory sub-judges run on Opus 4.7; any Opus provider outage takes
+      BOTH mandatories down simultaneously, hard-failing every review with no fallback
+      model, no Sonnet failover, no degraded-mode path - review system is fully coupled
+      to single external dependency with no bounded blast radius.
+    scope: instance
+    raised_by:
+    - adversarial
+  - severity: Important
+    location: "Design \xA7 PDSA item 2 (Required-sections)"
+    problem: Required-sections check described as heuristic parse that tightens when
+      BUG-016 closes, but Success Criteria says PDSA hard-blocks dispatch on mechanical
+      fails with no override; buggy heuristic false-positive blocks dispatch indefinitely
+      with no bypass.
+    scope: instance
+    raised_by:
+    - adversarial
+  - severity: Important
+    location: "Design \xA7 Delta-review compute_changed_sections"
+    problem: compute_changed_sections unspecified (no definition of section, diff
+      granularity, cross-section change handling, mermaid/table/list treatment); sub-judges
+      receive full iter-2 doc AND prompt-level instruction to skip unchanged sections
+      - advisory not enforced.
+    scope: instance
+    raised_by:
+    - adversarial
+  - severity: Important
+    location: "Design \xA7 Delta-review iter-1-missed policy"
+    problem: Permits unbounded new Critical findings on unchanged sections at iter-2
+      - iter-2 can surface N new Criticals with no clean forward path; interview-gate
+      at iter-3 override doesn't include one more bounded iter-2 to address newly-surfaced
+      Criticals, so 2-iter cap becomes hard wall.
+    scope: instance
+    raised_by:
+    - adversarial
+  - severity: Important
+    location: "Security \xA7 S1 prompt-level path scoping"
+    problem: Prompt-level scoping permits Read within docs/, cli/, skills/, tests/,
+      eval/ but repo root also contains .claude/ (auto-loaded rules), .git/ (full
+      history), .venv/ (installed packages), .env (if present); sub-judge paraphrasing
+      content from these paths into prose findings bypasses 100-char + regex output-quarantine.
+    scope: class
+    raised_by:
+    - adversarial
+  - severity: Important
+    location: "Design \xA7 PDSA item 3 citation regex"
+    problem: Citation regex matches file:line but novel forms (file:50,55; file:50ff;
+      file:50- open range; file:#anchor; file:func_name symbol cite) silently skip
+      validation - doc citing wrong artifacts via unsupported forms passes PDSA while
+      cited location is invalid.
+    scope: instance
+    raised_by:
+    - adversarial
+  - severity: Important
+    location: "Design \xA7 Schema + Mandatory-map versioning"
+    problem: MANDATORY_SUBJUDGES is a static frozenset in cli.spec_review source;
+      schema_version 2.0 doesn't capture mandatory-set version, so when a future release
+      adds a mandatory sub-judge, an in-flight iter-2 reading iter-1 attestation under
+      newer binary has divergent mandatory semantics with no compatibility check.
+    scope: class
+    raised_by:
+    - adversarial
+  - severity: Important
+    location: "Edge Cases \xA7 E9 + Design \xA7 Dispatch protocol"
+    problem: Concurrent dispatch race detected only at write time via byte-compare
+      - both dispatchers complete all 6 sub-judges before one fails the write; no
+      file-lock on dispatch entry, no pre-dispatch check for in-flight same-doc review;
+      cost-amplification vector.
+    scope: instance
+    raised_by:
+    - adversarial
+  - severity: Important
+    location: "Design \xA7 Interview-gate auto-fire"
+    problem: AskUserQuestion fires on Critical/Important findings, but behavior in
+      non-interactive contexts (CI runs, scheduled agents, headless /loop dispatch)
+      is unspecified - does dispatch hang, fail with no-input error, or default? Unspecified
+      failure mode for automation invocation paths.
+    scope: instance
+    raised_by:
+    - adversarial
+  - severity: Important
+    location: "Design \xA7 PDSA item 7 (Filename grammar)"
+    problem: PDSA filename-grammar check pattern-matches against LLD-006-r4, but CLAUDE.md
+      states L4 currently doesn't pattern-match bare-name design supersession (BUG-014)
+      - PDSA inherits this gap and will either false-reject valid design/orchestra-philosophy-r2.md
+      or silently pass invalid supersession.
+    scope: instance
+    raised_by:
+    - adversarial
+  - severity: Important
+    location: "Design \xA7 Class-vs-instance fix protocol"
+    problem: Sub-judges prompted to default scope:class for pattern findings - adversarial
+      sub-judge with red-team posture has strong incentive to flag everything as class
+      to maximize impact; no constraint, no sanity-check class:instance ratio, author
+      burden drifts toward audit-attestation boilerplate.
+    scope: class
+    raised_by:
+    - adversarial
+  - severity: Important
+    location: "Design \xA7 Cross-judge report + Success Criteria depth metric"
+    problem: Tolerant parsing of codex .md regex extract degrades to see file on format
+      change - but >=80% codex-overlap success criterion cannot be computed without
+      parsed findings; a codex plugin update silently passes the criterion via degraded
+      mode with no measurement-validity check or alarm.
+    scope: instance
+    raised_by:
+    - adversarial
+  - severity: Important
+    location: "Security \xA7 S8 + Schema integrity-hash atomicity"
+    problem: Integrity hash defends against post-write tamper but iter-1 write is
+      not specified atomic-with-hash-compute; race window exists where attestation
+      is written, hash computed over read-back content, another writer interleaves
+      modifications producing valid-looking but inconsistent attestation.
+    scope: class
+    raised_by:
+    - adversarial
+  - severity: Important
+    location: "Design \xA7 PDSA item 6 (Cross-doc Refs)"
+    problem: 'Cross-doc Refs: line resolution uses Path(<path>).exists() with no canonicalization
+      - symlinks, absolute paths, and .. escapes not blocked, contradicting S3 inherited
+      F1+F5 canonicalization claim; a doc citing Refs: ../../../etc/hosts passes PDSA
+      cleanly because exists() resolves the escape.'
+    scope: instance
+    raised_by:
+    - adversarial
+  - severity: Important
+    location: "Design \xA7 Override-cap iter-3 interview-gate options"
+    problem: Options at iter-3 override include No accept iter-2 as final; this ships
+      a doc with iter-2 Critical findings explicitly unaddressed - interview-gate
+      becomes a Critical-bypass mechanism inverse to its documented purpose of catching
+      context drift.
+    scope: instance
+    raised_by:
+    - adversarial
+  - severity: Minor
+    location: "Security \xA7 S1 output-quarantine 100-char threshold"
+    problem: 100-char threshold has obvious bypass (99-char secret quote) and obvious
+      false positive (legitimate quoted-context findings often span >100 chars); threshold
+      is unbacked by analysis of finding-text length distribution.
+    scope: instance
+    raised_by:
+    - adversarial
+  - severity: Minor
+    location: "Design \xA7 Rubric-freeze + Schema rubric_version validation"
+    problem: Schema validates sub-judge rubric_version against known rubric files
+      on disk - a developer pruning old rubric files silently fails iter-2 of any
+      in-flight review pinned to that version, with no migration path other than restoring
+      from git history; no minimum retention policy documented.
+    scope: instance
+    raised_by:
+    - adversarial
+  - severity: Minor
+    location: "Edge Cases \xA7 E10"
+    problem: Author bumps Iteration to 2 without editing doc lets an author artificially
+      advance the Iteration counter (to test the cap or pad audit trail), polluting
+      attestation history with no-op entries and burning iter-2 budget for nothing.
+    scope: instance
+    raised_by:
+    - adversarial
+  - severity: Minor
+    location: "Design \xA7 File layout (schema versioning)"
+    problem: Schema v1.0 frozen and v2.0 lives alongside; versioning policy ad-hoc
+      with no documented mechanism for v2.1 minor bumps - first such bump has no precedent
+      on whether it lands in new file, in-place edit, or via migration, risking schema
+      sprawl.
+    scope: instance
+    raised_by:
+    - adversarial
+- id: repo-context
+  model: claude-opus-4-7
+  mandatory: false
+  rubric_version: repo-context-v1
+  status: completed
+  verdict: conditional_pass
+  findings:
+  - severity: Critical
+    location: "Testing Strategy \xA7 Unit tests + Changelog iter-1 entry"
+    problem: Doc lists tests/test_tool_trace_rejection.py as NEW but this file does
+      NOT exist in the repo. test_attestation_integrity.py and test_provenance.py
+      exist; tool_trace_rejection is missing.
+    scope: instance
+    raised_by:
+    - repo-context
+  - severity: Important
+    location: "Problem Statement \xA7 Defect 1 - Loop pathology"
+    problem: Citation per docs/HANDOFF.md lines 60-80 is wrong - the actual root-cause
+      table at HANDOFF.md lives at lines 290-296. Lines 60-80 cover unrelated content.
+    scope: instance
+    raised_by:
+    - repo-context
+  - severity: Minor
+    location: "Problem Statement \xA7 Defect 1 - Loop pathology"
+    problem: Cite skills/spec-review/prompt-template.md:65-70 for typical reviews
+      find 2-5 issues per gate instruction is imprecise - relevant content lives at
+      lines 68-70; lines 65-67 are SEVERITY ENUM content.
+    scope: instance
+    raised_by:
+    - repo-context
+- id: architectural-fit
+  model: claude-opus-4-7
+  mandatory: false
+  rubric_version: architectural-fit-v1
+  status: completed
+  verdict: pass
+  findings: []
+  justification: 'LLD-011 cites LLD-007-r5 as the v1 architecture it supersedes, with
+
+    explicit transition plan in Related Documents; LLD-007-r5 currently
+
+    Status Implemented is correct for pre-ship state - no supersession
+
+    integrity break. 4-gate rubric invariant from orchestra-philosophy-r2
+
+    preserved (inherited by semantic sub-judge per Scope item 1). The
+
+    only ADR (ADR-001) is unrelated and not contradicted. Two ADR refs
+
+    in the body (ADR-002, ADR-007) appear inside illustrative example
+
+    payloads - not architectural claims. Cross-doc Refs align with this
+
+    doc''s claims. No structural conflict with recorded canon.
+
+    '
+findings_aggregated:
+- severity: Minor
+  location: "Changelog table \xA7 entry ordering"
+  problem: Changelog entries not in consistent chronological/iteration order - iter-4
+    spec-review entry appears above iter-3 and iter-2 entries, breaking either oldest-first
+    or newest-first convention.
+  raised_by:
+  - gate-compliance
+  scope: instance
+- severity: Important
+  location: "Changelog \xA7 2026-05-11 status-flip Draft -> Approved entry"
+  problem: Status flipped Draft -> Approved without an orchestra spec-review pass
+    on iter-1 (orchestra v1 explicitly skipped per Changelog). Gate 3 requires spec
+    review on every doc before commit; codex substitution is documented and justified,
+    but the canonical orchestra-side Gate 3 attestation for the iter-1 Approved state
+    is absent.
+  raised_by:
+  - gate-compliance
+  scope: instance
+- severity: Important
+  location: "Design \xA7 Aggregator (overall_verdict computation)"
+  problem: Mapping between codex severity vocabulary (Critical/High/Medium) and orchestra
+    schema (Critical/Important/Minor) is not specified anywhere in Design or Cross-judge
+    report, despite being load-bearing for the cross-judge overlap metric.
+  raised_by:
+  - semantic
+  scope: class
+- severity: Critical
+  location: "Design \xA7 Aggregator + Edge Cases \xA7 E14"
+  problem: fuzzy_hash collision documented as acceptable but aggregator takes max
+    severity AND picks canonical text from alphabetically-first sub_judge id - so
+    a Critical from adversarial colliding with an unrelated Important from semantic
+    at the same normalized location collapses to one entry, silently suppressing semantic's
+    distinct problem statement; unbounded loss of Critical signal.
+  raised_by:
+  - adversarial
+  scope: class
+- severity: Critical
+  location: "Design \xA7 Aggregator + Schema findings.location"
+  problem: Sub-judge-emitted findings.location flows through normalize_location (whitespace/case
+    only) into the persisted attestation and chat report with no path-shape rejection;
+    a prompt-injected sub-judge can emit location=/etc/passwd:1 or location with embedded
+    markdown propagating verbatim to the user's chat report.
+  raised_by:
+  - adversarial
+  scope: class
+- severity: Important
+  location: "Design \xA7 Class-vs-instance fix protocol"
+  problem: Sub-judge cast lists only repo-context and architectural-fit as having
+    Grep tool access. Mandatory sub-judges (semantic, adversarial) have Read only.
+    How does a Read-only sub-judge perform the re-grep verification on a class finding
+    it raised? Closure protocol contradicts tool scoping.
+  raised_by:
+  - semantic
+  scope: class
+- severity: Important
+  location: "Design \xA7 Class-vs-instance fix protocol"
+  problem: Sub-judges prompted to default scope:class for pattern findings - adversarial
+    sub-judge with red-team posture has strong incentive to flag everything as class
+    to maximize impact; no constraint, no sanity-check class:instance ratio, author
+    burden drifts toward audit-attestation boilerplate.
+  raised_by:
+  - adversarial
+  scope: class
+- severity: Important
+  location: "Design \xA7 Cross-judge report + Success Criteria depth metric"
+  problem: Tolerant parsing of codex .md regex extract degrades to see file on format
+    change - but >=80% codex-overlap success criterion cannot be computed without
+    parsed findings; a codex plugin update silently passes the criterion via degraded
+    mode with no measurement-validity check or alarm.
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Important
+  location: "Design \xA7 Cross-judge report format"
+  problem: Report example shows 6/6 completed for sub-judges but no specification
+    of what format is emitted when codex is NOT run. Fresh reader cannot tell what
+    the report looks like in the orchestra-only common case.
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Critical
+  location: "Design \xA7 Delta-review + Edge Cases \xA7 E5"
+  problem: git default gc.pruneExpire is 2 weeks, not >=14 days, typically months;
+    any iter-2 >=2 weeks after iter-1 with intervening auto-gc loses the blob and
+    forces --override-cap, conflating two distinct recovery semantics.
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Important
+  location: "Design \xA7 Delta-review compute_changed_sections"
+  problem: compute_changed_sections unspecified (no definition of section, diff granularity,
+    cross-section change handling, mermaid/table/list treatment); sub-judges receive
+    full iter-2 doc AND prompt-level instruction to skip unchanged sections - advisory
+    not enforced.
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Important
+  location: "Design \xA7 Delta-review iter-1-missed policy"
+  problem: Permits unbounded new Critical findings on unchanged sections at iter-2
+    - iter-2 can surface N new Criticals with no clean forward path; interview-gate
+    at iter-3 override doesn't include one more bounded iter-2 to address newly-surfaced
+    Criticals, so 2-iter cap becomes hard wall.
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Critical
+  location: "Design \xA7 Delta-review on iter 2"
+  problem: git hash-object -w writes loose blobs to user's .git/objects/ on every
+    iter-1 dispatch - silent write side-effect on a nominally read-only review; fails
+    on read-only checkouts, worktrees with non-writable .git, or non-git working trees,
+    with no fallback path specified.
+  raised_by:
+  - adversarial
+  scope: class
+- severity: Minor
+  location: "Design \xA7 File layout (schema versioning)"
+  problem: Schema v1.0 frozen and v2.0 lives alongside; versioning policy ad-hoc with
+    no documented mechanism for v2.1 minor bumps - first such bump has no precedent
+    on whether it lands in new file, in-place edit, or via migration, risking schema
+    sprawl.
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Important
+  location: "Design \xA7 Interview-gate auto-fire"
+  problem: AskUserQuestion fires on Critical/Important findings, but behavior in non-interactive
+    contexts (CI runs, scheduled agents, headless /loop dispatch) is unspecified -
+    does dispatch hang, fail with no-input error, or default? Unspecified failure
+    mode for automation invocation paths.
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Important
+  location: "Design \xA7 Override-cap iter-3 interview-gate options"
+  problem: Options at iter-3 override include No accept iter-2 as final; this ships
+    a doc with iter-2 Critical findings explicitly unaddressed - interview-gate becomes
+    a Critical-bypass mechanism inverse to its documented purpose of catching context
+    drift.
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Important
+  location: "Design \xA7 PDSA item 2 (Required-sections)"
+  problem: Required-sections check described as heuristic parse that tightens when
+    BUG-016 closes, but Success Criteria says PDSA hard-blocks dispatch on mechanical
+    fails with no override; buggy heuristic false-positive blocks dispatch indefinitely
+    with no bypass.
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Important
+  location: "Design \xA7 PDSA item 3 (Citation validity)"
+  problem: PDSA citation check reads cited files but the doc never reconciles this
+    with its pre-dispatch is doc-only framing in Design dispatch protocol. Fresh reader
+    following Design alone cannot infer this.
+  raised_by:
+  - semantic
+  scope: class
+- severity: Critical
+  location: "Design \xA7 PDSA item 3 (Citation validity)"
+  problem: 'PDSA executes Path(file).read_text() on every file:line cite with no allowlist
+    or canonicalization; a doc containing Refs: /etc/passwd:1 or ../../../etc/shadow:1-3
+    causes PDSA itself to read those files - inconsistent with S3 canonicalization
+    claim and broader than scoped-roots trust boundary.'
+  raised_by:
+  - adversarial
+  scope: class
+- severity: Important
+  location: "Design \xA7 PDSA item 3 citation regex"
+  problem: Citation regex matches file:line but novel forms (file:50,55; file:50ff;
+    file:50- open range; file:#anchor; file:func_name symbol cite) silently skip validation
+    - doc citing wrong artifacts via unsupported forms passes PDSA while cited location
+    is invalid.
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Important
+  location: "Design \xA7 PDSA item 6 (Cross-doc Refs)"
+  problem: 'Cross-doc Refs: line resolution uses Path(<path>).exists() with no canonicalization
+    - symlinks, absolute paths, and .. escapes not blocked, contradicting S3 inherited
+    F1+F5 canonicalization claim; a doc citing Refs: ../../../etc/hosts passes PDSA
+    cleanly because exists() resolves the escape.'
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Important
+  location: "Design \xA7 PDSA item 7 (Filename grammar)"
+  problem: PDSA filename-grammar check pattern-matches against LLD-006-r4, but CLAUDE.md
+    states L4 currently doesn't pattern-match bare-name design supersession (BUG-014)
+    - PDSA inherits this gap and will either false-reject valid design/orchestra-philosophy-r2.md
+    or silently pass invalid supersession.
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Minor
+  location: "Design \xA7 Rubric-freeze + Schema rubric_version validation"
+  problem: Schema validates sub-judge rubric_version against known rubric files on
+    disk - a developer pruning old rubric files silently fails iter-2 of any in-flight
+    review pinned to that version, with no migration path other than restoring from
+    git history; no minimum retention policy documented.
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Important
+  location: "Design \xA7 Schema + Mandatory-map versioning"
+  problem: MANDATORY_SUBJUDGES is a static frozenset in cli.spec_review source; schema_version
+    2.0 doesn't capture mandatory-set version, so when a future release adds a mandatory
+    sub-judge, an in-flight iter-2 reading iter-1 attestation under newer binary has
+    divergent mandatory semantics with no compatibility check.
+  raised_by:
+  - adversarial
+  scope: class
+- severity: Important
+  location: "Design \xA7 Schema v2.0 (notes field)"
+  problem: 'Schema fragment shows notes field as optional but Out-of-scope + Iter-cap
+    + E18 + Delta-review all reference logged as degraded mode in attestation notes.
+    Contract is ambiguous: when must notes be populated?'
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Minor
+  location: "Design \xA7 Schema v2.0 (peer_judge.context_isolation)"
+  problem: Field value fresh_subagent_per_subjudge recorded but its valid enum / acceptable
+    values are not specified anywhere in the schema.
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Critical
+  location: "Design \xA7 Schema v2.0 attestation_integrity_hash + Security \xA7 S8"
+  problem: SHA-256 over canonical YAML payload with this field zeroed specifies neither
+    the YAML canonicalization algorithm (key ordering, quoting, whitespace, line endings,
+    anchor/alias handling) nor what zeroed means (empty string, null, omitted); two
+    yaml-lib versions produce different bytes for the same logical payload, breaking
+    integrity guarantee.
+  raised_by:
+  - adversarial
+  scope: class
+- severity: Minor
+  location: "Edge Cases & Error Handling \xA7 E10"
+  problem: 'iter-2 no-op case attestation contents not specified: does iter-2 require
+    re-dispatch of sub-judges or copy their outputs? The hash and provenance interaction
+    in the no-op case is not specified.'
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Minor
+  location: "Edge Cases \xA7 E10"
+  problem: Author bumps Iteration to 2 without editing doc lets an author artificially
+    advance the Iteration counter (to test the cap or pad audit trail), polluting
+    attestation history with no-op entries and burning iter-2 budget for nothing.
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Critical
+  location: "Edge Cases \xA7 E17b + Scope item 14"
+  problem: Both mandatory sub-judges run on Opus 4.7; any Opus provider outage takes
+    BOTH mandatories down simultaneously, hard-failing every review with no fallback
+    model, no Sonnet failover, no degraded-mode path - review system is fully coupled
+    to single external dependency with no bounded blast radius.
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Important
+  location: "Edge Cases \xA7 E9 + Design \xA7 Dispatch protocol"
+  problem: Concurrent dispatch race detected only at write time via byte-compare -
+    both dispatchers complete all 6 sub-judges before one fails the write; no file-lock
+    on dispatch entry, no pre-dispatch check for in-flight same-doc review; cost-amplification
+    vector.
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Important
+  location: "Problem Statement \xA7 Defect 1 - Loop pathology"
+  problem: Citation per docs/HANDOFF.md lines 60-80 is wrong - the actual root-cause
+    table at HANDOFF.md lives at lines 290-296. Lines 60-80 cover unrelated content.
+  raised_by:
+  - repo-context
+  scope: instance
+- severity: Minor
+  location: "Problem Statement \xA7 Defect 1 - Loop pathology"
+  problem: Cite skills/spec-review/prompt-template.md:65-70 for typical reviews find
+    2-5 issues per gate instruction is imprecise - relevant content lives at lines
+    68-70; lines 65-67 are SEVERITY ENUM content.
+  raised_by:
+  - repo-context
+  scope: instance
+- severity: Minor
+  location: "Problem Statement \xA7 Defect 1 table"
+  problem: Table cites per docs/HANDOFF.md lines 60-80 but provides no verification
+    path; numeric percentages in contribution column stated without methodology.
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Minor
+  location: "Security \xA7 S1 output-quarantine 100-char threshold"
+  problem: 100-char threshold has obvious bypass (99-char secret quote) and obvious
+    false positive (legitimate quoted-context findings often span >100 chars); threshold
+    is unbacked by analysis of finding-text length distribution.
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Critical
+  location: "Security \xA7 S1 output-quarantine credential regex"
+  problem: Credential-detection regex list is narrowly hardcoded and misses Stripe
+    sk_live_/pk_live_, GitHub ghp_/gho_/ghs_, GitLab glpat-, JWT eyJ.*, OAuth refresh
+    tokens, internal API keys, DB connection URIs; a sub-judge paraphrasing non-AWS
+    secrets bypasses output-quarantine entirely.
+  raised_by:
+  - adversarial
+  scope: class
+- severity: Important
+  location: "Security \xA7 S1 prompt-level path scoping"
+  problem: Prompt-level scoping permits Read within docs/, cli/, skills/, tests/,
+    eval/ but repo root also contains .claude/ (auto-loaded rules), .git/ (full history),
+    .venv/ (installed packages), .env (if present); sub-judge paraphrasing content
+    from these paths into prose findings bypasses 100-char + regex output-quarantine.
+  raised_by:
+  - adversarial
+  scope: class
+- severity: Important
+  location: "Security \xA7 S8 + Schema integrity-hash atomicity"
+  problem: Integrity hash defends against post-write tamper but iter-1 write is not
+    specified atomic-with-hash-compute; race window exists where attestation is written,
+    hash computed over read-back content, another writer interleaves modifications
+    producing valid-looking but inconsistent attestation.
+  raised_by:
+  - adversarial
+  scope: class
+- severity: Important
+  location: "Success Criteria \xA7 Iter-3 attempts blocked"
+  problem: AC claims override fires iter-3 interview-gate but the AC doesn't capture
+    that the override can resolve without iter-3 ever running, which is the intended
+    common case.
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Important
+  location: "Success Criteria \xA7 Loop iter-1 pass rate"
+  problem: Depth metric acceptance criterion requires >=80% overlap on Critical+Important
+    but does not define the timeline / process for measuring this on the 5-doc sample
+    (when, by whom, recorded where). Without a measurement protocol the criterion
+    is unfalsifiable.
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Important
+  location: "Success Criteria \xA7 Pytest baseline preserved"
+  problem: Says 259-test baseline stays green; add >=20 new tests. But Testing Strategy
+    lists 11 new test files plus existing v1.0 regression tests. Precise expected
+    total ambiguous and unverifiable without enumeration.
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Minor
+  location: "Testing Strategy \xA7 Eval scenarios"
+  problem: Lists 5 eval scenarios (s1-s5) but Success Criteria depth metric requires
+    5 sample docs; whether s3 enumerates 5 sub-cases or runs as single aggregate test
+    is unspecified.
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Critical
+  location: "Testing Strategy \xA7 Unit tests + Changelog iter-1 entry"
+  problem: Doc lists tests/test_tool_trace_rejection.py as NEW but this file does
+    NOT exist in the repo. test_attestation_integrity.py and test_provenance.py exist;
+    tool_trace_rejection is missing.
+  raised_by:
+  - repo-context
+  scope: instance
+overall_verdict: fail
+overall_verdict_basis:
+  worst_sub_judge_verdict: fail
+  excluded_sub_judges: []
+  mandatory_failures: []
+  reason: null
+attestation_integrity_hash: sha256:ae64e97255ed5bd4ad8787bba6ce9528af8f21bf363b60639e3971fd3e6ef4fe

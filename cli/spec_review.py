@@ -469,6 +469,15 @@ def main(argv=None) -> int:
         action="store_true",
         help="Overwrite existing attestation for same iteration",
     )
+    parser.add_argument(
+        "--override-cap",
+        dest="override_cap",
+        action="store_true",
+        help=(
+            "Bypass the 2-iteration post-commit cap. Operator confirms a "
+            "degraded-mode review at iter-3+; logged in attestation notes."
+        ),
+    )
     args = parser.parse_args(argv)
 
     repo_root = _resolve_repo_root()
@@ -497,6 +506,19 @@ def main(argv=None) -> int:
         return 1
 
     iteration = parse_iteration_from_text(doc_text)
+
+    # LLD-011 slices 3.7-3.9 — 2-iter post-commit cap. Iter-1 + iter-2 dispatch
+    # normally; iter-3+ refuses unless operator passes --override-cap (which
+    # represents an interview-gate confirmation upstream in the skill body).
+    if iteration >= 3 and not args.override_cap:
+        print(
+            f"error: iter_cap_exceeded: iter-{iteration} dispatch refused. "
+            f"Post-commit iteration cap is 2; further iterations require an "
+            f"interview-gate confirmation. Re-run with --override-cap to "
+            f"bypass (logged in attestation notes as degraded mode).",
+            file=sys.stderr,
+        )
+        return 1
 
     # F9: anchor attestation path under repo_root
     out_path = repo_root / compute_attestation_path(canonical_path, iteration)
@@ -599,6 +621,21 @@ def main(argv=None) -> int:
             file=sys.stderr,
         )
         return 1
+
+    # LLD-011 slice 3.13 — log degraded-mode override in attestation notes
+    # so the iter-3+ override is permanently auditable.
+    if args.override_cap and iteration >= 3:
+        notes_msg = (
+            f"degraded mode: iter-{iteration} dispatch ran under --override-cap "
+            f"(2-iter post-commit cap bypassed via interview-gate consent)"
+        )
+        existing_notes = attestation.get("notes")
+        if isinstance(existing_notes, list):
+            existing_notes.append(notes_msg)
+        elif isinstance(existing_notes, str):
+            attestation["notes"] = [existing_notes, notes_msg]
+        else:
+            attestation["notes"] = [notes_msg]
 
     # A24+PF10: atomic write
     yaml_content = yaml.safe_dump(

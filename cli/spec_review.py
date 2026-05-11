@@ -188,6 +188,20 @@ def main(argv=None) -> int:
 
     # F9: anchor attestation path under repo_root
     out_path = repo_root / compute_attestation_path(canonical_path, iteration)
+
+    # LLD-011 slice 1.7: refuse to overwrite v1.0 attestations (frozen-historical).
+    # Even --force is rejected — v1.0 audit trail is preserved permanently.
+    existing_version = _detect_schema_version(out_path)
+    if existing_version == "1.0":
+        print(
+            f"error: v1.0_attestation_frozen: {out_path} is a v1.0 attestation "
+            "and cannot be overwritten by v2.0 (--force does not apply). v1.0 "
+            "attestations are frozen-historical per LLD-011. To run a v2.0 review, "
+            "bump the doc's Iteration: field to start a fresh review cycle at iter N+1.",
+            file=sys.stderr,
+        )
+        return 1
+
     if out_path.exists() and not args.force:
         print(
             f"error: {out_path} already exists. Use --force to overwrite.",

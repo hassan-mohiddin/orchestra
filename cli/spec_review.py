@@ -72,6 +72,25 @@ def parse_iteration_from_text(text: str) -> int:
     return int(m.group(1))
 
 
+def _detect_schema_version(path: Path) -> str | None:
+    """Detect schema_version of an existing attestation YAML (LLD-011 slice 1.6).
+
+    Returns:
+        "1.0" or "2.0" if file exists and parses cleanly with a string schema_version
+        None if file is missing, unreadable, malformed, or missing schema_version
+    """
+    if not path.exists():
+        return None
+    try:
+        data = yaml.load(path.read_text(), Loader=_NoTimestampLoader)
+    except (yaml.YAMLError, OSError):
+        return None
+    if not isinstance(data, dict):
+        return None
+    version = data.get("schema_version")
+    return version if isinstance(version, str) else None
+
+
 def dispatch_subagent(prompt: str) -> str:
     """Read subagent YAML from stdin (production) or monkeypatched (tests).
 

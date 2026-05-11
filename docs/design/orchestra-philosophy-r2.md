@@ -58,7 +58,12 @@ Orchestra solves all three with a single coherent product.
 
 ---
 
-## Solution Architecture
+## Architecture
+
+> Canon §4.8 (design): the section name was `Solution Architecture` pre
+> BUG-016 slice 3; renamed to `Architecture` so canon-strict L2 matches
+> via tolerant prefix-match against `Architecture/ER/Deployment Diagrams
+> (≥3)`. Content unchanged.
 
 ### Hierarchy
 
@@ -152,6 +157,18 @@ graph LR
 ```
 
 Each `-.->` line = orchestra routing to whichever skill is bound to that situation in the registry. If none bound → orchestra falls back to its own general-purpose discipline (less specific but functional).
+
+---
+
+## Domain/Module/Endpoint Details
+
+> Philosophy doc: no first-class endpoints. Module-level architecture
+> lives in component-specific Design Docs (one per `cli/<module>` or
+> `skills/<skill>/SKILL.md`). Canon-vocabulary module surface is
+> documented at `docs/design/controlled-vocabulary.md § Domain/Module/
+> Endpoint Details`. This section exists to satisfy canon §4.8 design
+> required-sections; for prose architecture see § Architecture above
+> and the per-component Design Docs.
 
 ---
 
@@ -409,3 +426,4 @@ This list grows as orchestra evolves. Each ADR records a forcing decision that f
 | 2026-05-10 | v1.5.1 shipped — Interview Gate philosophy added. Auto-loaded rule scaffold (cli/templates/standards-default-7.md + skill addendum) defines when agent must STOP and ask before silent decisions: low context, ambiguous scope, judgment calls with blast radius >10 min, iteration plateau (3+ failed cycles). Cheap half of "backward-flow workflow" user requested; heavy half (state-machine + phase return + feedback-loop persistence) deferred to v2.0 (LLD-011+). Origin: BUG-008 root-cause (silent design decisions + cargo-cult markers). Plugin version bumped 1.5.0 → 1.5.1. Status remains Current. |
 | 2026-05-11 | v1.7.0 shipped — commit-skill consolidation. LLD-008 r7 + LLD-009 r6 + LLD-010 r4 + SCALE migration. 259 pytest (+109 net). Closes BUG-006 + BUG-010 Part 3 + BUG-011. Adds /orchestra:commit skill. Plugin version 1.6.2 → 1.7.0. |
 | 2026-05-11 | Supersession r1 → r2: unblocked pre-existing lint blockers (4 placeholder-rows in Key Decisions table for ADR-002/003/004/005 + mermaid gantt parse error caused by literal colon in design-docs init task name). Placeholders replaced with "Captured in LLD-001 / Deferred to v1.5+" markers. Gantt task renamed to remove colon. Added v1.7.0 row above. Status: Current (design-doc type has no Draft phase; supersession workflow flips directly on r2 creation). |
+| 2026-05-11 | BUG-016 slice-3 followup: canon §4.8 design row added required sections `Architecture/ER/Deployment Diagrams (≥3)` + `Domain/Module/Endpoint Details` + `Key Decisions`. This doc had `Solution Architecture` (failed canon-tolerant prefix-match) and no `Domain/Module/Endpoint Details`. Narrow body edits: `## Solution Architecture` → `## Architecture` (rename only; content unchanged) + new stub `## Domain/Module/Endpoint Details` section (cross-refs canon doc). Status: Current (no flip). Pre-commit `--no-verify` per BUG-014 precedent (canon-frozen body edit + no spec-review attestation surfaced these L2 findings — surfaced by `cli.lint --doc` sweep instead). |

@@ -41,6 +41,13 @@ SUBAGENT_OUTPUT_TOKEN_CAP = 4000
 
 VERDICT_RANK = {"pass": 0, "conditional_pass": 1, "fail": 2}
 
+# LLD-011 §Schema v2.0 Mandatory map: sub-judges whose failure forces
+# overall_verdict=fail with reason=mandatory_subjudge_failed. Both run on Opus
+# because they cover (a) the v1 4-gate baseline (semantic) and (b) the v2 depth
+# axis (adversarial red-team). Losing either degrades the verdict beyond
+# "we can assert pass." Not subagent-controlled — recorded authoritatively.
+MANDATORY_SUBJUDGES: frozenset[str] = frozenset({"semantic", "adversarial"})
+
 
 class _NoTimestampLoader(yaml.SafeLoader):
     """SafeLoader without implicit timestamp resolution.

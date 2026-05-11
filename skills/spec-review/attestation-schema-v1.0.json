@@ -28,6 +28,7 @@
     },
     "gates": {
       "type": "object",
+      "$comment": "Gate names canon: docs/design/controlled-vocabulary.md § 4.9",
       "required": ["completeness", "evidence", "clarity", "consistency"],
       "additionalProperties": false,
       "properties": {
@@ -37,7 +38,10 @@
         "consistency": {"$ref": "#/definitions/gate"}
       }
     },
-    "overall_verdict": {"enum": ["pass", "conditional_pass", "fail"]},
+    "overall_verdict": {
+      "$comment": "Verdict canon: docs/design/controlled-vocabulary.md § 4.4",
+      "enum": ["pass", "conditional_pass", "fail"]
+    },
     "required_followup": {"type": "array", "items": {"type": "string"}},
     "notes": {"type": "string"}
   },
@@ -47,7 +51,10 @@
       "required": ["verdict", "findings"],
       "additionalProperties": false,
       "properties": {
-        "verdict": {"enum": ["pass", "conditional_pass", "fail"]},
+        "verdict": {
+          "$comment": "Verdict canon: docs/design/controlled-vocabulary.md § 4.4",
+          "enum": ["pass", "conditional_pass", "fail"]
+        },
         "findings": {
           "type": "array",
           "items": {
@@ -55,7 +62,10 @@
             "required": ["severity", "location", "problem"],
             "additionalProperties": false,
             "properties": {
-              "severity": {"enum": ["Critical", "Important", "Minor"]},
+              "severity": {
+                "$comment": "Severity = finding_gravity axis per docs/design/controlled-vocabulary.md § 4.3",
+                "enum": ["Critical", "Important", "Minor"]
+              },
               "location": {"type": "string", "pattern": "^(.+\\s+§\\s+.+|line\\s+\\d+)$"},
               "problem": {"type": "string", "minLength": 1, "maxLength": 500}
             }

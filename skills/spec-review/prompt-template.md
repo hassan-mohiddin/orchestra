@@ -61,6 +61,8 @@ notes: |   # optional, free-form
 
 ## SEVERITY ENUM (only these three; no Info)
 
+> Canon: `docs/design/controlled-vocabulary.md § 4.3 finding_gravity`.
+
 - **Critical** — fact wrong, contract broken, security gap, doc would mislead any reader following it
 - **Important** — omission, ambiguity, or stale reference that a reader could reasonably misinterpret
 - **Minor** — small inconsistency, missing detail, or undocumented edge case

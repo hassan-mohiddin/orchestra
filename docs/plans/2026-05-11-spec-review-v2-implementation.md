@@ -2,7 +2,7 @@
 
 > **Doc ID:** 2026-05-11-spec-review-v2-implementation
 > **Date:** 2026-05-11
-> **Status:** Draft
+> **Status:** Approved
 > **DRI:** Hassan
 > **LLD:** `docs/features/011-spec-review-v2.md`
 > **Type:** Implementation Plan
@@ -322,4 +322,5 @@ Pytest baseline grows: 259 → ~339 (≥ 80 new tests).
 | Date | Entry |
 |---|---|
 | 2026-05-11 | Plan v1 drafted by Claude per Hassan request immediately after LLD-011 Status flip Draft → Approved. 84 slices across 3 phases + self-application. Pending: Hassan approval (Status → Approved) before Phase 1 slice 1.1 begins. Plan describes HOW + IN WHAT ORDER only; design decisions live in LLD-011. No design content duplicated. If a slice requires a design decision not in LLD-011, slice is BLOCKED on LLD update or interview — do not silently decide in this plan. |
+| 2026-05-11 | Status flip Draft → Approved per Hassan approval. Plan is now canon-frozen — future body changes require narrow-change rule (Addresses: lines per finding) or supersession. Beginning Phase 1 slice 1.1 (schema v2.0 JSON-Schema + first failing test). |
 | 2026-05-11 | Plan iter-1 spec-review by `/codex:adversarial-review` — found 3 findings (1 Critical, 2 High); all applied: (1) Critical L118 Phase-1 acceptance used `008-commit-skill-r8.md` as clean-pass fixture but its v1 attestation = `conditional_pass`; reframed Phase-1 acceptance to use known-clean + known-defective synthetic fixtures at `tests/fixtures/spec-review-v2/{clean-lld,defective-lld}.md` with specific-finding-recall assertion; real-doc invocation kept as observed-not-asserted dry-run; (2) High L272 Risk register introduced `inline-bytes-only` fallback contradicting LLD-011 fail-closed contract + plan's own "no design decisions" rule; removed fallback; restated recovery as fail-closed error + LLD-defined paths (restart iter-1, or `--override-cap` degraded mode); (3) High L111 Phase verification used filtered `pytest -k` only; slice counts (33/29/22) not multiples of 5 → tail-slice invariant regressions could slip past every-5-slice checkpoints; added Sequencing Rule 7 mandating full `pytest` + `pyrefly` + `cli.lint --pre-commit` + `cli.eval` at each phase-boundary acceptance gate; per-phase verification sections updated to distinguish filtered sanity-check (dev) from phase-boundary full-suite (required). |

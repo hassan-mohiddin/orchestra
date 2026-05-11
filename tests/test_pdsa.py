@@ -25,9 +25,8 @@ def test_lint_invocation(tmp_path, monkeypatch) -> None:
     """
     from cli import pdsa
 
-    doc = tmp_path / "docs" / "features" / "999-foo.md"
-    doc.parent.mkdir(parents=True)
-    doc.write_text("# Foo\n\n> **Status:** Draft\n\n## Body\n")
+    doc = tmp_path / "random.md"
+    doc.write_text("# Foo\n")
 
     captured_args: list[list[str]] = []
 
@@ -50,8 +49,7 @@ def test_lint_invocation_surfaces_failure(tmp_path, monkeypatch) -> None:
     """Slice 2.1 — non-zero lint exit → report.checks['lint'].passed=False, report.passed=False."""
     from cli import pdsa
 
-    doc = tmp_path / "docs" / "features" / "999-foo.md"
-    doc.parent.mkdir(parents=True)
+    doc = tmp_path / "random.md"
     doc.write_text("# Foo\n")
 
     monkeypatch.setattr(pdsa, "_invoke_lint", lambda argv: 1)
@@ -60,3 +58,125 @@ def test_lint_invocation_surfaces_failure(tmp_path, monkeypatch) -> None:
 
     assert report.checks["lint"].passed is False
     assert report.passed is False
+
+
+def test_required_sections_pass(tmp_path, monkeypatch) -> None:
+    """Slice 2.3 — Feature LLD with all required sections → required_sections.passed=True."""
+    from cli import pdsa
+
+    body = """# 999 Foo
+
+> **Status:** Draft
+
+## Problem Statement
+text
+## Success Criteria
+text
+## Scope
+text
+## Design
+text
+## API Changes
+text
+## Database Changes
+text
+## Edge Cases & Error Handling
+text
+## Security Considerations
+text
+## Testing Strategy
+text
+## Related Documents
+text
+## Changelog
+text
+"""
+    doc = tmp_path / "docs" / "features" / "999-foo.md"
+    doc.parent.mkdir(parents=True)
+    doc.write_text(body)
+
+    monkeypatch.setattr(pdsa, "_invoke_lint", lambda argv: 0)
+    report = pdsa.run_pdsa(doc)
+
+    assert report.checks["required_sections"].passed is True
+
+
+def test_required_sections_fail_missing(tmp_path, monkeypatch) -> None:
+    """Slice 2.3 — Feature LLD missing required section → required_sections.passed=False, detail names section."""
+    from cli import pdsa
+
+    body = """# 999 Foo
+
+> **Status:** Draft
+
+## Problem Statement
+text
+## Success Criteria
+text
+"""
+    doc = tmp_path / "docs" / "features" / "999-foo.md"
+    doc.parent.mkdir(parents=True)
+    doc.write_text(body)
+
+    monkeypatch.setattr(pdsa, "_invoke_lint", lambda argv: 0)
+    report = pdsa.run_pdsa(doc)
+
+    assert report.checks["required_sections"].passed is False
+    assert "Design" in report.checks["required_sections"].detail
+    assert report.passed is False
+
+
+def test_required_sections_bug_report(tmp_path, monkeypatch) -> None:
+    """Slice 2.3 — Bug Report doc type uses bug-report required-sections list."""
+    from cli import pdsa
+
+    body = """# BUG-099 Foo
+
+> **Status:** Investigating
+
+## Observed Behavior
+text
+## Expected Behavior
+text
+## Steps to Reproduce
+text
+## Environment
+text
+## Root Cause Analysis
+text
+## Fix Description
+text
+## Iteration Log
+text
+## Regression Prevention
+text
+## Related Documents
+text
+## Changelog
+text
+"""
+    doc = tmp_path / "docs" / "bugs" / "BUG-099-foo.md"
+    doc.parent.mkdir(parents=True)
+    doc.write_text(body)
+
+    monkeypatch.setattr(pdsa, "_invoke_lint", lambda argv: 0)
+    report = pdsa.run_pdsa(doc)
+
+    assert report.checks["required_sections"].passed is True
+
+
+def test_required_sections_unknown_doc_type(tmp_path, monkeypatch) -> None:
+    """Slice 2.3 — unknown doc type → required_sections.passed=True (skip check, no spec to enforce)."""
+    from cli import pdsa
+
+    doc = tmp_path / "docs" / "scratch" / "random.md"
+    doc.parent.mkdir(parents=True)
+    doc.write_text("# random\n")
+
+    monkeypatch.setattr(pdsa, "_invoke_lint", lambda argv: 0)
+    report = pdsa.run_pdsa(doc)
+
+    # Unknown type — check passes (informational only)
+    assert report.checks["required_sections"].passed is True
+    assert "unknown" in report.checks["required_sections"].detail.lower() or \
+        "skipped" in report.checks["required_sections"].detail.lower()

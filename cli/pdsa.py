@@ -15,8 +15,137 @@ live in the lint/PDSA log layer, not in attestation YAML).
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
+
+
+_REQUIRED_SECTIONS: dict[str, list[str]] = {
+    "feature": [
+        "Problem Statement",
+        "Success Criteria",
+        "Scope",
+        "Design",
+        "API Changes",
+        "Database Changes",
+        "Edge Cases",
+        "Security Considerations",
+        "Testing Strategy",
+        "Related Documents",
+        "Changelog",
+    ],
+    "bug": [
+        "Observed Behavior",
+        "Expected Behavior",
+        "Steps to Reproduce",
+        "Environment",
+        "Root Cause Analysis",
+        "Fix Description",
+        "Iteration Log",
+        "Regression Prevention",
+        "Related Documents",
+        "Changelog",
+    ],
+    "adr": [
+        "Context",
+        "Decision",
+        "Consequences",
+        "Alternatives",
+        "Related Documents",
+        "Changelog",
+    ],
+    "design": [
+        "Overview",
+        "Changelog",
+    ],
+    "postmortem": [
+        "Summary",
+        "Impact",
+        "Timeline",
+        "Root Cause",
+        "What Went Well",
+        "What Went Wrong",
+        "Action Items",
+        "Lessons Learned",
+        "Related Documents",
+        "Changelog",
+    ],
+    "runbook": [
+        "When This Fires",
+        "Quick Reference",
+        "Diagnosis",
+        "Mitigation",
+        "Verification",
+        "Escalation",
+        "Related Documents",
+        "Changelog",
+    ],
+    "policy": [
+        "Policy Statement",
+        "Rules",
+        "Changelog",
+    ],
+    "plan": [
+        "Header",
+        "File Structure",
+    ],
+}
+
+
+def _detect_doc_type(doc_path: Path) -> str | None:
+    """Map doc_path to one of the keys in _REQUIRED_SECTIONS, or None if unknown."""
+    parts = doc_path.parts
+    if "features" in parts:
+        return "feature"
+    if "bugs" in parts:
+        return "bug"
+    if "adr" in parts:
+        return "adr"
+    if "design" in parts:
+        return "design"
+    if "postmortems" in parts:
+        return "postmortem"
+    if "runbooks" in parts:
+        return "runbook"
+    if "policies" in parts:
+        return "policy"
+    if "plans" in parts:
+        return "plan"
+    return None
+
+
+def _extract_section_headings(body: str) -> set[str]:
+    """Return the set of `## Heading` / `### Heading` text values found in body."""
+    headings: set[str] = set()
+    for line in body.splitlines():
+        m = re.match(r"^#{2,4}\s+(.+?)\s*$", line)
+        if m:
+            headings.add(m.group(1).strip())
+    return headings
+
+
+def _check_required_sections(doc_path: Path) -> CheckResult:
+    """Verify each required section name is present as a heading in the doc.
+
+    Heuristic match: substring-in-heading-text (handles `## Edge Cases & Error Handling`
+    matching the canon "Edge Cases"). Tightens to strict-canon-match when BUG-016 closes.
+    """
+    doc_type = _detect_doc_type(doc_path)
+    if doc_type is None:
+        return CheckResult(passed=True, detail="unknown doc type — check skipped")
+
+    required = _REQUIRED_SECTIONS[doc_type]
+    headings = _extract_section_headings(doc_path.read_text())
+    missing = [
+        name for name in required
+        if not any(name.lower() in h.lower() for h in headings)
+    ]
+    if missing:
+        return CheckResult(
+            passed=False,
+            detail=f"missing required sections for {doc_type}: {', '.join(missing)}",
+        )
+    return CheckResult(passed=True, detail=f"{doc_type}: all {len(required)} sections present")
 
 
 @dataclass
@@ -61,5 +190,7 @@ def run_pdsa(doc_path: Path) -> PdsaReport:
         passed=(lint_rc == 0),
         detail=f"cli.lint --doc exit={lint_rc}",
     )
+
+    report.checks["required_sections"] = _check_required_sections(doc_path)
 
     return report

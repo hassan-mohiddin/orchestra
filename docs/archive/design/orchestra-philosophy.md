@@ -4,7 +4,9 @@
 > **Date:** 2026-05-06
 > **DRI:** Hassan Mohiddin
 > **Type:** Design Doc (living)
-> **Status:** Current
+> **Status:** Rejected
+> **Reason:** Lint blockers — pre-existing TBD placeholders in Key Decisions table (ADR-002/003/004/005) + mermaid gantt parse error on line 248 (`design-docs:init` task name contains literal colon that confuses gantt parser). Blocks future whitelist Changelog appends. Superseded to fix + add v1.7 entry.
+> **Superseded by:** docs/design/orchestra-philosophy-r2.md
 > **Last Updated:** 2026-05-06
 > **Version:** 1.0
 

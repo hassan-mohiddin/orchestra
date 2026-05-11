@@ -59,7 +59,7 @@ Per LLD-010 r4 Changelog entry, r4 was paperwork-only cascading edit; no interna
 
 ### Post-ship cleanup observations (2026-05-11)
 
-3. **`cli/lint.py` 1367 lines → module split** — Natural seam: `cli/lint/` package with `core.py` (regex constants + Finding dataclass + parsers) / `canon.py` (L2-detect + L2-finalize + tiered + helpers) / `commit.py` (Refs-eligibility + retroactive L2 + commit-range). Deferred until seam pressure increases.
+3. **`cli/lint.py` 1367 lines → module split** — Natural seam: `cli/lint/` package with `core.py` (regex constants + Finding dataclass + parsers) / `canon.py` (L2-detect + L2-finalize + tiered + helpers) / `commit.py` (Refs-eligibility + retroactive L2 + commit-range). **Defer to v1.8+** — evaluated 2026-05-11 Phase K and concluded split was YAGNI: file is large but cohesive, well-sectioned, searchable; split would touch 9+ test file imports for marginal benefit. Re-evaluate when a third major v1.8+ addition needs a new home.
 4. **`tests/scale_migration_helper.py` → `tools/`** — `tools/migrate_scale_rules.py` imports from `tests/` (wrong dependency direction). Promote helper out of tests/.
 5. **`attestation-template.yaml` → `skills/spec-review/templates/`** — currently in `cli/templates/`; spec-review skill owns it conceptually; move under skill dir for consistency with LLD-008 r7 placement rule.
 6. **`docs/design/orchestra-philosophy.md` lint issues** — pre-existing to-be-determined placeholders in Key Decisions table + mermaid parse error on line 240. Blocks whitelist Changelog appends. Either fix (supersession, since Status: Current) or relax lint to permit whitelist appends despite body warnings.

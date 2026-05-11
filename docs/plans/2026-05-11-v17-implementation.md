@@ -1,12 +1,12 @@
-# Implementation Plan: orchestra v1.7.0 — commit-skill consolidation (LLD-008 r5 + LLD-009 r3 + LLD-010 r3)
+# Implementation Plan: orchestra v1.7.0 — commit-skill consolidation (LLD-008 r7 + LLD-009 r6 + LLD-010 r4)
 
 > **Doc ID:** 2026-05-11-v17-implementation
 > **Date:** 2026-05-11
 > **DRI:** Hassan Mohiddin
 > **Type:** Plan
 > **Status:** Active (pre-impl; impl SHAs tracked per phase milestone post-merge — see § Impl-SHA tracking)
-> **Iteration:** 3
-> **Targets:** LLD-008 r7 + LLD-009 r5 + LLD-010 r4 (combined v1.7.0 ship)
+> **Iteration:** 4
+> **Targets:** LLD-008 r7 + LLD-009 r6 + LLD-010 r4 (combined v1.7.0 ship)
 
 ## Goal
 
@@ -17,7 +17,7 @@ Ship `orchestra:commit` skill at v1.7.0 in a single atomic release covering:
 - Pre-commit framework detection + `--apply` transactional rollback + `--verify` hybrid fingerprint (LLD-010 r3; BUG-006 close)
 - SCALE-side migration (2 deletions + 1 partial-edit + 1 registry-append)
 
-Pytest target: **≥248** (= 150 v1.6.2 baseline + 17 LLD-008 r7 + 53 LLD-009 r5 + 28 LLD-010 r4). Cross-LLD audit-trail lineage: LLD-008 r7 A10 (150 → 167 = +17; added T5g non-TTY fail-closed); LLD-009 r5 A16 (167 → 220 = +53; added T10g multi-var CI detection + symlink-safe helper tests); LLD-010 r4 A11 (220 → 248 = +28; absorb cascade + T-INT-010-repo-identity).
+Pytest target: **≥252** (= 150 v1.6.2 baseline + 17 LLD-008 r7 + 53 LLD-009 r6 + 28 LLD-010 r4 + 4 Plan Phase 4 net-new). Cross-LLD audit-trail lineage: LLD-008 r7 A10 (150 → 167 = +17); LLD-009 r6 A16 (167 → 220 = +53; r5→r6 adds T2g+T2h transactional cleanup tests +0 net since prior T-counts absorbed); LLD-010 r4 A11 (220 → 248 = +28); Plan Phase 4 Slice 4.1 net-new beyond LLD-008 T6 (248 → 252 = +4 for transactional helper + multi-factor identity + symlink + atomic).
 
 ## Impl-SHA tracking (codex plan-r1 HIGH#2)
 
@@ -27,10 +27,10 @@ Plan filed pre-impl. Each phase milestone records its commit-SHA below post-merg
 |---|---|---|---|---|
 | Phase 0 (test-quality audit) | TBD | TBD | 150 | pending |
 | Phase 1 (LLD-008 r7 — skill structure + ORCHESTRA_INIT_STRICT + non-TTY fail-closed) | TBD | TBD | ≥167 | pending |
-| Phase 2 (LLD-009 r5 — L2-finalize + tiered + ORCHESTRA_BYPASS multi-var CI-deny + symlink-safe helper) | TBD | TBD | ≥220 | pending |
+| Phase 2 (LLD-009 r6 — L2-finalize + tiered + ORCHESTRA_BYPASS multi-var CI-deny + transactional pending cleanup) | TBD | TBD | ≥220 | pending |
 | Phase 3 (LLD-010 r4 — framework detection + repo-identity helper share) | TBD | TBD | ≥248 | pending |
-| Phase 4 (SCALE migration — transactional + symlink-safe + repo-identity) | TBD | TBD | 248 (no orchestra delta) | pending |
-| Phase 5 (v1.7.0 ship) | TBD | TBD | 248 | pending |
+| Phase 4 (SCALE migration — transactional + multi-factor repo-identity + symlink-safe) | TBD | TBD | ≥252 (Phase 4 +4 net beyond LLD-008 T6) | pending |
+| Phase 5 (v1.7.0 ship) | TBD | TBD | ≥252 | pending |
 
 Update this table after each phase's milestone-commit lands. Plan r2+ iterations sync this table for post-impl audit-trail.
 
@@ -135,7 +135,7 @@ Before slicing: skim `tests/test_install_hooks.py`, `tests/test_cli_install_hook
 
 **Phase 1 milestone:** all 17 LLD-008 r7 tests green + baseline ≥167. Bump SKILL.md `version: 1.7.0-pre`. Commit: `feat: LLD-008 r7 skill structure + bootstrap + TTY-aware fail-closed + ORCHESTRA_INIT_STRICT opt-in (BUG-010 Part 3 closed). Refs: docs/features/008-commit-skill.md`.
 
-## Phase 2: LLD-009 r5 (L2-finalize + tiered + ORCHESTRA_STRICT + ORCHESTRA_BYPASS multi-var CI-deny + symlink-safe helper; 53 tests)
+## Phase 2: LLD-009 r6 (L2-finalize + tiered + ORCHESTRA_STRICT + ORCHESTRA_BYPASS multi-var CI-deny + transactional pending cleanup; 53 tests)
 
 ### Slice 2.1 — FINDING_REF_RE constant + ALLOWED_GATES (T6)
 - **Test first:** `tests/test_lint_finding_ref_re.py` — 8 sub-cases: valid line passes; embedded mid-prose fails; `..`-traversal fails; unknown gate fails; etc.
@@ -157,9 +157,11 @@ Before slicing: skim `tests/test_install_hooks.py`, `tests/test_cli_install_hook
 - **Test first:** 5 sub-tests including worktree subdir gitdir resolution (T1e).
 - **Impl:** Modify `lint_staged` to call `is_narrow_change(prior, new, commit_msg=None, repo_root=None)` for canon-frozen candidates; on False return, append `<sha>\t<path>` to pending file (resolved via `git rev-parse --git-path`); does NOT block.
 
-### Slice 2.6 — `lint_commit_msg_finalize` entrypoint + ORCHESTRA_BYPASS multi-var CI-deny + Bypass: mandatory (T2a-f, T10a-g, T11)
-- **Test first:** 6 + 7 + 1 = 14 sub-tests.
-- **Impl:** New CLI subcommand `cli.lint --commit-msg-finalize <msg-file>`. Reads pending, msg, runs tiered rule per pending entry; cleans up via `unlink(missing_ok=True)`.
+### Slice 2.6 — `lint_commit_msg_finalize` entrypoint + ORCHESTRA_BYPASS multi-var CI-deny + Bypass: mandatory + transactional pending cleanup (T2a-h, T10a-g, T11)
+- **Test first:** 8 + 7 + 1 = 16 sub-tests (added T2g + T2h r4 per codex plan-r3 HIGH#1 transactional cleanup).
+- **Impl:** New CLI subcommand `cli.lint --commit-msg-finalize <msg-file>`. Reads pending, msg, runs tiered rule per pending entry.
+  - **Transactional pending cleanup (r4; per codex plan-r3 HIGH#1):** cleanup pending file ONLY after L2-finalize validation completes successfully (rc=0 return). If validation raises exception OR rejects (rc=1): pending file PRESERVED for retry. Retried commit re-runs pre-commit hook (which truncates pending fresh anyway) OR if invoked with --no-verify on retry: pending entries from prior fire remain → L2-finalize re-validates on next commit-msg fire. Eliminates lost-state window where mid-validation crash skipped enforcement on retried commit. Implementation: replace `finally: unlink(missing_ok=True)` with success-only cleanup at end of normal return path; exception/reject paths leave pending in place.
+  - Per LLD-009 r6 A2 update + new T2g (crash-during-validation: inject exception → pending preserved → retry sees pending → L2-finalize re-runs successfully) + T2h (reject-then-retry-with-fix: rc=1 leaves pending; retry with valid msg cleans up successfully).
   - **ORCHESTRA_BYPASS handling (per LLD-009 r5 A10 + codex plan-r2 HIGH#2 + user direction):**
     - **Multi-var CI detection** via helper `_is_ci_environment()`: returns True if ANY of these env vars non-empty: `CI`, `GITHUB_ACTIONS`, `GITLAB_CI`, `BUILDKITE`, `CIRCLECI`, `TRAVIS`, `JENKINS_URL`. Closes codex plan-r2 HIGH#2 brittle-CI-detection gap.
     - When `ORCHESTRA_BYPASS=1` AND `_is_ci_environment()` returns True: REJECT bypass with explicit error `error: ORCHESTRA_BYPASS=1 cannot be used in CI environment (detected via: <list-of-set-vars>). Fix the underlying issue or run locally.`. Exit non-zero.
@@ -188,7 +190,7 @@ Before slicing: skim `tests/test_install_hooks.py`, `tests/test_cli_install_hook
 - **Test first:** `tests/test_skill_md_content.py::test_skill_md_pre_stage_checklist_present` — assert SKILL.md contains the pre-stage checklist + attestation-commit-first note.
 - **Impl:** Write SKILL.md prose per LLD-009 Author UX section.
 
-**Phase 2 milestone:** all 53 LLD-009 r5 tests green + baseline ≥220. BUG-011 frontmatter `Status: Investigating → Fix Applied` via whitelist edit. Commit: `feat: LLD-009 r5 L2-detect/L2-finalize + tiered narrow-change + ORCHESTRA_BYPASS multi-var CI-deny + symlink-safe helper (BUG-011 closed). Refs: docs/features/009-commit-msg-l2-finalize.md`.
+**Phase 2 milestone:** all 53 LLD-009 r6 tests green + baseline ≥220. BUG-011 frontmatter `Status: Investigating → Fix Applied` via whitelist edit. Commit: `feat: LLD-009 r6 L2-detect/L2-finalize + tiered narrow-change + ORCHESTRA_BYPASS multi-var CI-deny + transactional pending cleanup (BUG-011 closed). Refs: docs/features/009-commit-msg-l2-finalize.md`.
 
 ## Phase 3: LLD-010 r3 (framework detection + verify + transactional --apply; 27 tests)
 
@@ -224,7 +226,7 @@ Before slicing: skim `tests/test_install_hooks.py`, `tests/test_cli_install_hook
 - **Test first:** end-to-end tmpdir + framework + canon-frozen fixture + violation → commit rejected.
 - **Impl:** Fixture file at `tests/fixtures/test-canon-frozen.md` + end-to-end test driver (uses real `pre-commit` binary in tmpdir).
 
-**Phase 3 milestone:** all 28 LLD-010 r4 tests green + baseline ≥248. BUG-006 `Status: Investigating → Fix Applied`. Commit: `feat: LLD-010 r4 framework detection + transactional apply + hybrid verify (BUG-006 closed). Refs: docs/features/010-framework-detection-determinism.md`.
+**Phase 3 milestone:** all 28 LLD-010 r4 tests green + baseline ≥248 (LLD-010 portion; Plan Phase 4 adds further 4 net = 252 final). BUG-006 `Status: Investigating → Fix Applied`. Commit: `feat: LLD-010 r4 framework detection + transactional apply + hybrid verify (BUG-006 closed). Refs: docs/features/010-framework-detection-determinism.md`.
 
 ## Phase 4: SCALE migration (transactional per codex plan-r1 CRITICAL)
 
@@ -235,12 +237,21 @@ Before slicing: skim `tests/test_install_hooks.py`, `tests/test_cli_install_hook
   - `test_migration_idempotent_rerun` — rerun on already-migrated state: detects + exits 0 with `already-migrated` message; modifies nothing
   - `test_migration_rollback_on_mid_run_failure` — inject failure between deletion + registry-append; assert all changes reverted from snapshot; SCALE state restored byte-for-byte
   - `test_migration_post_check_invariants` — after successful migration: assert 2 files absent + documentation-gate.md correct + registry has orchestra:commit row
-  - `test_migration_rejects_wrong_repo_identity` (NEW codex plan-r2 MEDIUM) — pass `--scale-root` pointing to dir without SCALE sentinel → refuse with `error: target dir not recognized as SCALE repo`; no mutation
-  - `test_migration_rejects_symlinked_targets` (NEW codex plan-r2 MEDIUM) — create any of the touched paths as a symlink → refuse with `error: refusing to mutate symlinked path`; no mutation
+  - `test_migration_rejects_wrong_git_toplevel` (NEW codex plan-r3 HIGH#2) — pass `--scale-root` pointing to subdir of a git repo → git rev-parse mismatch → refuse; no mutation
+  - `test_migration_rejects_bad_remote` (NEW codex plan-r3 HIGH#2) — pass `--expected-remote` mismatching actual `remote.origin.url` → refuse; no mutation
+  - `test_migration_rejects_missing_claude_md_sentinel` (NEW) — CLAUDE.md absent or missing SCALE marker → refuse; no mutation
+  - `test_migration_rejects_missing_apps_web_sentinel` (NEW) — apps/web/package.json absent or missing scale name → refuse; no mutation
+  - `test_migration_rejects_symlinked_targets` (codex plan-r2 MEDIUM) — create any of the touched paths as a symlink → refuse; no mutation
 - **Impl:** `tools/migrate-scale-rules.py` with:
   - **`--dry-run` flag:** print planned ops; modify nothing.
   - **`--scale-root` arg:** explicit SCALE repo path (no implicit cwd or path traversal).
-  - **NEW: Repo-identity verification (codex plan-r2 MEDIUM):** before any mutation, verify `<scale-root>` is the intended SCALE repo by checking for sentinel: `<scale-root>/.claude/CLAUDE.md` exists AND contains string `SCALE — Claude Code` in first 100 lines (matches SCALE's project CLAUDE.md). If absent: refuse with explicit error listing the sentinel-check path + content expectation. Prevents accidental wrong-root execution (typo, copy-paste).
+  - **NEW: Multi-factor repo-identity verification (codex plan-r2 MEDIUM + plan-r3 HIGH#2 strengthening):** before any mutation, ALL of the following must pass; ANY failure → refuse with explicit error listing the failed check:
+    - **(a) Git toplevel match:** `git rev-parse --show-toplevel` (run with cwd=`<scale-root>`) must resolve to the same path as `Path(scale_root).resolve()`. Rejects accidental sub-directory targeting.
+    - **(b) Expected remote match:** `git config --get remote.origin.url` must match `--expected-remote` arg (required; no default — user MUST pass it). Rejects wrong-repo-with-similar-structure forgery.
+    - **(c) SCALE CLAUDE.md sentinel:** `<scale-root>/.claude/CLAUDE.md` exists AND contains `SCALE — Claude Code` in first 100 lines.
+    - **(d) Second sentinel:** `<scale-root>/apps/web/package.json` exists AND contains `"name": "scale"` (or substring `scale`).
+    - Rejects accidental wrong-root execution (typo, copy-paste, partial-replicate-of-SCALE-tree).
+  - Tests T-migration-rejects-wrong-toplevel (cwd is subdir) + T-migration-rejects-bad-remote (git remote mismatch) + T-migration-rejects-missing-sentinel-a + T-migration-rejects-missing-sentinel-b → 4 new tests covering each of the 4 factors fail-closed-individually.
   - **NEW: Symlink-safe path mutation (codex plan-r2 MEDIUM):** for EVERY path the helper touches (read/write/delete/copy/restore): perform `path.lstat()` + `path.is_symlink()` check. If symlink: refuse with `error: refusing to mutate symlinked path: <path> -> <readlink>`. Applies to all 4 source files + .scale-migration-backup dir creation + parent-dir traversal. Mirrors LLD-008 r6 Security § symlink defense extended to migration script.
   - **Pre-flight invariant checks:** assert all 3 source files present at expected paths + frontmatter check on documentation-gate.md + skills-registry.md exists + ALL paths pass symlink check. Refuse to start otherwise.
   - **Pre-flight snapshot:** copy `SCALE/.claude/rules/{canon-frozen-guard.md,commit-strategy.md,documentation-gate.md}` + `SCALE/.claude/skills-registry.md` → `SCALE/.scale-migration-backup/<timestamp>/`. If backup dir exists with same timestamp: refuse.
@@ -250,8 +261,8 @@ Before slicing: skim `tests/test_install_hooks.py`, `tests/test_cli_install_hook
   - **Cleanup:** on success leave `.scale-migration-backup/<timestamp>/` for 1 week (user manual cleanup) — gives recovery window if SCALE-side problem surfaces post-migration.
 
 ### Slice 4.2 — Run migration in SCALE repo (dry-run first)
-- **Run dry-run first:** `python3 ~/Documents/Antigravity/orchestra/tools/migrate-scale-rules.py --scale-root ~/Documents/Antigravity/SCALE\ APP --dry-run`. Inspect planned ops.
-- **Run real:** drop `--dry-run`. Migration helper executes transactional sequence.
+- **Run dry-run first:** `python3 ~/Documents/Antigravity/orchestra/tools/migrate-scale-rules.py --scale-root ~/Documents/Antigravity/SCALE\ APP --expected-remote <SCALE-repo-url> --dry-run`. Inspect planned ops.
+- **Run real:** drop `--dry-run`. Migration helper executes transactional sequence with all 4 identity checks + symlink-safe + atomic.
 - **Verify state:** post-flight invariants from Slice 4.1 (already enforced); manual `git status` + `git diff` confirms.
 - **Commit in SCALE repo:** `chore: migrate canon-frozen-guard + commit-strategy to orchestra:commit skill (orchestra v1.7.0). Refs: orchestra/docs/features/008-commit-skill.md`.
 
@@ -263,7 +274,7 @@ Before slicing: skim `tests/test_install_hooks.py`, `tests/test_cli_install_hook
 
 ### Slice 5.2 — CHANGELOG.md v1.7.0 entry
 - Combined entry covering LLD-008/009/010 portions + BUG-006 + BUG-010 Part 3 + BUG-011 closes.
-- Pytest baseline: 150 → 240.
+- Pytest baseline: 150 → 252.
 
 ### Slice 5.3 — Flip Status: Draft → Implemented (3 LLDs)
 - Each LLD currently `Status: Draft` (full edit permitted on Draft per LLD-006-r4). Flip to `Implemented` — this is the transition INTO canon-frozen state. After flip: subsequent body edits subject to narrow-change rule (whitelist or tiered).
@@ -291,8 +302,8 @@ Before slicing: skim `tests/test_install_hooks.py`, `tests/test_cli_install_hook
 ## Acceptance gate
 
 v1.7.0 ships when ALL of:
-- All 98 new tests green (17 + 53 + 28)
-- Pytest baseline ≥248 confirmed
+- All 102 new tests green (17 LLD-008 + 53 LLD-009 + 28 LLD-010 + 4 Phase 4 net-new beyond LLD-008 T6)
+- Pytest baseline ≥252 confirmed
 - 3 LLDs Status: Implemented (LLD-008 r7 + LLD-009 r5 + LLD-010 r4)
 - BUG-006 Status: Investigating → Fix Applied (state flip)
 - BUG-010 Part 3: Changelog row appended (BUG-010 already canon-frozen Fix Applied; whitelist append only — NOT a Status flip)
@@ -313,9 +324,9 @@ Track as `BUG-012-v17.1-minor-followups.md` post-ship.
 
 ## Related Documents
 
-- `docs/features/008-commit-skill.md` — LLD-008 r5
-- `docs/features/009-commit-msg-l2-finalize.md` — LLD-009 r3
-- `docs/features/010-framework-detection-determinism.md` — LLD-010 r3
+- `docs/features/008-commit-skill.md` — LLD-008 r7
+- `docs/features/009-commit-msg-l2-finalize.md` — LLD-009 r6
+- `docs/features/010-framework-detection-determinism.md` — LLD-010 r4
 - `docs/reviews/008-commit-skill-r4.review.yaml` + `.codex.md` — r4 attestations (drove r5)
 - `docs/reviews/009-commit-msg-l2-finalize-r2.review.yaml` + `.codex.md` — r2 attestations (drove r3)
 - `docs/reviews/010-framework-detection-determinism-r2.review.yaml` + `.codex.md` — r2 attestations (drove r3)
@@ -329,5 +340,6 @@ Track as `BUG-012-v17.1-minor-followups.md` post-ship.
 | Date | Change |
 |---|---|
 | 2026-05-11 | r1 drafted per user direction. Covers 5 phases / 33 slices / 90 new tests / target ≥240 pytest baseline. Status: Active. Filed without spec-review (Gate 3 violation — caught + fixed in r2). |
+| 2026-05-11 | r3 spec-review verdicts: orchestra conditional_pass (3 Minor paperwork: doc title r5/r3/r3 stale; Phase 3 header LLD-010 r3 stale; Slice 5.2 baseline 240 stale + Related Documents iter tags); codex needs-attention (2 HIGH + 1 MEDIUM convergent with orchestra Minor #1 on Slice 5.2 baseline). r3 → r4 per user-delegated decisions (all Recommended): (1) codex HIGH#1 transactional pending cleanup — Slice 2.6 + LLD-009 r5→r6 A2 update: cleanup pending ONLY after L2-finalize rc=0; exception/reject paths preserve pending for retry-safety. New T2g (crash-during-validation) + T2h (reject-then-retry). (2) codex HIGH#2 multi-factor repo-identity — Slice 4.1 upgraded from single CLAUDE.md sentinel to 4-factor verification: (a) git rev-parse --show-toplevel match `--scale-root`, (b) `--expected-remote` arg required + matches `git config --get remote.origin.url`, (c) CLAUDE.md SCALE sentinel, (d) apps/web/package.json scale-name marker. 4 new tests (one per factor fail-closed). (3) codex MEDIUM + orchestra Minor #1 + #2 + #3 (paperwork stale-text) — fixed: doc title r7/r6/r4; Phase 3 header LLD-010 r4 / 28 tests; Slice 5.2 baseline 150→252; Related Documents iter tags r7/r6/r4. Combined v1.7.0 target 248 → 252 (Plan Phase 4 +4 net beyond LLD-008 T6 placeholder). Status: Active iter 4. **NO further spec-review per user direction "no more spec reviews, we can proceed to fix and then prepare for compaction"**. |
 | 2026-05-11 | r2 spec-review verdicts: orchestra PASS (2 Minor paperwork: LLD-010 A11 stale 240→243; LLD-008 A10 prose stale 15/165→16/166); codex needs-attention (2 HIGH + 1 MEDIUM — fresh substantive surface, zero orchestra↔codex overlap; codex r1↔r2 OVERLAP on cli.init fail-open — plateau signal). r2 → r3 per user-delegated decisions (Hassan deferred to my technical judgment on all 4 questions): (1) codex HIGH#1 fail-open compromise — Slice 1.4 + LLD-008 r7 A14 now TTY-aware: interactive → fail-open WARNING; non-TTY → fail-closed (returns non-zero rc). ORCHESTRA_INIT_STRICT=1 opt-in overrides TTY-aware default for fail-closed always. New T5g test. (2) codex HIGH#2 CI detection refinement — Slice 2.6 + LLD-009 r5 A10 multi-var detection via `_is_ci_environment()` helper checking ANY of {CI, GITHUB_ACTIONS, GITLAB_CI, BUILDKITE, CIRCLECI, TRAVIS, JENKINS_URL}. New T10g regression test. (3) codex MEDIUM SCALE migration safety — Slice 4.1 + 2 new tests: repo-identity sentinel check (`<scale-root>/.claude/CLAUDE.md` contains `SCALE — Claude Code`); symlink-safe mutation via `path.is_symlink()` lstat check on every touched path; atomic-replace via `tempfile.NamedTemporaryFile` + `os.replace` for rewrites. (4) orchestra paperwork — LLD-010 r3→r4 bump (A11 baseline 240→248 cascade); LLD-008 r6 A10 prose stale 15→17 / 165→167. Combined v1.7.0 pytest target: 243 → 248 (= 150 + 17 + 53 + 28). Test count delta: +1 LLD-008 (T5g) + +3 LLD-009 (T10g + 2 symlink helpers shared with migration) + +1 LLD-010 (T-INT-010 repo-identity check). Status: Active iter 3. Re-spec-review of r3 pending per user direction. |
 | 2026-05-11 | r1 spec-review verdicts: orchestra conditional_pass (7 Minor); codex needs-attention (1 CRITICAL + 3 HIGH — fresh substantive surface, zero cross-judge overlap). r1 → r2 fixes inline per user interview-gate direction: Phase 4 SCALE migration redesigned as transactional helper with snapshot/dry-run/idempotent/pre-+post-invariants/rollback + 5 tests (codex CRITICAL); impl-SHA tracking table added at top (codex HIGH#2); Slice 1.4 cli.init bootstrap adds ORCHESTRA_INIT_STRICT=1 opt-in mirror-of-LLD-009-pattern (codex HIGH#3 partial — user picked Recommended); Slice 2.6 ORCHESTRA_BYPASS gains CI-deny + mandatory Bypass: annotation (codex HIGH#4 — user picked Recommended); Phase 0 output contract specified (orchestra Minor #1); Slice 1.7 deterministic wording (orchestra Minor #2); Slice 1.2 LLD-010 A4 cross-cite added (orchestra Minor #3); Acceptance gate BUG-006/010/011 distinguished (orchestra Minor #4); Slice count enumeration honest (33 not 22; orchestra Minor #5); Risks table Phase 2/3 parallel-eligible noted (orchestra Minor #6); Slice 5.3 Draft→Implemented framing fixed + baseline lineage surfaced (orchestra Minor #7). LLD-008 r5 → r6 (add A14 ORCHESTRA_INIT_STRICT + T5f); LLD-009 r3 → r4 (A10 ORCHESTRA_BYPASS CI-deny + mandatory Bypass: + T10e + T10f). Test counts updated (+1 LLD-008 / +2 LLD-009 / 0 LLD-010 = +3); pytest target 240 → 243. Status: Active iter 2. Re-spec-review of r2 dispatched per user direction "re-run spec review on plan doc to see if all issues were fixed or any overlapping errors, if new issues weren't created etc." |

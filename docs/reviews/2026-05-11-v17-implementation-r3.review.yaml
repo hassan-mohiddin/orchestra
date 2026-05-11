@@ -1,0 +1,90 @@
+schema_version: '1.0'
+doc_subject:
+  path: docs/plans/2026-05-11-v17-implementation.md
+  content_hash: sha256:51874e22f8aa115e3be92aba582e0c47e749b49b50e244e43424c13da6f0931d
+  iteration: 3
+reviewer:
+  identifier: subagent:general-purpose+spec-review-v1
+  invoked_at: '2026-05-11T00:00:00Z'
+  context_isolation: fresh_subagent
+gates:
+  completeness:
+    verdict: pass
+    findings: []
+    justification: All 5 phases enumerate slices with test-first + impl + verify triplets.
+      Phase 1 (7 slices), Phase 2 (11 slices), Phase 3 (8 slices), Phase 4 (2 slices),
+      Phase 5 (5 slices) = 33 slices. r3 additions (T5g non-TTY fail-closed in Slice
+      1.4; T10g multi-var CI-deny in Slice 2.6; repo-identity + symlink-safe tests
+      in Slice 4.1) all present with explicit Test-first/Impl/Verify structure. Acceptance
+      gate enumerates 10 ship conditions. Phase 0 audit + deferred v1.7.1 items listed.
+      No slice missing test-first scaffolding.
+  evidence:
+    verdict: pass
+    findings: []
+    justification: "Pytest arithmetic verified: 150 baseline + 17 (LLD-008 r7) + 53\
+      \ (LLD-009 r5) + 28 (LLD-010 r4) = 248. Line 20 cites this lineage with audit-trail\
+      \ anchors (LLD-008 A10, LLD-009 A16, LLD-010 A11). Cross-LLD test deltas vs\
+      \ r2 are sound: +1 LLD-008 (T5g), +2 LLD-009 (T10g + symlink-helper tests counted\
+      \ as 53 vs r2's 51), +1 LLD-010 (T-INT-010 repo-identity \u2192 28 vs r2's 27).\
+      \ Phase milestones match cumulative thresholds (>=167, >=220, >=248). All r2\
+      \ finding fixes have explicit anchor cites. Impl-SHA tracking table present."
+  clarity:
+    verdict: pass
+    findings: []
+    justification: 'Plan readable end-to-end. Phase structure mirrors LLD numbering.
+      r3 changes individually flagged with NEW markers and codex-finding back-cites.
+      Changelog row enumerates all 4 r2->r3 decisions explicitly. Risks table covers
+      ordering + parallelism. Vocabulary consistent throughout (canon-frozen, narrow-change,
+      tiered, Bypass: annotation).'
+  consistency:
+    verdict: conditional_pass
+    findings:
+    - severity: Minor
+      location: "Phase 5 \xA7 Slice 5.2 line 266"
+      problem: "CHANGELOG entry text shows stale baseline lineage (150 -> 240) \u2014\
+        \ r3 target is 248. r2 baseline was 243; original r1 was 240. Stale-baseline\
+        \ cascade \u2014 Acceptance gate uses 248 correctly so impact documentation-only,\
+        \ not impl-gating."
+    - severity: Minor
+      location: "Phase 3 \xA7 header line 193"
+      problem: Phase 3 header reads 'LLD-010 r3 ... 27 tests' but Phase 3 milestone
+        line 227 + Goal line 20 + Acceptance gate line 295 read LLD-010 r4 / 28 tests.
+        Doc title line 1 also references LLD-010 r3 (stale iteration tag from r2 iteration
+        not bumped in title). Should be LLD-010 r4 / 28 tests.
+    - severity: Minor
+      location: "Related Documents \xA7 lines 316-318"
+      problem: "Related Documents section references LLD iteration tags LLD-008 r5,\
+        \ LLD-009 r3, LLD-010 r3 \u2014 stale from r2. Should be LLD-008 r7, LLD-009\
+        \ r5, LLD-010 r4 to match r3 targets."
+    justification: "r3 fixes for all 3 r2 findings (codex HIGH#1, HIGH#2, MEDIUM)\
+      \ propagated into plan body with anchor cites. Cross-LLD ordering preserved.\
+      \ Pytest math sums correctly to 248. Three Minor stale-text findings remain:\
+      \ paperwork-cascade misses from r3 LLD iteration bumps that didn't update plan\
+      \ body title/header/Related-Documents/CHANGELOG-entry. None impl-gating \u2014\
+      \ all paperwork."
+overall_verdict: conditional_pass
+required_followup:
+- Update doc title (line 1) to reference LLD-008 r7 + LLD-009 r5 + LLD-010 r4 (currently
+  r5/r3/r3).
+- Update Phase 3 header (line 193) from 'LLD-010 r3 ... 27 tests' to 'LLD-010 r4 ...
+  28 tests'.
+- Update Slice 5.2 CHANGELOG entry text (line 266) baseline from '150 -> 240' to '150
+  -> 248'.
+- 'Update Related Documents section (lines 316-318) iteration tags: LLD-008 r5 ->
+  r7, LLD-009 r3 -> r5, LLD-010 r3 -> r4.'
+notes: "r3 substantively closes all 3 codex r2 findings. TTY-aware fail-open/closed\
+  \ compromise (Slice 1.4) well-designed: satisfies codex HIGH#1 fail-closed instinct\
+  \ for CI without breaking solo-dev ergonomics; T5g regression pins non-TTY path.\
+  \ Multi-var CI detection (Slice 2.6 + T10g) closes HIGH#2 brittle-detection gap\
+  \ with 7-var coverage matching mainstream CI. Slice 4.1 repo-identity sentinel +\
+  \ symlink-safe lstat + atomic-replace = solid defense-in-depth for SCALE migration;\
+  \ 2 new tests regression-meaningful. Combined arithmetic 150+17+53+28=248 verified.\n\
+  3 Minor consistency findings are stale-text artifacts of r3 LLD iteration bumps\
+  \ that didn't cascade into plan body title/header/Related-Documents/CHANGELOG-entry.\
+  \ Goal line 20 + Phase milestones DO reflect r3 targets correctly, so impl-execution\
+  \ will not be misled. Fix before flipping plan to canon-frozen but does not block\
+  \ r3 attestation pass.\nNo new r3-introduced issues. Plateau heuristic: iter 3 with\
+  \ all r2 findings substantively closed and only Minor paperwork remaining \u2014\
+  \ interview-gate plateau threshold (iter 3+ with OVERLAPPING findings) does NOT\
+  \ fire because r3 findings non-overlapping with r2 (r2 was substantive HIGH/MEDIUM;\
+  \ r3 is Minor paperwork-cascade only).\n"

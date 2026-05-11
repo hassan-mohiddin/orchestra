@@ -4,7 +4,7 @@
 > **Date:** 2026-05-06
 > **DRI:** Hassan Mohiddin
 > **Severity:** Low
-> **Status:** Investigating
+> **Status:** Fix Applied
 
 ## Observed Behavior
 
@@ -108,3 +108,4 @@ Tests verify:
 | Date | Change |
 |---|---|
 | 2026-05-06 | Filed during SCALE audit. Plugin tried to install hook in SCALE; would have broken pre-commit framework if accepted. Status: Investigating. Target fix: v1.4. |
+| 2026-05-11 | Status: Investigating → Fix Applied. Closed via LLD-010 r4 in orchestra v1.7.0 (commit `da7238d`). Framework detection + `--apply` transactional rollback + hybrid `--verify` shipped; 30 new tests cover regression. Refs: docs/features/010-framework-detection-determinism.md |

@@ -1,5 +1,79 @@
 # Changelog
 
+## v1.7.0 — 2026-05-11
+
+Commit-skill consolidation. Ships LLD-008 r7 + LLD-009 r6 + LLD-010 r4 as a
+single atomic release plus SCALE-side migration. Closes BUG-006 (framework
+detection) + BUG-010 Part 3 (auto-install bootstrap) + BUG-011 (supersession
+tier refinement). Pytest baseline 150 → 265 (+115 new tests).
+
+### New skill
+
+- `skills/commit/` — `orchestra:commit` discipline skill: SKILL.md +
+  5 references (commit-strategy, canon-frozen-guard, refs-line-rules,
+  doc-vs-code-commit, supersession-decision) + 2 hook templates
+  (pre-commit.sh, commit-msg.sh) + 1 framework snippet
+  (precommit-framework-snippet.yaml).
+
+### LLD-008 r7 (Phase 1 — commit `eb50924`)
+
+- Hook templates relocated `cli/templates/{pre-commit,commit-msg}.sh` →
+  `skills/commit/templates/`.
+- `SKILL_TEMPLATES_DIR` constant in `cli/install_hooks.py` (consumed by
+  LLD-009 + LLD-010).
+- `cli.install_hooks --on-conflict={skip,replace,append}` flag with
+  argparse sentinel + TTY fallback + `--force` precedence.
+- Symlink-rejection + parent-dir containment defense in `install_one_hook`.
+- `cli.init` bootstrap call: `install_hooks.main(["--all", "--on-conflict=skip"])`.
+- TTY-aware fail-open/closed default (A14): non-TTY rc!=0 → propagate;
+  TTY rc!=0 → WARNING + rc=0. `ORCHESTRA_INIT_STRICT=1` opt-in overrides.
+
+### LLD-009 r6 (Phase 2 — commit `3395b68`)
+
+- L2-detect at pre-commit annotates pending file; does NOT block.
+- L2-finalize at commit-msg reads pending + msg + staged content;
+  applies tiered narrow-change rule (BUG-011 close).
+- Critical never bypasses; Important ≤3 / ≥4 threshold; Minor body edit +
+  Addresses: lines + per-finding Changelog row permitted.
+- `Addresses:` line format with gate-name (anti-gaming).
+- Staged-content trust source via `git show :0:<path>` (trust-boundary).
+- `Path.is_relative_to` path-traversal containment defense.
+- `ORCHESTRA_BYPASS=1` multi-var CI-deny (7 providers) + mandatory
+  `Bypass: <reason>` annotation + 5-column TAB-separated audit log.
+- `ORCHESTRA_STRICT=1` opt-in: pending absent → recompute inline.
+- Transactional pending cleanup: success-only unlink; reject preserves
+  pending for retry-safety.
+- `cli.lint --pre-stage-check` author-iteration entrypoint.
+
+### LLD-010 r4 (Phase 3 — commit `da7238d`)
+
+- `precommit-framework-snippet.yaml` template (2 hook ids; both
+  `pass_filenames: false`; `default_install_hook_types: [pre-commit, commit-msg]`).
+- Framework-detection helpers: `_parse_user_config` (UserConfigParseError
+  on malformed YAML), `_orchestra_ids_state` (none / partial XOR-fail / full).
+- `install_via_framework_apply`: deep-merge user config + atomic write
+  (flush + fsync + dirfsync + os.replace) + `pre-commit install` subprocess +
+  verify; stderr first-20-lines surfaced on non-zero rc.
+- `install_via_framework_apply_with_rollback`: snapshot config; restore
+  on subprocess/verify failure.
+- `verify_hooks_active`: hybrid substring fingerprint + entrypoint pattern
+  (stale-script false-PASS closed).
+- `cli.install_hooks --apply` / `--verify` / `--force-raw` flags.
+- T-INT-010 end-to-end integration test (LLD-008+009+010 path).
+
+### SCALE migration (Phase 4 — commits `d700102` + `64836e0`)
+
+- `tools/migrate_scale_rules.py` transactional helper with 4-factor
+  repo-identity (git toplevel + `--expected-remote` + CLAUDE.md sentinel +
+  apps/{api,web,worker} layout sentinel), symlink-safe, atomic-replace,
+  snapshot/rollback, idempotent rerun, `--dry-run` flag.
+- Real SCALE migration ran: 2 deletions + 1 partial-edit + 1 registry-append.
+
+### Tests
+
+- 115 new tests across LLD-008 (17), LLD-009 (55), LLD-010 (30), Phase 4 (7),
+  Phase 1 baseline assertion (1). Pytest 150 → 265.
+
 ## v1.6.2 — 2026-05-10
 
 Enforcement gaps closed + backlog cleanup. Closes 5 of 11 tracked BUGs

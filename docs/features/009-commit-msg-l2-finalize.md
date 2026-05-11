@@ -4,7 +4,7 @@
 > **Date:** 2026-05-11
 > **DRI:** Hassan Mohiddin
 > **Type:** Feature LLD
-> **Status:** Draft
+> **Status:** Implemented
 > **Iteration:** 6
 
 ## Glossary
@@ -632,6 +632,7 @@ Pytest target post-LLD-009-ship: 167 (LLD-008 r7 baseline) + 51 (LLD-009 r5) = *
 | Date | Change |
 |---|---|
 | 2026-05-11 | r1 LLD filed post-grilling-session (6 Q&A locked: pending format / overwrite-truncate / git show :0:path + reject-merge / fail-closed + ORCHESTRA_BYPASS / pre-stage skill checklist / path-explicit Addresses). Carries forward codex r1 high #2 (hook-ordering) + codex r2 high #1 + #3 (commit-msg arg + index-vs-worktree) fixes from prior LLD-008 r2 attempts. Status: Draft. Awaiting iteration 1 spec-review. |
+| 2026-05-11 | Status: Draft → Implemented. Phase 2 shipped at commit `3395b68` (55 new tests; baseline 228 + 1 xfail). BUG-011 closed (Status flip in Phase 5 batch). |
 | 2026-05-11 | r5 → r6 cascading edit per plan-r3 codex HIGH#1 + user direction: A2 transactional pending cleanup — success-only `unlink()`; exception/reject paths preserve pending for retry-safety (closes lost-state window where mid-validation crash skipped enforcement on retry). New T2g (crash-during-validation) + T2h (reject-then-retry). lint_commit_msg_finalize pseudocode updated (removed `finally: unlink(missing_ok=True)` in favor of conditional success-only cleanup). Test count 51 → 53. r6 captured by plan r4 (per user "no more spec reviews"). Status: Draft. |
 | 2026-05-11 | r4 → r5 cascading edit per plan-r2 codex HIGH#2 + user-delegated decision: A10 CI-deny upgraded to multi-var detection via `_is_ci_environment()` helper checking ANY of `{CI, GITHUB_ACTIONS, GITLAB_CI, BUILDKITE, CIRCLECI, TRAVIS, JENKINS_URL}` non-empty. Closes codex plan-r2 HIGH#2 brittle-CI-detection gap. New T10g regression test. Test count 50 → 51; pytest baseline 216 → 218 (absorbs LLD-008 r7 cascade 166 → 167). r5 captured by plan r3 spec-review. Status: Draft. |
 | 2026-05-11 | r3 → r4 cascading edit per plan-r1 codex HIGH#4 + user interview-gate direction: A10 ORCHESTRA_BYPASS strengthened with trust-boundary controls — CI-deny (refuse when `CI` env-var present); mandatory `Bypass: <reason>` annotation in commit message body (promoted from advisory). New tests T10e (CI-deny) + T10f (Bypass: missing → reject). Audit log gains 5th column for `<reason>`. Test count 48 → 50; pytest baseline 213 → 216 (also picks up LLD-008 r6 baseline shift 165 → 166). r4 spec-review deferred — plan r2 spec-review covers cascading change per user direction. Status: Draft. |

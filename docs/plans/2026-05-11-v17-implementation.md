@@ -25,12 +25,12 @@ Plan filed pre-impl. Each phase milestone records its commit-SHA below post-merg
 
 | Phase | Milestone commit-SHA | Date | Test count after | Status |
 |---|---|---|---|---|
-| Phase 0 (test-quality audit) | TBD | TBD | 150 | pending |
+| Phase 0 (test-quality audit) | skipped | n/a | 150 | skipped (deferred to v1.7.1 per Phase 0 30min time-box) |
 | Phase 1 (LLD-008 r7 — skill structure + ORCHESTRA_INIT_STRICT + non-TTY fail-closed) | eb50924 | 2026-05-11 | 173 + 1 xfail | shipped |
-| Phase 2 (LLD-009 r6 — L2-finalize + tiered + ORCHESTRA_BYPASS multi-var CI-deny + transactional pending cleanup) | TBD | TBD | ≥220 | pending |
-| Phase 3 (LLD-010 r4 — framework detection + repo-identity helper share) | TBD | TBD | ≥248 | pending |
-| Phase 4 (SCALE migration — transactional + multi-factor repo-identity + symlink-safe) | TBD | TBD | ≥252 (Phase 4 +4 net beyond LLD-008 T6) | pending |
-| Phase 5 (v1.7.0 ship) | TBD | TBD | ≥252 | pending |
+| Phase 2 (LLD-009 r6 — L2-finalize + tiered + ORCHESTRA_BYPASS multi-var CI-deny + transactional pending cleanup) | 3395b68 | 2026-05-11 | 228 + 1 xfail | shipped |
+| Phase 3 (LLD-010 r4 — framework detection + repo-identity helper share) | da7238d | 2026-05-11 | 258 (T5d xfail flipped to pass) | shipped |
+| Phase 4 (SCALE migration — transactional + multi-factor repo-identity + symlink-safe) | d700102 (orchestra) + 64836e0 (SCALE) | 2026-05-11 | 265 | shipped |
+| Phase 5 (v1.7.0 ship) | TBD | TBD | 265 | in-progress |
 
 Update this table after each phase's milestone-commit lands. Plan r2+ iterations sync this table for post-impl audit-trail.
 

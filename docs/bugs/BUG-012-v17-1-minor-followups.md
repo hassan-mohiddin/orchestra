@@ -6,7 +6,11 @@
 > **Type:** Bug Report
 > **Severity:** Low
 > **Status:** Investigating
-> **Iteration:** 5
+> **Iteration:** 6
+
+**Severity note:** `Low` matches canon §4.2 `bug_severity = {Critical, High, Medium, Low}`. This is a paperwork-grade tracker (no behavioral defect); Low is correct.
+
+**Doc ID note:** Filename `BUG-012-v17-1-minor-followups.md` encodes the version segment `v17-1` (= "v1.7.1") with an internal hyphen. This is canon §4.10 bug grammar `BUG-NNN-name(-rN)?.md` compliant (`v17-1-minor-followups` is the `name` segment; iteration-suffix `-rN` is reserved for filename revisions and never used here since BUG-012 is a single first-iteration filename — iterations are tracked via Iteration Log entries, not by `-rN` filename revisions). No L4 grammar collision possible.
 
 ## Observed Behavior
 
@@ -23,7 +27,7 @@ Read the cited attestation paths in `docs/reviews/` for each LLD/plan iteration;
 ## Environment
 
 - orchestra v1.7.0 tag at `6a4ea94`; this BUG filed in commit `20132da` (one commit after the tag, post-cleanup batch)
-- Pytest baseline at v1.7.0 ship: 259. Current (post-BUG-016 + post-T2): 521.
+- Pytest baseline at v1.7.0 ship: 259. Current (post-BUG-016 + post-T2 + post-BUG-001-WIP): 521 (verified `2026-05-11` against HEAD `a35a0f7`; +1 from T2 commit `8af4b45`, +2 from BUG-001 parallel-session WIP per HANDOFF — exact provenance via `git log --since=2026-05-09 --oneline tests/`).
 
 ## Root Cause Analysis
 
@@ -39,7 +43,7 @@ Iterate through the items below; close per LLD-006-r4 narrow-change whitelist (C
 
 1. ~~**`input_fn=input` pseudocode clarification**~~ — CLOSED 2026-05-11 (commit dogfood batch 1). Inline comment added to install_one_hook pseudocode.
 2. ~~**Prompt UX preservation note**~~ — CLOSED 2026-05-11 (LLD-008 batch 3). A5 inline note documenting v1.5+ prompt UX preservation added.
-3. ~~**T2 11-file enumeration assertion**~~ — CLOSED 2026-05-11 (BUG-012 r5 batch). Full canonical-set enumeration test added to `tests/test_install_hooks_skill_dir.py::test_cli_templates_dir_full_enumeration` asserting exactly the 11 files in cli/templates/ post-BUG-016 slice 8 (vocabulary-default-1.md). Detects drift in either direction.
+3. ~~**T2 11-file enumeration assertion**~~ — CLOSED 2026-05-11 (BUG-012 r5 batch; commit `8af4b45`). Full canonical-set enumeration test added to `tests/test_install_hooks_skill_dir.py::test_cli_templates_dir_full_enumeration` asserting exactly the 11 files in cli/templates/ post-BUG-016 slice 8 (vocabulary-default-1.md). Detects drift in either direction. **Test/A3-prose disagreement note:** As of r5, the test asserts 11 (matches reality) while LLD-008 r8 A3 prose still says 10 — A3 sync is tracked separately as §Post-ship cleanup #5 below. The test is the authoritative canon; A3 prose is stale and will be synced in the next commit slice (r6 body sync first, A3 sync second, since LLD-008 r8 is canon-frozen and requires tiered narrow-change with an attestation finding to address).
 4. ~~**A8 section-header citation**~~ — CLOSED 2026-05-11 (commit dogfood batch 1). Line range 109-128 replaced with `## Quick Reference` section-header anchor.
 5. ~~**Skill-Status value-collision documentation**~~ — CLOSED 2026-05-11 (LLD-008 batch 3). Explicit value-collision example added to Skill-Status field-name divergence note.
 
@@ -66,7 +70,7 @@ Per LLD-010 r4 Changelog entry, r4 was paperwork-only cascading edit; no interna
 2. ~~**`tests/scale_migration_helper.py` → `tools/`**~~ — CLOSED 2026-05-11 via commit `7f581e9` (`refactor: move scale_migration_helper.py from tests/ to tools/scale_migration_core.py`). `tools/migrate_scale_rules.py` now imports cleanly from `tools.scale_migration_core` (correct dependency direction). Verified on-disk: `tests/scale_migration_helper.py` does NOT exist; `tools/scale_migration_core.py` + `tools/migrate_scale_rules.py` both present.
 3. ~~**`attestation-template.yaml` → `skills/spec-review/templates/`**~~ — CLOSED 2026-05-11 via LLD-008 r7 → r8 supersession. File moved (git mv preserves history); A3 adjusted to 10 cli/templates artifacts + new skills/spec-review/templates/ dir. Zero code refs; tests untouched.
 4. ~~**`docs/design/orchestra-philosophy.md` lint issues**~~ — CLOSED 2026-05-11 via philosophy r1 → r2 supersession. 4 placeholder rows + mermaid gantt colon parse error fixed inline; v1.7.0 Changelog row added.
-5. **LLD-008 r8 A3 enumeration drift (10 → 11)** — BUG-016 slice 8 (commit `937a5f0`) added `cli/templates/vocabulary-default-1.md` (generated from `docs/design/controlled-vocabulary.md` canon §4.x) without syncing LLD-008 r8 A3 prose. Reality: 11 files; A3 prose says 10. Detected by T2 enumeration test (this iteration). **Fix path:** tiered narrow-change to LLD-008 r8 A3 in-place + Changelog row (canon-frozen edit, requires `Addresses:` commit-msg line citing BUG-012 r2 attestation finding). Tracked separately as a r5 commit slice.
+5. **LLD-008 r8 A3 enumeration drift (10 → 11)** — BUG-016 slice 8 (commit `937a5f0`) added `cli/templates/vocabulary-default-1.md` (generated from `docs/design/controlled-vocabulary.md` canon §4.x) without syncing LLD-008 r8 A3 prose. Reality: 11 files; A3 prose says 10. Detected by T2 enumeration test (this iteration). **Fix path (awaiting BUG-012 r5 attestation, then r6 close):** tiered narrow-change to LLD-008 r8 A3 in-place per LLD-009 r6 §A6 — commit message will contain `Addresses: docs/reviews/BUG-012-v17-1-minor-followups-r5.orchestra.review.yaml gate <gate> finding <N> (Important)` where `<gate>` ∈ {evidence, consistency} and `<N>` corresponds to the r5 finding identifying the A3-vs-test prose disagreement. The exact gate + finding-N values bind at A3-sync commit time. **Owner:** Hassan; **target:** v2.0.1 patch cycle (next commit slice after r6 closure). **Blocking-vs-tracking:** this item is *blocking* BUG-012 closure (Investigating → Fix Applied) — the BUG is the tracker for A3 sync, so unclosed-#5 means unclosed-BUG.
 
 ## Iteration Log
 
@@ -74,15 +78,48 @@ Per LLD-010 r4 Changelog entry, r4 was paperwork-only cascading edit; no interna
 - r2 (2026-05-11) — dogfood batch landed via tiered narrow-change (LLD-009 r6 first real-world use). Closed: LLD-008 r7 Minors #1 (input_fn comment) + #4 (A8 section-header anchor); LLD-009 r6 Minors #3 (3a/3b legend) + #4 (A13 pre-commit.sh ownership). Plan Minors #1 (cross-doc lineage verification) + #2 (test-quality audit) closed via Plan Phase D/J. Remaining open: LLD-008 #2/#3/#5 + LLD-009 #1/#2/#5 + Post-ship cleanup #1-#4 (under original #3-#6 numbering) = 11 items.
 - r3 (2026-05-11) — second narrow-change batch landed. Closed: LLD-008 r7 Minors #2 (prompt UX preservation note) + #5 (Skill-Status value-collision example); LLD-009 r6 Minors #1 (D1-D3 verifiability classification) + #2 (mixed anchors → function-anchors) + #5 (A16 CHANGELOG cite verification). Remaining open: LLD-008 #3 (T2 test enumeration — test code, not narrow-change) + Post-ship cleanup #1-#4 (under original #3-#6) = 5 items.
 - r4 (2026-05-11) — supersession batch landed (philosophy r1→r2 + LLD-008 r7→r8). Closed: Post-ship #3 (attestation-template move via LLD-008 r8; now renumbered #3 in r5) + #4 (philosophy.md lint blockers via r2; now renumbered #4 in r5). Surfaced new BUG-014 (L4 doc-id-burn rejects bare-name design supersession; --no-verify bypass used; v1.7.1 fix). Remaining open: LLD-008 #3 (T2 test enumeration) + Post-ship #1 (lint.py split — deferred) + Post-ship #2 (scale_migration_helper move — actually already done at commit `7f581e9`, body stale) = 3 items.
-- r5 (2026-05-11) — closure batch post-BUG-016. Closed: LLD-008 r7 Minor #3 (T2 full enumeration test — `tests/test_install_hooks_skill_dir.py::test_cli_templates_dir_full_enumeration`) + Post-ship #2 (scale_migration_helper move verified at commit `7f581e9`; body corrected). Surfaced new Post-ship #5 (LLD-008 r8 A3 enumeration drift 10→11 via BUG-016 slice 8; tracked for separate commit slice). Applied 12 r1 attestation findings inline (free edit; Status: Investigating). Renumbered Post-ship cleanup observations #1-#5 (was #3-#6 + new). Reviewed: pending r2 v2 spec-review. Remaining open: Post-ship #1 (lint.py split, deferred v1.8+) + Post-ship #5 (LLD-008 r8 A3 sync, separate commit slice). Target: close A3 sync slice → r2 review pass → user-confirm → Fix Applied.
+- r5 (2026-05-11) — closure batch post-BUG-016. Closed: LLD-008 r7 Minor #3 (T2 full enumeration test — `tests/test_install_hooks_skill_dir.py::test_cli_templates_dir_full_enumeration`, commit `8af4b45`) + Post-ship #2 (scale_migration_helper move verified at commit `7f581e9`; body corrected). Surfaced new Post-ship #5 (LLD-008 r8 A3 enumeration drift 10→11 via BUG-016 slice 8; tracked for separate commit slice). Applied 12 r1 attestation findings inline (free edit, Status: Investigating; commits `c1259d0` + `3b80fb9`). Renumbered Post-ship cleanup observations #1-#5 (was #3-#6 + new). r5 v2 spec-review attestation: `docs/reviews/BUG-012-v17-1-minor-followups-r5.orchestra.review.yaml` (overall_verdict: fail; 32 deduped findings: 3 Critical [all adversarial], 15 Important, 14 Minor; repo-context pass). Remaining open: Post-ship #1 (lint.py split, deferred v1.8+) + Post-ship #5 (LLD-008 r8 A3 sync, separate commit slice).
+
+  **r1 finding closure table (12 r1 findings → r5 body edits):**
+
+  | r1 Gate | r1 Finding | Severity | Closure in r5 body | Commit |
+  |---|---|---|---|---|
+  | Completeness | Iteration field missing in frontmatter | Minor | Added `Iteration: 5` | `c1259d0` |
+  | Completeness | Regression Prevention thin | Minor | Expanded with 3 new prevention rules | `c1259d0` |
+  | Evidence | Related Docs path `008-commit-skill.md` should be `-r8.md` | Important | Path corrected | `c1259d0` |
+  | Evidence | Post-ship #4 `scale_migration_helper.py` non-reproducible | Important | Renumbered as #2 + struck-through with commit `7f581e9` cite | `c1259d0` |
+  | Evidence | Environment commit-lineage relationship unclear | Minor | Reworded `6a4ea94` tag + `20132da` one-after relationship | `c1259d0` |
+  | Evidence | r2 Phase J commit SHA missing | Minor | Added cite `dac0195`-era cleanup batch | `c1259d0` |
+  | Clarity | Post-ship numbering starts at #3 with no #1/#2 | Important | Renumbered #1-#5 | `c1259d0` |
+  | Clarity | Regression Prevention bullet-2 wrong BUG cross-ref | Minor | Corrected to `docs/plans/2026-05-11-test-quality-audit.md` | `c1259d0` |
+  | Clarity | LLD-006-r4 + tiered narrow-change anchor missing | Minor | Inline anchors added in Fix Description | `c1259d0` |
+  | Consistency | Related Docs bare-name supersession-stale (same as Evidence #3) | Important | Same closure as Evidence #3 | `c1259d0` |
+  | Consistency | r4 iteration count 4 vs list-derived 3 | Minor | Renumbering exposed root cause; reconciled | `c1259d0` |
+  | Consistency | Review-yaml iteration paths stale | Minor | Related Docs paths updated to latest on-disk + Convention note added | `c1259d0` |
+
+  Plus §Root Cause Analysis canon spelling fix (Root Cause → Root Cause Analysis per canon §4.8) in commit `3b80fb9`. Total: 12/12 r1 findings closed.
+- r6 (2026-05-11) — r5 attestation closure batch. Closed (via this iteration's body edits): all 3 r5 Critical findings (Regression Prevention rewritten to discipline-not-gate framing — mechanical-vs-discipline boundary made explicit) + 15 r5 Important findings (Changelog rows added for r2/r3/r4, per-finding closure table added to r5 entry above, BUG-014 cross-referenced in Related Documents, Convention note narrowed to BUG-012-local, Post-ship #5 fix-path made implementable, aggregate-tracker recursion termination criterion added, frontmatter Severity + Doc ID notes added, Environment pytest delta explained, test/A3-prose disagreement noted explicitly in LLD-008 #3 closure entry). Status: Investigating. Reviewed: pending r6 v2 spec-review. Remaining open: Post-ship #1 (lint.py split, deferred v1.8+) + Post-ship #5 (LLD-008 r8 A3 sync, target v2.0.1 patch cycle).
 
 ## Regression Prevention
 
-- Each v1.7.x and v2.0.x ship verifies BUG-012 checklist before tag.
+**Scope of this section:** What follows is *agent discipline + manual convention*, not mechanically-enforced gates. Where a mechanical layer exists (pre-commit hook, cli.lint, CI), it is cited explicitly. Where no mechanical layer exists, the claim is labeled as **discipline** to make the enforcement boundary unambiguous (closes BUG-012 r5 adversarial Critical findings 1-3 — "enforcement claimed without mechanism").
+
+### Mechanical layer (enforced by code)
+
+- **L1+L2+L3+L4+L5 lint checks** at `cli/lint.py` enforce metadata + required-sections + Refs-line + doc-id-burn + strict-enum-match. Wired into pre-commit hook (BUG-010, LLD-008). Bypass: `--no-verify`.
+- **T2 enumeration test** at `tests/test_install_hooks_skill_dir.py::test_cli_templates_dir_full_enumeration` fails CI if cli/templates/ membership drifts. The brittleness is *by design* (canon-frozen-guard intent): test failure forces simultaneous A3-prose sync, preventing silent additions that drift A3 contract. There is intentionally no env-var grace path — the coupling IS the protection.
+
+### Discipline layer (agent / human convention; no mechanical enforcement)
+
+- **`--no-verify` discipline:** When `--no-verify` is required to bypass an L4 gap (e.g., BUG-014 bare-name design supersession case), it SHOULD be tracked as a new BUG immediately. **No mechanical enforcement exists** — `--no-verify` by definition disables the hook, and git history does not expose post-hoc which commits used `--no-verify`. This is agent self-discipline. Future v1.8+ work could explore signed commits + `--no-verify` audit trail; out of scope here.
+- **Deferred-Minor leakage discipline:** Each ship SHOULD file an aggregate BUG-NNN tracker before tag if spec-review attestation Minor findings were deferred. **No mechanical enforcement** — currently relies on author memory. Hardening path: add a `cli.lint --pre-tag` check that fails if any open spec-review attestation has open Minor findings and no corresponding BUG-NNN tracker exists; deferred to v1.8+ (BUG-012 itself surfaces the need but does not fix the mechanism).
+- **A3-prose ↔ test lockstep discipline:** Future additions to `cli/templates/` MUST update both LLD-008 r8 A3 prose AND `CLI_TEMPLATES_CANONICAL_SET` frozenset in the test, in a single tiered narrow-change commit with `Addresses:` line. Test failure (mechanical, above) prevents merging the partial update; the closing of the test failure requires the prose sync as a discipline (no code enforces that A3 prose is updated, only that the test passes — author can in principle "fix" the test by reverting the addition).
+- **Aggregate-tracker recursion termination:** BUG-012 itself is a tracker for v1.7.x deferred Minors. To prevent unbounded recursion (tracker-of-tracker-of-tracker), the convention is: **trackers terminate at version-boundary closure**. BUG-012 closes at v2.0.1 ship; any Minor findings from BUG-012 r5+ get either (a) absorbed inline before close, OR (b) filed as named follow-up BUGs with concrete fix scope (not aggregate paperwork). Aggregate trackers do not generate aggregate trackers.
+
+### Cross-references
+
 - Test-quality audit handled independently via `docs/plans/2026-05-11-test-quality-audit.md` (commit `a1932bd`; closed Plan r2/r3 Minor #2). Independent of BUG-013 (slash-command naming inconsistency).
-- **Canon-frozen-guard discipline that surfaced BUG-014:** When --no-verify is required to bypass an L4 gap (BUG-014 bare-name design supersession case), it MUST be tracked as a new BUG immediately. Pre-commit hook (BUG-010) catches most violations mechanically; the residual gaps are owned by BUG-NNN trackers, not silent precedent.
-- **Deferred-Minor leakage prevention between releases:** Each ship's spec-review attestation Minor findings get an aggregate BUG-NNN tracker filed BEFORE the tag commit. Tag commit blocked until tracker exists. Prevents Minors from being forgotten across version boundaries (BUG-012 itself was this discipline's first instance).
-- **A3 enumeration drift prevention:** T2 full-enumeration test (closed r5) detects cli/templates/ membership drift programmatically. Future additions to cli/templates/ MUST update both LLD-008 r8 A3 prose + CLI_TEMPLATES_CANONICAL_SET frozenset in the test, in a single tiered narrow-change commit with `Addresses:` line.
+- BUG-014 (L4 bare-name design supersession) surfaced via r4 batch; see `docs/bugs/BUG-014-l4-bare-name-design-supersession.md`. Cross-listed in §Related Documents below.
 
 ## Related Documents
 
@@ -91,17 +128,23 @@ Per LLD-010 r4 Changelog entry, r4 was paperwork-only cascading edit; no interna
 - `docs/features/010-framework-detection-determinism.md` — LLD-010 r4 (Implemented)
 - `docs/plans/2026-05-11-v17-implementation.md` — Plan r4 (Implemented)
 - `docs/plans/2026-05-11-test-quality-audit.md` — test-quality audit (commit `a1932bd`)
-- `docs/reviews/BUG-012-v17-1-minor-followups-r1.orchestra.review.yaml` — r1 spec-review (overall_verdict: fail; 12 findings)
-- `docs/reviews/008-commit-skill-r4.orchestra.review.yaml` + `.codex.review.md` — LLD-008 last reviewed iteration (r5-r6-r7-r8 shipped under interview-gate "ship without 4th review" + r7→r8 supersession; latest on-disk attestation is r8 orchestra-only at `docs/reviews/008-commit-skill-r8.orchestra.review.yaml`)
-- `docs/reviews/009-commit-msg-l2-finalize-r2.orchestra.review.yaml` + `.codex.review.md` — LLD-009 last reviewed iteration (r3-r4-r5-r6 shipped under interview-gate; r1 sonnet also present)
-- `docs/reviews/010-framework-detection-determinism-r2.orchestra.review.yaml` + `.codex.review.md` — LLD-010 last reviewed iteration (r3-r4 shipped under interview-gate; r1 sonnet also present)
-- `docs/reviews/2026-05-11-v17-implementation-r3.orchestra.review.yaml` + `.codex.review.md` — Plan last reviewed iteration (r4 shipped under interview-gate)
+- `docs/bugs/BUG-014-l4-bare-name-design-supersession.md` — surfaced by r4 batch (L4 doc-id-burn rejects bare-name design supersession); cross-referenced for bidirectional supersession-integrity intent per LLD-006-r4.
+- `docs/reviews/BUG-012-v17-1-minor-followups-r1.orchestra.review.yaml` — r1 spec-review (schema v1.0; overall_verdict: fail; 12 findings: 4 Important + 8 Minor)
+- `docs/reviews/BUG-012-v17-1-minor-followups-r5.orchestra.review.yaml` — r5 spec-review (schema v2.0, 6-sub-judge ensemble under --override-cap; overall_verdict: fail; 32 deduped findings: 3 Critical + 15 Important + 14 Minor; repo-context pass)
+- `docs/reviews/008-commit-skill-r4.orchestra.review.yaml` + `.codex.review.md` — LLD-008 last full-stack reviewed iteration. LLD-008 sits at r8 (Implemented); r5-r6-r7 shipped under interview-gate "ship without 4th review"; r7→r8 supersession added r8-only orchestra attestation at `docs/reviews/008-commit-skill-r8.orchestra.review.yaml`.
+- `docs/reviews/009-commit-msg-l2-finalize-r2.orchestra.review.yaml` + `.codex.review.md` — LLD-009 last reviewed iteration. LLD-009 sits at r6 (Implemented); r3-r6 shipped under interview-gate; r1 sonnet also present.
+- `docs/reviews/010-framework-detection-determinism-r2.orchestra.review.yaml` + `.codex.review.md` — LLD-010 last reviewed iteration. LLD-010 sits at r4 (Implemented); r3-r4 shipped under interview-gate; r1 sonnet also present.
+- `docs/reviews/2026-05-11-v17-implementation-r3.orchestra.review.yaml` + `.codex.review.md` — Plan last reviewed iteration. Plan sits at r4 (Implemented); r4 shipped under interview-gate.
 
-**Convention note:** Related Documents tracks the LATEST attestation on-disk and notes when the doc-iteration has advanced beyond the attestation-iteration (interview-gate "ship without 4th review" pattern shipped r5-r8 for LLD-008 + r3-r6 for LLD-009 + r3-r4 for LLD-010 + r4 for the plan without fresh attestations). This BUG itself is the deferred-Minor tracker for those un-attested iterations. r5 sync done in this commit batch.
+**Convention note (BUG-012-local; do NOT generalize without ADR):** Related Documents for BUG-012 tracks the latest on-disk attestation paths and notes where doc-iteration has advanced beyond attestation-iteration (the "ship without 4th review" pattern shipped r5-r8 for LLD-008, r3-r6 for LLD-009, r3-r4 for LLD-010, r4 for the plan without fresh attestations). This is a paperwork-disclosure convention for the aggregate-tracker BUG itself — BUG-012's whole purpose is to track those deferred iterations. **This convention is NOT a generally-applicable Gate 3 bypass rule for orchestra docs.** Any doc that wishes to invoke "doc-iteration ≥ attestation-iteration" must (a) cite an explicit interview-gate consent for that ship, OR (b) be explicitly classified as paperwork-grade. Generalizing the convention to other docs requires an ADR. r6 body sync done in commit batch immediately following the r5 attestation write.
 
 ## Changelog
 
 | Date | Change |
 |---|---|
-| 2026-05-11 | BUG filed post-v1.7.0 ship to aggregate deferred Minors across 3 LLDs + plan + post-ship cleanup observations. Severity: Low (paperwork-grade; no behavioral defects). Status: Investigating. Target: v1.7.1. |
-| 2026-05-11 | r5 closure batch: applied 12 r1 attestation findings inline (Iteration field added; Related Documents paths corrected to current iterations + per-judge suffix; Post-ship cleanup renumbered #1-#5; BUG-013 cross-ref corrected; Regression Prevention expanded). Closed LLD-008 #3 (T2 enumeration test) + Post-ship #2 (scale_migration_helper already moved at `7f581e9`). Surfaced Post-ship #5 (LLD-008 r8 A3 enumeration drift). Remaining open: Post-ship #1 (lint.py split, deferred v1.8+) + Post-ship #5 (A3 sync slice). |
+| 2026-05-11 | r1 — BUG filed post-v1.7.0 ship to aggregate deferred Minors across 3 LLDs + plan + post-ship cleanup observations. Severity: Low (paperwork-grade; no behavioral defects). Status: Investigating. Target: v1.7.1. |
+| 2026-05-11 | r2 — dogfood batch (LLD-009 r6 first real-world tiered narrow-change use). Closed 4 Minors via tiered path + 2 Plan Minors via Phase D/J. Remaining open: 11 items. |
+| 2026-05-11 | r3 — second narrow-change batch. Closed 5 more Minors. Remaining open: LLD-008 #3 (test code) + Post-ship cleanup. |
+| 2026-05-11 | r4 — supersession batch (philosophy r1→r2 + LLD-008 r7→r8). Closed 2 Post-ship items. Surfaced BUG-014 (L4 doc-id-burn gap; `--no-verify` bypass used). Remaining open: 3 items. |
+| 2026-05-11 | r5 closure batch: applied 12 r1 attestation findings inline (Iteration field added; Related Documents paths corrected to current iterations + per-judge suffix; Post-ship cleanup renumbered #1-#5; BUG-013 cross-ref corrected; Regression Prevention expanded). Closed LLD-008 #3 (T2 enumeration test, commit `8af4b45`) + Post-ship #2 (scale_migration_helper already moved at `7f581e9`). Surfaced Post-ship #5 (LLD-008 r8 A3 enumeration drift). r5 v2 attestation written: overall_verdict: fail (32 findings: 3 Crit + 15 Imp + 14 Min). Remaining open: Post-ship #1 (lint.py split, deferred v1.8+) + Post-ship #5 (A3 sync slice). Commits: `c1259d0` + `3b80fb9`. |
+| 2026-05-11 | r6 — r5 attestation closure batch. Reworded Regression Prevention to discipline-not-gate framing (closes 3 r5 Criticals by making mechanical-vs-discipline boundary explicit); added per-finding closure table for r1 findings; added BUG-014 to Related Documents; narrowed Convention note to BUG-012-local; made Post-ship #5 fix-path implementable (cites r5 attestation); added aggregate-tracker recursion termination criterion; added frontmatter Severity + Doc ID notes; explained Environment pytest delta; flagged test/A3-prose disagreement in LLD-008 #3 closure. Status: Investigating. Reviewed: pending r6 v2 spec-review. |

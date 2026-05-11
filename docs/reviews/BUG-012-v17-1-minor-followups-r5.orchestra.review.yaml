@@ -1,0 +1,602 @@
+schema_version: '2.0'
+doc_subject:
+  path: docs/bugs/BUG-012-v17-1-minor-followups.md
+  content_hash: sha256:4154e8a003bf3e9695ba8b2d27467899334ba51823f1cf4ff070bf59a5c87fd0
+  iter_commit_sha: e27382f8d47fba2212a241862db4398d347c92ad
+  iter_blob_sha: 14d7db875561c62feddca392bff3e8c54cf8940f
+  iteration: 5
+peer_judge:
+  id: orchestra:spec-reviewer
+  invoked_at: '2026-05-11T18:11:53Z'
+  context_isolation: fresh_subagent_per_subjudge
+sub_judges:
+- id: structure
+  model: claude-sonnet-4-6
+  mandatory: false
+  rubric_version: structure-v1
+  status: completed
+  verdict: conditional_pass
+  findings:
+  - severity: Important
+    location: "Frontmatter \xA7 Doc ID"
+    problem: "Doc ID 'BUG-012-v17-1-minor-followups' encodes version 'v17-1' with\
+      \ internal hyphen \u2014 creates ambiguity with iteration suffix grammar (-rN)\
+      \ per LLD-006-r4. Tooling parsing -rN suffixes could misread."
+    raised_by:
+    - structure
+    scope: instance
+  - severity: Important
+    location: "Frontmatter \xA7 Severity"
+    problem: "Severity value 'Low' \u2014 canon \xA74.2 bug_severity enum is Critical/High/Medium/Low;\
+      \ verify 'Low' permitted (likely yes, but author should confirm against canon)."
+    raised_by:
+    - structure
+    scope: instance
+  - severity: Minor
+    location: "Changelog \xA7 rows"
+    problem: Changelog rows missing for r2, r3, r4 transitions; only r1 filing + r5
+      batch present. Iteration Log documents 5 iterations but Changelog has 2 rows.
+    raised_by:
+    - structure
+    scope: instance
+  - severity: Minor
+    location: "Iteration Log \xA7 structure"
+    problem: Flat bullet list rather than h3 subsections per iteration; inconsistent
+      with h2/h3 hierarchy elsewhere in doc. No functional impact.
+    raised_by:
+    - structure
+    scope: instance
+- id: semantic
+  model: claude-opus-4-7
+  mandatory: true
+  rubric_version: semantic-v1
+  status: completed
+  verdict: conditional_pass
+  findings:
+  - severity: Important
+    location: "Related Documents \xA7 attestation paths"
+    problem: "Cites '008-commit-skill-r4.orchestra.review.yaml' / '009...-r2.orchestra...'\
+      \ / '010...-r2.orchestra...' / '2026-05-11-v17...-r3.orchestra...' with per-judge\
+      \ suffix; on-disk files use the same convention now post-BUG-016. Repo-context\
+      \ judge verified all paths resolve. Reword to remove the 'suffix-stale' caveat\
+      \ \u2014 paths DO resolve."
+    raised_by:
+    - semantic
+    scope: instance
+  - severity: Important
+    location: "Iteration Log \xA7 r5"
+    problem: "r5 says 'Applied 12 r1 attestation findings inline' without per-finding\
+      \ closure table mapping each of 12 findings \u2192 which body edit. Reader cannot\
+      \ verify all 12 were addressed vs 11+1 missed."
+    raised_by:
+    - semantic
+    scope: instance
+  - severity: Important
+    location: "Fix Description \xA7 LLD-008 #3 vs Post-ship #5"
+    problem: '#3 closed claims ''test asserts exactly 11 files'' but #5 says LLD-008
+      r8 A3 prose still says 10. Doc internally inconsistent: test asserts 11, A3
+      says 10, A3 sync deferred. Note the prose/test inconsistency more explicitly
+      in #3.'
+    raised_by:
+    - semantic
+    scope: instance
+  - severity: Minor
+    location: "Iteration Log \xA7 r4"
+    problem: 'r4 acknowledged Post-ship #2 body was stale (''actually already done
+      at 7f581e9'') but did not fix it; r5 closes it. Tighten r4 narrative to clarify
+      staleness was discovered at r4 vs left for r5.'
+    raised_by:
+    - semantic
+    scope: instance
+  - severity: Minor
+    location: "Environment \xA7 pytest baseline"
+    problem: 'Cites ''Current pytest: 521'' but MEMORY.md records 518 post-BUG-016
+      ship. Delta of +3 not explained inline (likely from BUG-001 work + T2 test);
+      reconcile.'
+    raised_by:
+    - semantic
+    scope: instance
+  - severity: Minor
+    location: "Regression Prevention \xA7 Deferred-Minor leakage prevention"
+    problem: Claim 'Tag commit blocked until tracker exists' has no mechanical enforcement
+      cited (no hook, lint, CI). Reword as convention/discipline rather than blocking
+      gate, OR file a follow-up to add the mechanical check.
+    raised_by:
+    - semantic
+    scope: instance
+  - severity: Minor
+    location: "Related Documents \xA7 Convention note"
+    problem: "'r5 sync done in this commit batch' \u2014 'this commit batch' is ambiguous\
+      \ without commit SHA anchor. Prefer commit SHA or batch label."
+    raised_by:
+    - semantic
+    scope: instance
+- id: gate-compliance
+  model: claude-sonnet-4-6
+  mandatory: false
+  rubric_version: gate-compliance-v1
+  status: completed
+  verdict: conditional_pass
+  findings:
+  - severity: Important
+    location: "Changelog \xA7 rows"
+    problem: Changelog rows missing for r2, r3, r4 transitions. Lifecycle audit-trail
+      requires a row per material iteration per STANDARDS.md.
+    raised_by:
+    - gate-compliance
+    scope: instance
+  - severity: Minor
+    location: "Frontmatter \xA7 Status"
+    problem: "Status: Investigating at r5 is correct for an open bug, but Iteration\
+      \ Log states next-step target is 'r2 review pass \u2192 user-confirm \u2192\
+      \ Fix Applied'. Doc effectively awaiting review that hasn't been committed;\
+      \ minor hygiene gap."
+    raised_by:
+    - gate-compliance
+    scope: instance
+  - severity: Minor
+    location: "Fix Description \xA7 Post-ship #5"
+    problem: 'Fix path references ''BUG-012 r2 attestation finding'' but r2 attestation
+      doesn''t exist yet (this review IS r2). Imprecise wording could cause L2 commit-msg
+      validator confusion. Reword ''awaiting r2 attestation finding, then Addresses:
+      per LLD-009 r6 A6''.'
+    raised_by:
+    - gate-compliance
+    scope: instance
+- id: adversarial
+  model: claude-opus-4-7
+  mandatory: true
+  rubric_version: adversarial-v1
+  status: completed
+  verdict: fail
+  findings:
+  - severity: Critical
+    location: "Regression Prevention \xA7 Deferred-Minor leakage prevention"
+    problem: "'Tag commit blocked until tracker exists' stated as enforcement but\
+      \ no mechanism cited (no pre-commit hook, no CI gate, no lint rule). Discipline\
+      \ relies on human memory \u2014 same failure mode this BUG documents. Unbounded\
+      \ blast radius."
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Critical
+    location: "Regression Prevention \xA7 Canon-frozen-guard discipline"
+    problem: "'--no-verify ... MUST be tracked as a new BUG immediately' \u2014 no\
+      \ mechanism enforces this. --no-verify by definition bypasses the hook that\
+      \ could detect it. Git history offers no post-hoc detection of which commits\
+      \ used --no-verify. Trust-boundary asserted with zero defense-in-depth; fail-open\
+      \ in a fail-closed context."
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Critical
+    location: "Regression Prevention \xA7 A3 enumeration drift prevention"
+    problem: T2 test asserts EXACTLY 11 files in cli/templates/. Any legitimate v1.8+
+      addition will break the test before LLD-008 A3 prose is synced, creating forced-coupling.
+      No grace path (env-var override, marker for in-progress additions). Brittle
+      invariant.
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Important
+    location: "Fix Description \xA7 LLD-008 #3 vs Post-ship #5"
+    problem: "Test asserts canonical set is 11 post-BUG-016 slice 8, but Post-ship\
+      \ #5 explicitly records A3 prose still says 10. Test/prose disagree \u2014 #3\
+      \ closure marker premature if canon it asserts isn't actually canon yet in A3."
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Important
+    location: "Iteration Log \xA7 r5"
+    problem: "'Applied 12 r1 attestation findings inline (free edit; Status: Investigating)'\
+      \ \u2014 free-edit bypasses Gate 3 for the edit batch. No re-review attestation\
+      \ cited for r5 body; r2 review 'pending'. Closure claims precede review attestation.\
+      \ Audit-trail gap."
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Important
+    location: "Fix Description \xA7 Post-ship #5"
+    problem: "'Tracked separately as a r5 commit slice' \u2014 r5 IS this iteration\
+      \ and #5 is still open. Either slice should have landed (didn't) or tracking\
+      \ semantics circular. Add: owner, target iteration, blocking-vs-tracking distinction."
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Important
+    location: "Root Cause Analysis \xA7 aggregate-tracker pattern"
+    problem: '''Each release''s deferred-Minor sweep gets its own BUG-NNN tracker''
+      has no termination criterion. What stops BUG-012 from accruing its own deferred
+      Minors needing BUG-012-followup tracker? Recursion risk unbounded.'
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Important
+    location: "Iteration Log \xA7 r4"
+    problem: '''Post-ship #2 actually already done at 7f581e9, body stale'' admits
+      doc body wrong for 4 iterations (r1-r4 listed #2 open when closed at r1 time).
+      Discovery process unreliable; same staleness may hide other open/closed items.'
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Important
+    location: "Fix Description \xA7 LLD-009 #5"
+    problem: "'CHANGELOG v1.7.0 entry (150 \u2192 259) verified matches A16 cite'\
+      \ but Plan Minor #1 closure chain (150+17=167, 167+53=220, \u2192 \u2265252)\
+      \ has unexplained 220\u2192259 gap (39 unaccounted tests). Verification claim\
+      \ weaker than asserted."
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Important
+    location: "Related Documents \xA7 Convention note"
+    problem: "Permits 'doc-iteration has advanced beyond attestation-iteration' as\
+      \ routine (r5-r8 / r3-r6 / r3-r4 / r4 un-attested). Normalizes Gate 3 bypass\
+      \ \u2014 contradicts documentation-gate.md 'No exceptions for small updates'.\
+      \ Convention encodes the violation."
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Minor
+    location: "Iteration Log \xA7 r5"
+    problem: "No per-finding closure table mapping 12 r1 findings \u2192 body edits.\
+      \ Reader cannot verify all 12 addressed vs 11+1 missed."
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Minor
+    location: "Fix Description \xA7 Post-ship #1 (lint.py split)"
+    problem: "'Re-evaluate when a third major v1.8+ addition needs a new home' \u2014\
+      \ subjective trigger. No size threshold (LoC, function count). Reads as permanent\
+      \ deferral with cosmetic re-eval clause."
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Minor
+    location: "Environment \xA7 pytest baseline"
+    problem: 'Pytest baseline drift: doc cites 521 current; MEMORY.md says 518; CLAUDE.md
+      says 259 baseline. Doc may cite stale or future number.'
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Minor
+    location: "Iteration Log \xA7 r4"
+    problem: '''--no-verify bypass used'' for BUG-014 surface but doesn''t record
+      WHICH commit used --no-verify. Forensically unrecoverable if regression precedent
+      needed later.'
+    raised_by:
+    - adversarial
+    scope: instance
+- id: repo-context
+  model: claude-opus-4-7
+  mandatory: false
+  rubric_version: repo-context-v1
+  status: completed
+  verdict: pass
+  findings: []
+  justification: "All cited file paths resolve. cli/templates/ contains exactly 11\
+    \ files including vocabulary-default-1.md (Post-ship #5 enumeration claim correct).\
+    \ tests/test_install_hooks_skill_dir.py::test_cli_templates_dir_full_enumeration\
+    \ exists with CLI_TEMPLATES_CANONICAL_SET frozenset asserting bidirectional drift\
+    \ detection (T2 closure claim accurate). docs/reviews/BUG-012-v17-1-minor-followups-r1.orchestra.review.yaml\
+    \ exists with overall_verdict fail and 12 findings (4 Important + 8 Minor) \u2014\
+    \ matches doc body. All 9 Related Documents attestation paths resolve. docs/features/008-commit-skill-r8.md\
+    \ exists. docs/plans/2026-05-11-test-quality-audit.md exists. docs/design/controlled-vocabulary.md\
+    \ exists. tools/scale_migration_core.py exists; tests/scale_migration_helper.py\
+    \ does NOT exist (Post-ship #2 closure claim accurate). All commit SHAs cited\
+    \ (6a4ea94, 20132da, 7f581e9, 937a5f0, a1932bd, dac0195) resolve to valid git\
+    \ objects."
+- id: architectural-fit
+  model: claude-opus-4-7
+  mandatory: false
+  rubric_version: architectural-fit-v1
+  status: completed
+  verdict: conditional_pass
+  findings:
+  - severity: Important
+    location: "Post-ship cleanup observations \xA7 #5"
+    problem: 'Fix path ''tiered narrow-change citing BUG-012 r2 attestation finding''
+      is unimplementable as stated. LLD-009 r6 A6 Addresses: line requires gate-name
+      (completeness/evidence/clarity/consistency) + 1-indexed finding-N + severity.
+      Without naming gate + expected severity, can''t construct the Addresses: line.
+      Add placeholder format or downgrade to ''awaiting r2 attestation''.'
+    raised_by:
+    - architectural-fit
+    scope: instance
+  - severity: Important
+    location: "Related Documents \xA7 Convention note"
+    problem: "Convention 'doc-iteration \u2265 attestation-iteration acceptable under\
+      \ interview-gate' elevated to project-canon by precedent. No Design Doc / ADR\
+      \ records this convention. Either cite establishing doc, file new ADR, or reduce\
+      \ to 'BUG-012-local; do not generalize'."
+    raised_by:
+    - architectural-fit
+    scope: instance
+  - severity: Minor
+    location: "Regression Prevention \xA7 cross-release pattern"
+    problem: Project-wide pattern 'each release's deferred-Minor sweep gets own BUG-NNN
+      tracker; tag blocked until tracker exists' asserted with cross-release blast
+      radius but no Design Doc / ADR / Runbook records it. LLD-006-r4 doesn't enforce
+      tag-blocking. Cite or file ADR/Runbook.
+    raised_by:
+    - architectural-fit
+    scope: instance
+  - severity: Minor
+    location: "Iteration Log \xA7 r4 (BUG-014 surface)"
+    problem: "r4 surfaces BUG-014 (L4 doc-id-burn) but BUG-014 NOT cross-listed in\
+      \ \xA7 Related Documents. Per LLD-006-r4 supersession integrity intent, bidirectional\
+      \ cross-reference expected. Add BUG-014 to Related Documents."
+    raised_by:
+    - architectural-fit
+    scope: instance
+findings_aggregated:
+- severity: Minor
+  location: "Changelog \xA7 rows"
+  problem: Changelog rows missing for r2, r3, r4 transitions; only r1 filing + r5
+    batch present. Iteration Log documents 5 iterations but Changelog has 2 rows.
+  raised_by:
+  - structure
+  scope: instance
+- severity: Important
+  location: "Changelog \xA7 rows"
+  problem: Changelog rows missing for r2, r3, r4 transitions. Lifecycle audit-trail
+    requires a row per material iteration per STANDARDS.md.
+  raised_by:
+  - gate-compliance
+  scope: instance
+- severity: Minor
+  location: "Environment \xA7 pytest baseline"
+  problem: 'Cites ''Current pytest: 521'' but MEMORY.md records 518 post-BUG-016 ship.
+    Delta of +3 not explained inline (likely from BUG-001 work + T2 test); reconcile.'
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Minor
+  location: "Environment \xA7 pytest baseline"
+  problem: 'Pytest baseline drift: doc cites 521 current; MEMORY.md says 518; CLAUDE.md
+    says 259 baseline. Doc may cite stale or future number.'
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Important
+  location: "Fix Description \xA7 LLD-008 #3 vs Post-ship #5"
+  problem: '#3 closed claims ''test asserts exactly 11 files'' but #5 says LLD-008
+    r8 A3 prose still says 10. Doc internally inconsistent: test asserts 11, A3 says
+    10, A3 sync deferred. Note the prose/test inconsistency more explicitly in #3.'
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Important
+  location: "Fix Description \xA7 LLD-008 #3 vs Post-ship #5"
+  problem: "Test asserts canonical set is 11 post-BUG-016 slice 8, but Post-ship #5\
+    \ explicitly records A3 prose still says 10. Test/prose disagree \u2014 #3 closure\
+    \ marker premature if canon it asserts isn't actually canon yet in A3."
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Important
+  location: "Fix Description \xA7 LLD-009 #5"
+  problem: "'CHANGELOG v1.7.0 entry (150 \u2192 259) verified matches A16 cite' but\
+    \ Plan Minor #1 closure chain (150+17=167, 167+53=220, \u2192 \u2265252) has unexplained\
+    \ 220\u2192259 gap (39 unaccounted tests). Verification claim weaker than asserted."
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Minor
+  location: "Fix Description \xA7 Post-ship #1 (lint.py split)"
+  problem: "'Re-evaluate when a third major v1.8+ addition needs a new home' \u2014\
+    \ subjective trigger. No size threshold (LoC, function count). Reads as permanent\
+    \ deferral with cosmetic re-eval clause."
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Minor
+  location: "Fix Description \xA7 Post-ship #5"
+  problem: 'Fix path references ''BUG-012 r2 attestation finding'' but r2 attestation
+    doesn''t exist yet (this review IS r2). Imprecise wording could cause L2 commit-msg
+    validator confusion. Reword ''awaiting r2 attestation finding, then Addresses:
+    per LLD-009 r6 A6''.'
+  raised_by:
+  - gate-compliance
+  scope: instance
+- severity: Important
+  location: "Fix Description \xA7 Post-ship #5"
+  problem: "'Tracked separately as a r5 commit slice' \u2014 r5 IS this iteration\
+    \ and #5 is still open. Either slice should have landed (didn't) or tracking semantics\
+    \ circular. Add: owner, target iteration, blocking-vs-tracking distinction."
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Important
+  location: "Frontmatter \xA7 Doc ID"
+  problem: "Doc ID 'BUG-012-v17-1-minor-followups' encodes version 'v17-1' with internal\
+    \ hyphen \u2014 creates ambiguity with iteration suffix grammar (-rN) per LLD-006-r4.\
+    \ Tooling parsing -rN suffixes could misread."
+  raised_by:
+  - structure
+  scope: instance
+- severity: Important
+  location: "Frontmatter \xA7 Severity"
+  problem: "Severity value 'Low' \u2014 canon \xA74.2 bug_severity enum is Critical/High/Medium/Low;\
+    \ verify 'Low' permitted (likely yes, but author should confirm against canon)."
+  raised_by:
+  - structure
+  scope: instance
+- severity: Minor
+  location: "Frontmatter \xA7 Status"
+  problem: "Status: Investigating at r5 is correct for an open bug, but Iteration\
+    \ Log states next-step target is 'r2 review pass \u2192 user-confirm \u2192 Fix\
+    \ Applied'. Doc effectively awaiting review that hasn't been committed; minor\
+    \ hygiene gap."
+  raised_by:
+  - gate-compliance
+  scope: instance
+- severity: Minor
+  location: "Iteration Log \xA7 r4"
+  problem: 'r4 acknowledged Post-ship #2 body was stale (''actually already done at
+    7f581e9'') but did not fix it; r5 closes it. Tighten r4 narrative to clarify staleness
+    was discovered at r4 vs left for r5.'
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Important
+  location: "Iteration Log \xA7 r4"
+  problem: '''Post-ship #2 actually already done at 7f581e9, body stale'' admits doc
+    body wrong for 4 iterations (r1-r4 listed #2 open when closed at r1 time). Discovery
+    process unreliable; same staleness may hide other open/closed items.'
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Minor
+  location: "Iteration Log \xA7 r4"
+  problem: '''--no-verify bypass used'' for BUG-014 surface but doesn''t record WHICH
+    commit used --no-verify. Forensically unrecoverable if regression precedent needed
+    later.'
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Minor
+  location: "Iteration Log \xA7 r4 (BUG-014 surface)"
+  problem: "r4 surfaces BUG-014 (L4 doc-id-burn) but BUG-014 NOT cross-listed in \xA7\
+    \ Related Documents. Per LLD-006-r4 supersession integrity intent, bidirectional\
+    \ cross-reference expected. Add BUG-014 to Related Documents."
+  raised_by:
+  - architectural-fit
+  scope: instance
+- severity: Important
+  location: "Iteration Log \xA7 r5"
+  problem: "r5 says 'Applied 12 r1 attestation findings inline' without per-finding\
+    \ closure table mapping each of 12 findings \u2192 which body edit. Reader cannot\
+    \ verify all 12 were addressed vs 11+1 missed."
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Important
+  location: "Iteration Log \xA7 r5"
+  problem: "'Applied 12 r1 attestation findings inline (free edit; Status: Investigating)'\
+    \ \u2014 free-edit bypasses Gate 3 for the edit batch. No re-review attestation\
+    \ cited for r5 body; r2 review 'pending'. Closure claims precede review attestation.\
+    \ Audit-trail gap."
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Minor
+  location: "Iteration Log \xA7 r5"
+  problem: "No per-finding closure table mapping 12 r1 findings \u2192 body edits.\
+    \ Reader cannot verify all 12 addressed vs 11+1 missed."
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Minor
+  location: "Iteration Log \xA7 structure"
+  problem: Flat bullet list rather than h3 subsections per iteration; inconsistent
+    with h2/h3 hierarchy elsewhere in doc. No functional impact.
+  raised_by:
+  - structure
+  scope: instance
+- severity: Important
+  location: "Post-ship cleanup observations \xA7 #5"
+  problem: 'Fix path ''tiered narrow-change citing BUG-012 r2 attestation finding''
+    is unimplementable as stated. LLD-009 r6 A6 Addresses: line requires gate-name
+    (completeness/evidence/clarity/consistency) + 1-indexed finding-N + severity.
+    Without naming gate + expected severity, can''t construct the Addresses: line.
+    Add placeholder format or downgrade to ''awaiting r2 attestation''.'
+  raised_by:
+  - architectural-fit
+  scope: instance
+- severity: Critical
+  location: "Regression Prevention \xA7 A3 enumeration drift prevention"
+  problem: T2 test asserts EXACTLY 11 files in cli/templates/. Any legitimate v1.8+
+    addition will break the test before LLD-008 A3 prose is synced, creating forced-coupling.
+    No grace path (env-var override, marker for in-progress additions). Brittle invariant.
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Critical
+  location: "Regression Prevention \xA7 Canon-frozen-guard discipline"
+  problem: "'--no-verify ... MUST be tracked as a new BUG immediately' \u2014 no mechanism\
+    \ enforces this. --no-verify by definition bypasses the hook that could detect\
+    \ it. Git history offers no post-hoc detection of which commits used --no-verify.\
+    \ Trust-boundary asserted with zero defense-in-depth; fail-open in a fail-closed\
+    \ context."
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Minor
+  location: "Regression Prevention \xA7 cross-release pattern"
+  problem: Project-wide pattern 'each release's deferred-Minor sweep gets own BUG-NNN
+    tracker; tag blocked until tracker exists' asserted with cross-release blast radius
+    but no Design Doc / ADR / Runbook records it. LLD-006-r4 doesn't enforce tag-blocking.
+    Cite or file ADR/Runbook.
+  raised_by:
+  - architectural-fit
+  scope: instance
+- severity: Minor
+  location: "Regression Prevention \xA7 Deferred-Minor leakage prevention"
+  problem: Claim 'Tag commit blocked until tracker exists' has no mechanical enforcement
+    cited (no hook, lint, CI). Reword as convention/discipline rather than blocking
+    gate, OR file a follow-up to add the mechanical check.
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Critical
+  location: "Regression Prevention \xA7 Deferred-Minor leakage prevention"
+  problem: "'Tag commit blocked until tracker exists' stated as enforcement but no\
+    \ mechanism cited (no pre-commit hook, no CI gate, no lint rule). Discipline relies\
+    \ on human memory \u2014 same failure mode this BUG documents. Unbounded blast\
+    \ radius."
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Important
+  location: "Related Documents \xA7 attestation paths"
+  problem: "Cites '008-commit-skill-r4.orchestra.review.yaml' / '009...-r2.orchestra...'\
+    \ / '010...-r2.orchestra...' / '2026-05-11-v17...-r3.orchestra...' with per-judge\
+    \ suffix; on-disk files use the same convention now post-BUG-016. Repo-context\
+    \ judge verified all paths resolve. Reword to remove the 'suffix-stale' caveat\
+    \ \u2014 paths DO resolve."
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Minor
+  location: "Related Documents \xA7 Convention note"
+  problem: "'r5 sync done in this commit batch' \u2014 'this commit batch' is ambiguous\
+    \ without commit SHA anchor. Prefer commit SHA or batch label."
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Important
+  location: "Related Documents \xA7 Convention note"
+  problem: "Permits 'doc-iteration has advanced beyond attestation-iteration' as routine\
+    \ (r5-r8 / r3-r6 / r3-r4 / r4 un-attested). Normalizes Gate 3 bypass \u2014 contradicts\
+    \ documentation-gate.md 'No exceptions for small updates'. Convention encodes\
+    \ the violation."
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Important
+  location: "Related Documents \xA7 Convention note"
+  problem: "Convention 'doc-iteration \u2265 attestation-iteration acceptable under\
+    \ interview-gate' elevated to project-canon by precedent. No Design Doc / ADR\
+    \ records this convention. Either cite establishing doc, file new ADR, or reduce\
+    \ to 'BUG-012-local; do not generalize'."
+  raised_by:
+  - architectural-fit
+  scope: instance
+- severity: Important
+  location: "Root Cause Analysis \xA7 aggregate-tracker pattern"
+  problem: '''Each release''s deferred-Minor sweep gets its own BUG-NNN tracker''
+    has no termination criterion. What stops BUG-012 from accruing its own deferred
+    Minors needing BUG-012-followup tracker? Recursion risk unbounded.'
+  raised_by:
+  - adversarial
+  scope: instance
+overall_verdict: fail
+overall_verdict_basis:
+  worst_sub_judge_verdict: fail
+  excluded_sub_judges: []
+  mandatory_failures: []
+  reason: null
+notes: 'degraded mode: iter-5 dispatch ran under --override-cap (2-iter post-commit
+  cap bypassed via interview-gate consent)'
+attestation_integrity_hash: sha256:e019f1009f31b2c1961138d0a5607650526112b7c98562edb952aeabcb8c3fdc

@@ -1,124 +1,750 @@
-schema_version: '1.0'
+schema_version: '2.0'
 doc_subject:
   path: docs/features/012-rule-durability-and-learning-layer.md
-  content_hash: sha256:d6d04d9468301715e75cf8ed0e4864efb113f5d3cd1b58abfd9647b29d329652
+  content_hash: sha256:5e629e7cbabfe59bb847305287935841d23d2dfa28675f38a660cd6862786a31
+  iter_commit_sha: 2a1fb78ff5dfd06cf4fbc591802dffa06c76dfaf
+  iter_blob_sha: b70450cd239cf46e05053eeb15dea1d62442ca47
   iteration: 2
-reviewer:
-  identifier: subagent:general-purpose+spec-review-v1
-  invoked_at: '2026-05-11T15:42:12Z'
-  context_isolation: fresh_subagent
-gates:
-  completeness:
-    verdict: pass
-    findings: []
-    justification: All required Feature LLD sections present and substantively filled.
-      No empty placeholders; no TODO markers without followup. Novel terms defined
-      inline at first use.
-  evidence:
-    verdict: fail
-    findings:
-    - severity: Critical
-      location: "Design \xA7 lessons_lint and auto-promotion"
-      problem: Stale file:line citation. Doc cites `cli/spec_review.py:269-287` as
-        the `canonicalize_doc_path` function location, but the function actually lives
-        at `cli/spec_review.py:376-394` at HEAD. Reader following the cite lands on
-        unrelated code.
-    - severity: Important
-      location: "Success Criteria \xA7 SC-13"
-      problem: Karpathy K-number citations (K1/K2/K3/K4/K8) appear as load-bearing
-        lineage but the doc provides no inline gloss for K2, K4, K8. Only K1 and K3
-        are grounded earlier.
-    - severity: Minor
-      location: "Problem Statement \xA7 hooks-as-law citation"
-      problem: "60\u219290% rule-compliance figure hedged honestly but Success Criteria\
-        \ do not include any measured compliance acceptance \u2014 uplift number asserted,\
-        \ never verified."
-  clarity:
-    verdict: conditional_pass
-    findings:
-    - severity: Important
-      location: "Design \xA7 Three-layer file taxonomy"
-      problem: '`State layer` is `Excluded from git` but Scope/In-scope item `.claude/state/`
-        and SC-14''s `.claude/state/turn-counter.json` do not state how non-commit
-        is enforced (no .gitignore entry mentioned).'
-    - severity: Minor
-      location: "Design \xA7 Lessons skill \xA7 Future v1.9+ ratification path"
-      problem: '`/orchestra:ratify-lesson <id>` mentioned as deferred to v1.9+ but
-        never restated in Out of Scope.'
-    - severity: Minor
-      location: "Edge Cases & Error Handling \xA7 Concurrent plugin SessionStart hooks"
-      problem: Disambiguation contract names `downstream readers` MAY match `[ORCHESTRA
-        TLDR]` marker, but runtime consumer not enumerated.
-  consistency:
-    verdict: fail
-    findings:
-    - severity: Critical
-      location: "Design \xA7 Architecture overview (mermaid)"
-      problem: 'Mermaid shows `Lint->>FS: draft TLDR mutation in target rule file`
-        and `Lint->>SR: trigger Gate 3 spec-review on drafted file`. Directly contradicts
-        SC-8 (Class-B reconciliation): lessons_lint writes a PROXY artifact and does
-        NOT auto-trigger spec-review. Diagram describes pre-Class-B behavior; load-bearing
-        self-contradiction with SCs.'
-    - severity: Critical
-      location: "Success Criteria \xA7 SC-7"
-      problem: 'SC-7 attributes `source: auto-promote` producer to `cli.lessons_lint`.
-        SC-8/SC-9 establish that lessons_lint only emits proxy artifacts and `cli.lessons_apply`
-        is the user-invoked CLI that mutates. Auto-promote producer is therefore lessons_apply,
-        not lessons_lint.'
-    - severity: Important
-      location: "Architecture overview \xA7 mermaid participant list"
-      problem: Mermaid omits UserPromptSubmit hook despite SC-14 + In-Scope. SC-14
-        is v1.8 deliverable; diagram does not depict full v1.8 hook surface.
-    - severity: Important
-      location: "Success Criteria \xA7 SC-12"
-      problem: SC-12 enumerates test coverage but does not list SC-14 UserPromptSubmit
-        turn-counter test. SC-14 specifies test inline; SC-12 master list omits it.
-    - severity: Important
-      location: "Testing Strategy \xA7 Unit tests (test_lessons_lint.py)"
-      problem: 'Description ends with `spec-review triggered on proxy path (mocked)`.
-        Contradicts SC-8 + Class-B: lessons_lint does NOT auto-trigger spec-review.'
-    - severity: Important
-      location: "Design \xA7 lessons_lint \xA7 Recursion guard line"
-      problem: "Forward reference `(See Lessons skill \xA7 source enum for the producer\
-        \ of source: auto-promote entries.)` is dangling. The Lessons skill section\
-        \ declares only `source: user` and never describes who writes `source: auto-promote`."
-    - severity: Minor
-      location: "API Changes \xA7 CLI surfaces table"
-      problem: '`cli.lessons_apply <proxy-path>` row hardcodes `-r1` attestation suffix.
-        Per LLD-006-r4 grammar, iter-2 proxy lands at `-r2.review.yaml`. Literal `-r1`
-        lookup misses higher-iter attestations.'
-    - severity: Minor
-      location: "Edge Cases & Error Handling \xA7 compaction_probe row"
-      problem: "Probe procedure references `Claude API's compact_20260112`. No URL\
-        \ or evidence cite \u2014 rest of doc cites every API surface (count_tokens,\
-        \ prompt-caching). `compact_20260112` appears unsourced."
+peer_judge:
+  id: orchestra:spec-reviewer
+  invoked_at: '2026-05-11T17:55:08Z'
+  context_isolation: fresh_subagent_per_subjudge
+sub_judges:
+- id: structure
+  model: claude-sonnet-4-6
+  mandatory: false
+  rubric_version: structure-v1
+  status: completed
+  verdict: pass
+  findings: []
+  justification: LLD-012 r3 satisfies all structure rubric checks. Metadata complete
+    (Doc ID, Date, Status, DRI, Type, Ship target, Iteration). Filename grammar matches
+    LLD-006-r4 Feature LLD pattern. All required Feature LLD sections present (Problem
+    Statement, Success Criteria, Scope, Design + Mermaid, API Changes, Database Changes,
+    Edge Cases, Security, Testing Strategy, Related Documents, Changelog). Heading
+    hierarchy consistent. Tables well-formed.
+- id: semantic
+  model: claude-opus-4-7
+  mandatory: true
+  rubric_version: semantic-v1
+  status: completed
+  verdict: conditional_pass
+  findings:
+  - severity: Important
+    location: "Success Criteria \xA7 SC-13"
+    problem: "SC-13 references K1/K2/K3/K4/K8 lineage but Problem Statement only cites\
+      \ K2 + K3 explicitly; K1/K4/K8 introduced only in Related Documents without\
+      \ being established in body \u2014 fresh reader cannot verify lineage without\
+      \ external context."
+    raised_by:
+    - semantic
+    scope: instance
+  - severity: Important
+    location: "Success Criteria \xA7 SC-6"
+    problem: "SC-6 says SKILL.md does NOT use commands: frontmatter list but Design\
+      \ \xA7 Lessons skill does not restate this no-commands constraint; SCs authoritative\
+      \ per Class-B but Design should mirror."
+    raised_by:
+    - semantic
+    scope: instance
+  - severity: Important
+    location: "Design \xA7 Hook architecture"
+    problem: "Budget enforcement says model resolved via claude --print-current-model\
+      \ \u2014 no evidence this CLI flag exists. If unavailable, entire model-resolution\
+      \ path collapses to fallback."
+    raised_by:
+    - semantic
+    scope: instance
+  - severity: Important
+    location: "Design \xA7 compaction_probe"
+    problem: "Apply Claude API compact_20260112 \u2014 no citation for this API identifier.\
+      \ If real, needs doc link; if speculative, probe rests on unverified infrastructure."
+    raised_by:
+    - semantic
+    scope: instance
+  - severity: Important
+    location: "Success Criteria \xA7 SC-5"
+    problem: SC-5 says probe asserts keyword survives simulated compacted-summary
+      text. Design step 4 says Apply Claude API compact_20260112 (real API call).
+      Edge-cases requires ANTHROPIC_API_KEY. Inconsistency simulated vs real-API.
+    raised_by:
+    - semantic
+    scope: instance
+  - severity: Important
+    location: "Design \xA7 Hook architecture"
+    problem: Session-local evidence (caveman hook in author env) cited as durable
+      contract evidence. Anthropic blog citation alone carries the load.
+    raised_by:
+    - semantic
+    scope: instance
+  - severity: Important
+    location: "Problem Statement \xA7 industry-converged patterns"
+    problem: "60\u219290% compliance is practitioner evidence honestly flagged but\
+      \ LLD never states measured target for orchestra deployment. No internal success\
+      \ metric for durability layer."
+    raised_by:
+    - semantic
+    scope: instance
+  - severity: Important
+    location: "Success Criteria \xA7 SC-14"
+    problem: SC-14 + Design consistent on 500-token budget. Neither states what happens
+      when UserPromptSubmit hook errors (e.g., turn-counter corrupted). Edge cases
+      cover settings.json malformed but not state-file corruption.
+    raised_by:
+    - semantic
+    scope: instance
+  - severity: Important
+    location: "Design \xA7 lessons_lint step 3"
+    problem: "Tie-break specifies most-recent on count-tie + lexicographic on observed\
+      \ if recency ties. Recency implies timestamp but lessons append-only per-month\
+      \ \u2014 tie-recency across months not specified."
+    raised_by:
+    - semantic
+    scope: instance
+  - severity: Minor
+    location: "Scope \xA7 In Scope"
+    problem: Bullet says per turn but token cap applies per emission (only every 5th
+      turn). Wording could mislead reader.
+    raised_by:
+    - semantic
+    scope: instance
+  - severity: Minor
+    location: "Edge Cases \xA7 Concurrent plugin SessionStart"
+    problem: "[ORCHESTRA TLDR] marker placed outside system-reminder wrap \u2014 appears\
+      \ in user-visible context. Unclear if intentional or marker should be inside\
+      \ wrap for system-priority interpretation."
+    raised_by:
+    - semantic
+    scope: instance
+  - severity: Minor
+    location: "Related Documents \xA7 LLD-011 entry"
+    problem: "Feed back here mechanism for plateau-\u2192-lesson capture path not\
+      \ specified. Spell out or remove coupling claim."
+    raised_by:
+    - semantic
+    scope: instance
+- id: gate-compliance
+  model: claude-sonnet-4-6
+  mandatory: false
+  rubric_version: gate-compliance-v1
+  status: completed
+  verdict: pass
+  findings: []
+  justification: 'Gate 1 N/A (Feature LLD not defect). Gate 2: Design content present
+    and sufficient. Gate 3: Iteration field present (3), Status Draft, not canon-frozen
+    so narrow-change rule N/A. Changelog records prior attestation paths. No canon-frozen
+    violations, no missing Iteration, no status transition without Changelog. All
+    gate-compliance criteria satisfied.'
+- id: adversarial
+  model: claude-opus-4-7
+  mandatory: true
+  rubric_version: adversarial-v1
+  status: completed
+  verdict: fail
+  findings:
+  - severity: Critical
+    location: "Design \xA7 Hook architecture"
+    problem: "Project-level .claude/settings.json committed to git turns hook commands\
+      \ into supply-chain attack vector \u2014 contributor PR can swap RESOLVED_PYTHON\
+      \ for malicious command, next reviewer's git pull && claude executes arbitrary\
+      \ code on SessionStart. --verify runs only in CI, not at session-start runtime.\
+      \ No fingerprint pinning, no signature, no runtime guard."
+    raised_by:
+    - adversarial
+    scope: class
+  - severity: Critical
+    location: "Design \xA7 lessons_lint and auto-promotion"
+    problem: 'Two-step gate illusory under malicious-contributor model. Anyone with
+      commit access can: (a) craft proxy artifact with arbitrary TLDR mutation, (b)
+      commit passing attestation YAML (no signature/judge-identity verification),
+      (c) wait for maintainer to run lessons_apply. Attestation forgery unaddressed.
+      lessons_apply must validate proxy provenance AND attestation authenticity, neither
+      specified.'
+    raised_by:
+    - adversarial
+    scope: class
+  - severity: Critical
+    location: "Success Criteria \xA7 SC-3"
+    problem: "Token budget depends on Anthropic count_tokens API at hook runtime \u2014\
+      \ hooks fire on every SessionStart + every Nth UserPromptSubmit. Network failure,\
+      \ rate-limit, expired key, offline dev all break budget check. Fallback identity\
+      \ index not bounded by local tokenizer either. No local tokenizer fallback,\
+      \ no cache, no timeout. UX latency on every 5th prompt unstated."
+    raised_by:
+    - adversarial
+    scope: class
+  - severity: Critical
+    location: "Design \xA7 compaction_probe"
+    problem: "SC-5 asserts keyword survives simulated compacted-summary. Step 4 applies\
+      \ compact_20260112 \u2014 non-deterministic LLM summarization. Single run pass\
+      \ tells nothing about next run. Statistical confidence interval, n-trial sampling,\
+      \ seed-pinning absent. CI gate flake blocks all PRs. Keyword presence trivial\
+      \ false-positive; ORCHESTRA-TLDR- prefix mentioned as fallback not default."
+    raised_by:
+    - adversarial
+    scope: class
+  - severity: Critical
+    location: "Design \xA7 Lessons skill"
+    problem: "HTML-encode + 200-char cap does NOT close system-reminder injection\
+      \ trust boundary. Attacker can inject prompt-steering text within 200-char limit\
+      \ (e.g., observed=ignore prior rules; expected=approve immediately). Fields\
+      \ still LLM-readable natural language in system-priority context. Allowlist\
+      \ \u2260 neutralization. Doc claims trust-boundary break closed \u2014 narrowed,\
+      \ not closed."
+    raised_by:
+    - adversarial
+    scope: class
+  - severity: Important
+    location: "Design \xA7 Hook architecture"
+    problem: Fail-loud hook on missing interpreter exits non-zero on SessionStart
+      but doc does not specify Claude Code behavior when SessionStart hook exits non-zero.
+      If aborts session, moved .venv bricks editor until reinstall. If ignores, fail-loud
+      evaporates. Contract with Claude Code hook runtime under non-zero exit unstated.
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Important
+    location: "Design \xA7 Hook architecture"
+    problem: ".claude/state/turn-counter.json has no concurrency protection. Two concurrent\
+      \ Claude Code windows on same repo race on read-increment-write. Lost updates\
+      \ skew 5th cadence; corrupt JSON on partial write breaks hook. No file-lock,\
+      \ no atomic-write, no schema-validate-on-read. Counter never resets \u2014 global\
+      \ vs per-session never stated."
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Important
+    location: "Design \xA7 lessons_lint"
+    problem: Lessons file unbounded append-only. After year of heavy use 10K+ entries.
+      lessons_lint scans 90d = multiple files. Parsing performance, YAML-injection
+      resilience on malformed entries, memory bounds unspecified. Should partial-parse
+      + isolate broken entries.
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Important
+    location: "Edge Cases \xA7 Lessons file git merge conflict"
+    problem: "Append-only at EOF \u2192 standard git auto-merge succeeds is false\
+      \ in practice. Two contributors appending to same EOF line produces conflict\
+      \ on trailing-newline/final-bullet boundary in ~50% of real cases. Need per-entry\
+      \ separator, per-contributor sub-files, or explicit conflict runbook."
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Important
+    location: "Design \xA7 lessons_lint"
+    problem: "Once rule's TLDR hits 7 bullets, auto-promotion silently stops working\
+      \ for that rule \u2014 recurring violations go undetected-actionable. lessons_lint\
+      \ should emit consolidation-required proxy artifact. Without it, most-violated\
+      \ rules (most disciplinary-needed) hit ceiling first and stop being maintained."
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Important
+    location: "Success Criteria \xA7 SC-10"
+    problem: "sys.executable captured at install pins to current venv path. Install\
+      \ from system Python (no venv active) \u2192 hook commands point to system python\
+      \ lacking orchestra deps. Install-time validation only checks interpreter exists+executable,\
+      \ not imports cli.hooks. Hook fails at first session start. Install should attempt\
+      \ python -c import cli.hooks.session_start_inject before writing."
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Important
+    location: "Design \xA7 compaction_probe"
+    problem: "CI gate requires ANTHROPIC_API_KEY + calls API per PR touching schema-layer.\
+      \ Burns API spend per PR (no cost ceiling, no cache of identical TLDR\u2192\
+      summary). Every PR dependent on Anthropic API availability. Leaks PR rule content\
+      \ to Anthropic. compact_20260112 model is moving target \u2014 deprecation could\
+      \ silently change behavior."
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Important
+    location: "Edge Cases \xA7 Concurrent plugin SessionStart hooks"
+    problem: "[ORCHESTRA TLDR] prefix marker informational not enforced. Multiple\
+      \ plugins emitting additionalContext concatenate in undocumented order. Later-loaded\
+      \ plugin could emit system-reminder claiming ignore prior TLDR \u2014 no precedence\
+      \ rule. Concatenation order opaque. Under adversarial co-resident plugin, prefix\
+      \ is not sufficient disambiguation."
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Important
+    location: "Success Criteria \xA7 SC-12"
+    problem: Tests listed but no test asserts actual end-to-end durability (TLDR keyword
+      survives real /compact event in live Claude Code session). All testing against
+      compact_20260112 API in isolation. Bridge between API compact preserves keyword
+      and Claude Code session-level /compact preserves keyword unstated. Manual verification
+      exists but not gated.
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Important
+    location: "Design \xA7 lessons_apply"
+    problem: lessons_apply mutates .claude/rules/<rule>.md (canon-frozen-eligible
+      per LLD-006-r4). Doc says proxy+target committed together but does not specify
+      what happens when target is canon-frozen and requires supersession (rN bump).
+      For .claude/rules/*.md, supersession convention undefined in LLD-006 grammar.
+      lessons_apply hits undefined canon-frozen path.
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Important
+    location: "Success Criteria \xA7 SC-3"
+    problem: "docs/lessons/ committed to git + read by hooks at every session start.\
+      \ If malicious entry lands, next session injects to system-priority context.\
+      \ No review gate on lesson entries before they reach injection \u2014 /orchestra:violation\
+      \ writes directly. Only post-hoc detection. Two-step gate applies to TLDR mutation\
+      \ NOT to lesson-injection. Injection trust-boundary lower than design implies."
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Important
+    location: "Design \xA7 Lessons skill"
+    problem: "Rule-id allowlist computed dynamically at command-invocation. Attacker\
+      \ adds .claude/rules/evil.md in PR, then /orchestra:violation --rule=evil becomes\
+      \ valid. Allowlist self-extends with attack surface. Rules referenced by lessons\
+      \ must exist AND have TLDR section AND be in previously-merged state \u2014\
+      \ doc doesn't specify any of this."
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Important
+    location: "Edge Cases \xA7 User runs /orchestra:teach"
+    problem: "Check is if not (repo_root / .claude/orchestra.json).exists(). repo_root\
+      \ discovery method unspecified \u2014 git rev-parse, pwd, walking up? In submodules/worktrees,\
+      \ repo_root ambiguous. Hook in worktree may discover wrong orchestra.json. Schema-validated\
+      \ at every load \u2014 schema version skew handling unstated."
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Minor
+    location: "Design \xA7 TLDR section format"
+    problem: "\u226480 chars per bullet \u2014 Unicode width unspecified. Bullet using\
+      \ box-drawing or emoji may pass byte-count but fail visual-width attention budget.\
+      \ Bullets with inline code spans count fence chars against budget (wrong abstraction\
+      \ \u2014 visual \u2260 syntactic cost)."
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Minor
+    location: "Edge Cases \xA7 Claude Code auto-memory"
+    problem: orchestra hook emits delta when CLAUDE.md re-injection detected via probe.
+      Probe mechanism undefined. How does hook know auto-memory injected CLAUDE.md
+      this session? No documented Claude Code API. Likely silent assumption that fails
+      when auto-memory feature changes shape.
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Minor
+    location: "Success Criteria \xA7 SC-13"
+    problem: ".claude/CLAUDE.md references new TLDR convention in 2-3 sentence subsection\
+      \ \u2014 this prose addition runs counter to rule-compression thesis of LLD\
+      \ itself. Convention should be self-evident from TLDR section's presence, not\
+      \ from explanatory prose that re-inflates file."
+    raised_by:
+    - adversarial
+    scope: instance
+- id: repo-context
+  model: claude-opus-4-7
+  mandatory: false
+  rubric_version: repo-context-v1
+  status: completed
+  verdict: conditional_pass
+  findings:
+  - severity: Critical
+    location: "Design \xA7 lessons_lint and auto-promotion"
+    problem: "Cites cli/spec_review.py:376-394 as location of canonicalize_doc_path,\
+      \ but function actually defined at line 416. Lines 376-394 contain _retrieve_doc_bytes_by_blob_sha\
+      \ + start of _detect_schema_version \u2014 cited symbol does not appear at cited\
+      \ line range. Changelog iter-2 row claims this exact cite was fix for prior\
+      \ stale 269-287 cite, but new range also stale."
+    raised_by:
+    - repo-context
+    scope: instance
+  - severity: Important
+    location: "Changelog \xA7 all iter rows"
+    problem: "Cited attestation/codex review paths use stale extensions. Actual files\
+      \ on disk are 012-rule-durability-and-learning-layer-r1.orchestra.review.yaml,\
+      \ r1.codex.review.md, r2.orchestra.review.yaml, 2026-05-11-lld-012-v18-implementation-r2.orchestra.review.yaml.\
+      \ Doc cites .review.yaml / .codex.md (missing .orchestra and .review segments)\
+      \ \u2014 none of cited paths resolve as written."
+    raised_by:
+    - repo-context
+    scope: class
+- id: architectural-fit
+  model: claude-opus-4-7
+  mandatory: false
+  rubric_version: architectural-fit-v1
+  status: completed
+  verdict: pass
+  findings:
+  - severity: Minor
+    location: "Related Documents \xA7 orchestra-philosophy entry"
+    problem: Cites docs/design/orchestra-philosophy-r2.md (revision-suffixed path)
+      rather than bare-name canonical form docs/design/orchestra-philosophy.md required
+      by LLD-006-r4 for design-type docs (bare-name one-per-component grammar). -r2
+      suffix pins to specific revision and will go stale on next supersession.
+    raised_by:
+    - architectural-fit
+    scope: instance
+  - severity: Minor
+    location: "Related Documents \xA7 orchestra-philosophy-r2 + SC-13"
+    problem: LLD-012 introduces Karpathy K1/K2/K3/K4/K8 three-layer taxonomy as canon
+      and SC-13 commits to adding to orchestra-philosophy-r2.md Changelog, but as
+      of this review target Design Doc contains NO Karpathy/three-layer content. Cross-ref
+      direction forward-only until impl. Acceptable as planned sync but creates temporary
+      cross-link inconsistency until SC-13 executed.
+    raised_by:
+    - architectural-fit
+    scope: instance
+  justification: "Doc Status: Draft, no supersession claim \u2192 integrity N/A. No\
+    \ active ADR Decision contradicted: ADR-001 governs .claude/orchestra.json; LLD-012\
+    \ new .claude/settings.json is Claude Code hook-settings file (separate surface),\
+    \ doc preserves orchestra.json as init marker. No Design Doc invariant violated:\
+    \ schema-layer/committed-by-default stance honored. LLD-008 r8 + LLD-006-r4 cited\
+    \ correctly. Both referenced LLDs exist. Two Minor stylistic issues do not block\
+    \ architectural fit."
+findings_aggregated:
+- severity: Important
+  location: "Changelog \xA7 all iter rows"
+  problem: "Cited attestation/codex review paths use stale extensions. Actual files\
+    \ on disk are 012-rule-durability-and-learning-layer-r1.orchestra.review.yaml,\
+    \ r1.codex.review.md, r2.orchestra.review.yaml, 2026-05-11-lld-012-v18-implementation-r2.orchestra.review.yaml.\
+    \ Doc cites .review.yaml / .codex.md (missing .orchestra and .review segments)\
+    \ \u2014 none of cited paths resolve as written."
+  raised_by:
+  - repo-context
+  scope: class
+- severity: Important
+  location: "Design \xA7 compaction_probe"
+  problem: "Apply Claude API compact_20260112 \u2014 no citation for this API identifier.\
+    \ If real, needs doc link; if speculative, probe rests on unverified infrastructure."
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Critical
+  location: "Design \xA7 compaction_probe"
+  problem: "SC-5 asserts keyword survives simulated compacted-summary. Step 4 applies\
+    \ compact_20260112 \u2014 non-deterministic LLM summarization. Single run pass\
+    \ tells nothing about next run. Statistical confidence interval, n-trial sampling,\
+    \ seed-pinning absent. CI gate flake blocks all PRs. Keyword presence trivial\
+    \ false-positive; ORCHESTRA-TLDR- prefix mentioned as fallback not default."
+  raised_by:
+  - adversarial
+  scope: class
+- severity: Important
+  location: "Design \xA7 compaction_probe"
+  problem: "CI gate requires ANTHROPIC_API_KEY + calls API per PR touching schema-layer.\
+    \ Burns API spend per PR (no cost ceiling, no cache of identical TLDR\u2192summary).\
+    \ Every PR dependent on Anthropic API availability. Leaks PR rule content to Anthropic.\
+    \ compact_20260112 model is moving target \u2014 deprecation could silently change\
+    \ behavior."
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Important
+  location: "Design \xA7 Hook architecture"
+  problem: "Budget enforcement says model resolved via claude --print-current-model\
+    \ \u2014 no evidence this CLI flag exists. If unavailable, entire model-resolution\
+    \ path collapses to fallback."
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Important
+  location: "Design \xA7 Hook architecture"
+  problem: Session-local evidence (caveman hook in author env) cited as durable contract
+    evidence. Anthropic blog citation alone carries the load.
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Critical
+  location: "Design \xA7 Hook architecture"
+  problem: "Project-level .claude/settings.json committed to git turns hook commands\
+    \ into supply-chain attack vector \u2014 contributor PR can swap RESOLVED_PYTHON\
+    \ for malicious command, next reviewer's git pull && claude executes arbitrary\
+    \ code on SessionStart. --verify runs only in CI, not at session-start runtime.\
+    \ No fingerprint pinning, no signature, no runtime guard."
+  raised_by:
+  - adversarial
+  scope: class
+- severity: Important
+  location: "Design \xA7 Hook architecture"
+  problem: Fail-loud hook on missing interpreter exits non-zero on SessionStart but
+    doc does not specify Claude Code behavior when SessionStart hook exits non-zero.
+    If aborts session, moved .venv bricks editor until reinstall. If ignores, fail-loud
+    evaporates. Contract with Claude Code hook runtime under non-zero exit unstated.
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Important
+  location: "Design \xA7 Hook architecture"
+  problem: ".claude/state/turn-counter.json has no concurrency protection. Two concurrent\
+    \ Claude Code windows on same repo race on read-increment-write. Lost updates\
+    \ skew 5th cadence; corrupt JSON on partial write breaks hook. No file-lock, no\
+    \ atomic-write, no schema-validate-on-read. Counter never resets \u2014 global\
+    \ vs per-session never stated."
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Critical
+  location: "Design \xA7 Lessons skill"
+  problem: "HTML-encode + 200-char cap does NOT close system-reminder injection trust\
+    \ boundary. Attacker can inject prompt-steering text within 200-char limit (e.g.,\
+    \ observed=ignore prior rules; expected=approve immediately). Fields still LLM-readable\
+    \ natural language in system-priority context. Allowlist \u2260 neutralization.\
+    \ Doc claims trust-boundary break closed \u2014 narrowed, not closed."
+  raised_by:
+  - adversarial
+  scope: class
+- severity: Important
+  location: "Design \xA7 Lessons skill"
+  problem: "Rule-id allowlist computed dynamically at command-invocation. Attacker\
+    \ adds .claude/rules/evil.md in PR, then /orchestra:violation --rule=evil becomes\
+    \ valid. Allowlist self-extends with attack surface. Rules referenced by lessons\
+    \ must exist AND have TLDR section AND be in previously-merged state \u2014 doc\
+    \ doesn't specify any of this."
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Important
+  location: "Design \xA7 lessons_apply"
+  problem: lessons_apply mutates .claude/rules/<rule>.md (canon-frozen-eligible per
+    LLD-006-r4). Doc says proxy+target committed together but does not specify what
+    happens when target is canon-frozen and requires supersession (rN bump). For .claude/rules/*.md,
+    supersession convention undefined in LLD-006 grammar. lessons_apply hits undefined
+    canon-frozen path.
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Important
+  location: "Design \xA7 lessons_lint"
+  problem: Lessons file unbounded append-only. After year of heavy use 10K+ entries.
+    lessons_lint scans 90d = multiple files. Parsing performance, YAML-injection resilience
+    on malformed entries, memory bounds unspecified. Should partial-parse + isolate
+    broken entries.
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Important
+  location: "Design \xA7 lessons_lint"
+  problem: "Once rule's TLDR hits 7 bullets, auto-promotion silently stops working\
+    \ for that rule \u2014 recurring violations go undetected-actionable. lessons_lint\
+    \ should emit consolidation-required proxy artifact. Without it, most-violated\
+    \ rules (most disciplinary-needed) hit ceiling first and stop being maintained."
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Critical
+  location: "Design \xA7 lessons_lint and auto-promotion"
+  problem: 'Two-step gate illusory under malicious-contributor model. Anyone with
+    commit access can: (a) craft proxy artifact with arbitrary TLDR mutation, (b)
+    commit passing attestation YAML (no signature/judge-identity verification), (c)
+    wait for maintainer to run lessons_apply. Attestation forgery unaddressed. lessons_apply
+    must validate proxy provenance AND attestation authenticity, neither specified.'
+  raised_by:
+  - adversarial
+  scope: class
+- severity: Critical
+  location: "Design \xA7 lessons_lint and auto-promotion"
+  problem: "Cites cli/spec_review.py:376-394 as location of canonicalize_doc_path,\
+    \ but function actually defined at line 416. Lines 376-394 contain _retrieve_doc_bytes_by_blob_sha\
+    \ + start of _detect_schema_version \u2014 cited symbol does not appear at cited\
+    \ line range. Changelog iter-2 row claims this exact cite was fix for prior stale\
+    \ 269-287 cite, but new range also stale."
+  raised_by:
+  - repo-context
+  scope: instance
+- severity: Important
+  location: "Design \xA7 lessons_lint step 3"
+  problem: "Tie-break specifies most-recent on count-tie + lexicographic on observed\
+    \ if recency ties. Recency implies timestamp but lessons append-only per-month\
+    \ \u2014 tie-recency across months not specified."
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Minor
+  location: "Design \xA7 TLDR section format"
+  problem: "\u226480 chars per bullet \u2014 Unicode width unspecified. Bullet using\
+    \ box-drawing or emoji may pass byte-count but fail visual-width attention budget.\
+    \ Bullets with inline code spans count fence chars against budget (wrong abstraction\
+    \ \u2014 visual \u2260 syntactic cost)."
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Minor
+  location: "Edge Cases \xA7 Claude Code auto-memory"
+  problem: orchestra hook emits delta when CLAUDE.md re-injection detected via probe.
+    Probe mechanism undefined. How does hook know auto-memory injected CLAUDE.md this
+    session? No documented Claude Code API. Likely silent assumption that fails when
+    auto-memory feature changes shape.
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Minor
+  location: "Edge Cases \xA7 Concurrent plugin SessionStart"
+  problem: "[ORCHESTRA TLDR] marker placed outside system-reminder wrap \u2014 appears\
+    \ in user-visible context. Unclear if intentional or marker should be inside wrap\
+    \ for system-priority interpretation."
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Important
+  location: "Edge Cases \xA7 Concurrent plugin SessionStart hooks"
+  problem: "[ORCHESTRA TLDR] prefix marker informational not enforced. Multiple plugins\
+    \ emitting additionalContext concatenate in undocumented order. Later-loaded plugin\
+    \ could emit system-reminder claiming ignore prior TLDR \u2014 no precedence rule.\
+    \ Concatenation order opaque. Under adversarial co-resident plugin, prefix is\
+    \ not sufficient disambiguation."
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Important
+  location: "Edge Cases \xA7 Lessons file git merge conflict"
+  problem: "Append-only at EOF \u2192 standard git auto-merge succeeds is false in\
+    \ practice. Two contributors appending to same EOF line produces conflict on trailing-newline/final-bullet\
+    \ boundary in ~50% of real cases. Need per-entry separator, per-contributor sub-files,\
+    \ or explicit conflict runbook."
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Important
+  location: "Edge Cases \xA7 User runs /orchestra:teach"
+  problem: "Check is if not (repo_root / .claude/orchestra.json).exists(). repo_root\
+    \ discovery method unspecified \u2014 git rev-parse, pwd, walking up? In submodules/worktrees,\
+    \ repo_root ambiguous. Hook in worktree may discover wrong orchestra.json. Schema-validated\
+    \ at every load \u2014 schema version skew handling unstated."
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Important
+  location: "Problem Statement \xA7 industry-converged patterns"
+  problem: "60\u219290% compliance is practitioner evidence honestly flagged but LLD\
+    \ never states measured target for orchestra deployment. No internal success metric\
+    \ for durability layer."
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Minor
+  location: "Related Documents \xA7 LLD-011 entry"
+  problem: "Feed back here mechanism for plateau-\u2192-lesson capture path not specified.\
+    \ Spell out or remove coupling claim."
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Minor
+  location: "Related Documents \xA7 orchestra-philosophy entry"
+  problem: Cites docs/design/orchestra-philosophy-r2.md (revision-suffixed path) rather
+    than bare-name canonical form docs/design/orchestra-philosophy.md required by
+    LLD-006-r4 for design-type docs (bare-name one-per-component grammar). -r2 suffix
+    pins to specific revision and will go stale on next supersession.
+  raised_by:
+  - architectural-fit
+  scope: instance
+- severity: Minor
+  location: "Related Documents \xA7 orchestra-philosophy-r2 + SC-13"
+  problem: LLD-012 introduces Karpathy K1/K2/K3/K4/K8 three-layer taxonomy as canon
+    and SC-13 commits to adding to orchestra-philosophy-r2.md Changelog, but as of
+    this review target Design Doc contains NO Karpathy/three-layer content. Cross-ref
+    direction forward-only until impl. Acceptable as planned sync but creates temporary
+    cross-link inconsistency until SC-13 executed.
+  raised_by:
+  - architectural-fit
+  scope: instance
+- severity: Minor
+  location: "Scope \xA7 In Scope"
+  problem: Bullet says per turn but token cap applies per emission (only every 5th
+    turn). Wording could mislead reader.
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Important
+  location: "Success Criteria \xA7 SC-10"
+  problem: "sys.executable captured at install pins to current venv path. Install\
+    \ from system Python (no venv active) \u2192 hook commands point to system python\
+    \ lacking orchestra deps. Install-time validation only checks interpreter exists+executable,\
+    \ not imports cli.hooks. Hook fails at first session start. Install should attempt\
+    \ python -c import cli.hooks.session_start_inject before writing."
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Important
+  location: "Success Criteria \xA7 SC-12"
+  problem: Tests listed but no test asserts actual end-to-end durability (TLDR keyword
+    survives real /compact event in live Claude Code session). All testing against
+    compact_20260112 API in isolation. Bridge between API compact preserves keyword
+    and Claude Code session-level /compact preserves keyword unstated. Manual verification
+    exists but not gated.
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Important
+  location: "Success Criteria \xA7 SC-13"
+  problem: "SC-13 references K1/K2/K3/K4/K8 lineage but Problem Statement only cites\
+    \ K2 + K3 explicitly; K1/K4/K8 introduced only in Related Documents without being\
+    \ established in body \u2014 fresh reader cannot verify lineage without external\
+    \ context."
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Minor
+  location: "Success Criteria \xA7 SC-13"
+  problem: ".claude/CLAUDE.md references new TLDR convention in 2-3 sentence subsection\
+    \ \u2014 this prose addition runs counter to rule-compression thesis of LLD itself.\
+    \ Convention should be self-evident from TLDR section's presence, not from explanatory\
+    \ prose that re-inflates file."
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Important
+  location: "Success Criteria \xA7 SC-14"
+  problem: SC-14 + Design consistent on 500-token budget. Neither states what happens
+    when UserPromptSubmit hook errors (e.g., turn-counter corrupted). Edge cases cover
+    settings.json malformed but not state-file corruption.
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Critical
+  location: "Success Criteria \xA7 SC-3"
+  problem: "Token budget depends on Anthropic count_tokens API at hook runtime \u2014\
+    \ hooks fire on every SessionStart + every Nth UserPromptSubmit. Network failure,\
+    \ rate-limit, expired key, offline dev all break budget check. Fallback identity\
+    \ index not bounded by local tokenizer either. No local tokenizer fallback, no\
+    \ cache, no timeout. UX latency on every 5th prompt unstated."
+  raised_by:
+  - adversarial
+  scope: class
+- severity: Important
+  location: "Success Criteria \xA7 SC-3"
+  problem: "docs/lessons/ committed to git + read by hooks at every session start.\
+    \ If malicious entry lands, next session injects to system-priority context. No\
+    \ review gate on lesson entries before they reach injection \u2014 /orchestra:violation\
+    \ writes directly. Only post-hoc detection. Two-step gate applies to TLDR mutation\
+    \ NOT to lesson-injection. Injection trust-boundary lower than design implies."
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Important
+  location: "Success Criteria \xA7 SC-5"
+  problem: SC-5 says probe asserts keyword survives simulated compacted-summary text.
+    Design step 4 says Apply Claude API compact_20260112 (real API call). Edge-cases
+    requires ANTHROPIC_API_KEY. Inconsistency simulated vs real-API.
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Important
+  location: "Success Criteria \xA7 SC-6"
+  problem: "SC-6 says SKILL.md does NOT use commands: frontmatter list but Design\
+    \ \xA7 Lessons skill does not restate this no-commands constraint; SCs authoritative\
+    \ per Class-B but Design should mirror."
+  raised_by:
+  - semantic
+  scope: instance
 overall_verdict: fail
-required_followup:
-- "Fix stale citation: `cli/spec_review.py:269-287` \u2192 376-394 (live HEAD line\
-  \ range for canonicalize_doc_path)."
-- 'Update Architecture mermaid: lessons_lint writes proxy only (no auto-spec-review,
-  no target mutation); add cli.lessons_apply user-invoked step; add UserPromptSubmit
-  hook participant + flow per SC-14.'
-- 'Reconcile SC-7: assign auto-promote producer to cli.lessons_apply (per SC-9); align
-  cross-references.'
-- Add SC-14 UserPromptSubmit turn-counter test to SC-12 master list.
-- 'Update test_lessons_lint.py description: remove `spec-review triggered on proxy
-  path`; replace with `proxy artifact written + lessons_lint exits 0`.'
-- "Document `source: auto-promote` producer inside Design \xA7 Lessons skill (resolve\
-  \ dangling forward reference)."
-- Drop hardcoded `-r1` from cli.lessons_apply API row; document iteration-aware attestation
-  lookup.
-- Inline 1-line gloss for Karpathy K2/K4/K8 first time cited, OR drop from SC-13 if
-  decorative.
-notes: "Iter-2 status: Class A/B/C/D batch fixes LANDED on Problem Statement, API\
-  \ Changes table, Edge Cases, Security Considerations. SC-14 (UserPromptSubmit) and\
-  \ Out-of-Scope row for workflow.md/skills-registry.md present and well-stated.\n\
-  \nBatch fix introduced regressions iter-1 could not have caught: (1) Architecture\
-  \ mermaid NOT updated alongside SC-8/9 reconciliation \u2014 still shows pre-Class-B\
-  \ flow; (2) SC-14 UserPromptSubmit absent from mermaid participants; (3) test_lessons_lint.py\
-  \ description contradicts SC-8; (4) SC-7 attributes auto-promote producer wrong;\
-  \ (5) stale cli/spec_review.py:269-287 citation slipped through Class A.\n\nConcrete\
-  \ Design \u2194 Success Criteria contradictions. Would cause implementer to ship\
-  \ Class-B-violating code following the mermaid or test description literally. Recommend\
-  \ tight iter-3 focused on Architecture diagram rewrite + SC-7 producer reconciliation\
-  \ + citation fix; rest of doc in good shape.\n"
+overall_verdict_basis:
+  worst_sub_judge_verdict: fail
+  excluded_sub_judges: []
+  mandatory_failures: []
+  reason: null
+attestation_integrity_hash: sha256:b3a841e9cea97559200f7867d66a2f10b72b7836e344ba9040a64752901b739d

@@ -1,0 +1,979 @@
+schema_version: '2.0'
+doc_subject:
+  path: docs/plans/2026-05-11-lld-012-v18-implementation.md
+  content_hash: sha256:c4d8b52bab068821a4bcef78a6f2922e5d6c3ac6e829c83425bbb5006b8b4cb9
+  iter_commit_sha: a35a0f7df7623a762ceda2406a86dcc412634628
+  iter_blob_sha: 2817863cd5258a3a5091cf8712c784c68cdae401
+  iteration: 2
+peer_judge:
+  id: orchestra:spec-reviewer
+  invoked_at: '2026-05-11T18:04:08Z'
+  context_isolation: fresh_subagent_per_subjudge
+sub_judges:
+- id: structure
+  model: claude-sonnet-4-6
+  mandatory: false
+  rubric_version: structure-v1
+  status: completed
+  verdict: conditional_pass
+  findings:
+  - severity: Important
+    location: "Metadata block \xA7 header"
+    problem: Doc ID 2026-05-11-lld-012-v18-implementation does not match Plan grammar
+      YYYY-MM-DD-name.md (the -v18- token embeds version suffix). Filename should
+      be 2026-05-11-lld-012-implementation.md OR Doc ID match disk filename.
+    raised_by:
+    - structure
+    scope: instance
+  - severity: Important
+    location: "Metadata block \xA7 header"
+    problem: No Mermaid phase-dependency / flow diagram. STANDARDS.md mandates flow/sequence
+      diagram for Implementation Plans. Nine sequential phases with conditional gates
+      + parallel-session dependency requires phase-dependency diagram.
+    raised_by:
+    - structure
+    scope: instance
+  - severity: Minor
+    location: "Phase 2 \xA7 Slices 2.3 2.4 2.5"
+    problem: Stub entries (single-word lines) with no Test/Impl/Commit fields, breaking
+      structural pattern established by every other slice. Commit message should be
+      spelled out for consistency.
+    raised_by:
+    - structure
+    scope: instance
+  - severity: Minor
+    location: "Phase 7 \xA7 Slice 7.1"
+    problem: Slice 7.1 lists Test and Impl block but no Commit line, unlike every
+      other slice. Missing commit message field breaks consistency.
+    raised_by:
+    - structure
+    scope: instance
+- id: semantic
+  model: claude-opus-4-7
+  mandatory: true
+  rubric_version: semantic-v1
+  status: completed
+  verdict: conditional_pass
+  findings:
+  - severity: Important
+    location: "Header \xA7 Tech stack"
+    problem: Anthropic SDK pin anthropic>=0.40,<1.0 cited in Slice 1.0 has no evidence/citation
+      confirming this range supports count_tokens + compact_20260112 APIs in slices
+      3.2 and 6.6; should-work assertion without verification.
+    raised_by:
+    - semantic
+    scope: instance
+  - severity: Important
+    location: "Header \xA7 LLD-011 Phase 2 state"
+    problem: Claim lessons_apply schema-version-agnostic with v1.0 read-only support
+      has no corresponding test in Files-created table for v1.0 fallback path; Slice
+      6.3 only tests iteration-aware v2.0 lookup.
+    raised_by:
+    - semantic
+    scope: instance
+  - severity: Important
+    location: "Open questions \xA7 Q2"
+    problem: "Q2 says no Claude Code docs URL verified for claude --print-current-model\
+      \ yet Slice 3.2 proceeds with API-key-based count_tokens path without explicit\
+      \ decision on whether this CLI is invoked at all; slice impl does not state\
+      \ which model identifier passed to count_tokens \u2014 unresolved input."
+    raised_by:
+    - semantic
+    scope: instance
+  - severity: Important
+    location: "Phase 6 \xA7 Slice 6.2"
+    problem: "Tests reference LLD-012 \xA7lessons_lint step 3 tie-break and overflow\
+      \ consolidate-first rule \u2014 neither marker name nor rule semantics restated\
+      \ in plan; fresh reader cannot verify test asserts right thing without round-tripping\
+      \ to LLD."
+    raised_by:
+    - semantic
+    scope: instance
+  - severity: Important
+    location: "Phase 9 \xA7 Slice 9.2"
+    problem: "Rollback If 1 file fails supersede only that file's TLDR via Phase-2-style\
+      \ commit assumes Phase-2 commits individually revertable, but Phase 2 commits\
+      \ each modify single file \u2014 semantics are rewrite in place not revert.\
+      \ Wording ambiguous: new commit re-authoring TLDR, or git revert?"
+    raised_by:
+    - semantic
+    scope: instance
+  - severity: Important
+    location: "Acceptance \xA7 Pytest baseline"
+    problem: "Estimate ~437 (estimate; final count depends on subtest granularity)\
+      \ is vague success criterion. Acceptance for ship gate should give exact expected\
+      \ count or explicit tolerance band; ~25 new tests \xB1 subtest granularity provides\
+      \ no measurable pass/fail line for CI."
+    raised_by:
+    - semantic
+    scope: instance
+  - severity: Important
+    location: "Phase 3 \xA7 Slice 3.2"
+    problem: Slice claims reuse session_start_inject's emit helper, but Slice 3.1
+      impl description does not name an emit helper as exported symbol; cross-slice
+      dependency on unnamed function is implicit contract fresh reader cannot verify
+      exists.
+    raised_by:
+    - semantic
+    scope: instance
+  - severity: Important
+    location: "Files NOT touched \xA7 cli/spec_review.py canonical-scope"
+    problem: 'Note references task #14 / pending BUG-NEW; fresh reader cannot resolve
+      task #14 without external session context (TaskList).'
+    raised_by:
+    - semantic
+    scope: instance
+  - severity: Minor
+    location: "Phase 2 \xA7 Slice 2.1"
+    problem: "python -m cli.tldr_extractor as one-shot CLI surfaced for verification\
+      \ \u2014 Files-created table describes cli/tldr_extractor.py as pure-parsing\
+      \ regex no I/O, contradicts having __main__ CLI surface."
+    raised_by:
+    - semantic
+    scope: instance
+  - severity: Minor
+    location: "Phase 6 \xA7 Slice 6.5"
+    problem: Test asserts ORCHESTRA-TLDR- prefix on collision; LLD-012 SC-5 cited
+      but plan does not restate what collision-risk with common English means operationally
+      (frequency list? regex match?). Fresh reader cannot author test from plan alone.
+    raised_by:
+    - semantic
+    scope: instance
+  - severity: Minor
+    location: "Changelog \xA7 iter-1 entry"
+    problem: 'Iter-1 Changelog entry uses TaskList tracking ID inline (task #14);
+      per repo CLAUDE.md task-tracking rule tasks are Claude-native ephemeral; pinning
+      task IDs in canon docs creates stale references once tasks complete/expire.'
+    raised_by:
+    - semantic
+    scope: instance
+- id: gate-compliance
+  model: claude-sonnet-4-6
+  mandatory: false
+  rubric_version: gate-compliance-v1
+  status: completed
+  verdict: conditional_pass
+  findings:
+  - severity: Important
+    location: "Header \xA7 metadata block"
+    problem: "Doc Status Draft at Iteration 2 but Changelog records iter-2 with verdict\
+      \ fail and rebase+iter-3 fix pass. Iteration header reads 2 while Changelog\
+      \ bottom describes iter-2 findings already applied and iteration bumped 2 \u2192\
+      \ 3. Header should read 3 to match Changelog narrative (or Changelog should\
+      \ reflect reverted iter-2)."
+    raised_by:
+    - gate-compliance
+    scope: instance
+  - severity: Minor
+    location: "Changelog \xA7 iter-2 entry"
+    problem: "Changelog entry states Iteration bumped 2 \u2192 3 but header Iteration\
+      \ field still shows 2. Changelog and header inconsistent per STANDARDS.md (header\
+      \ fields must reflect current state)."
+    raised_by:
+    - gate-compliance
+    scope: instance
+- id: adversarial
+  model: claude-opus-4-7
+  mandatory: true
+  rubric_version: adversarial-v1
+  status: completed
+  verdict: fail
+  findings:
+  - severity: Critical
+    location: "Slice 3.2 \xA7 Token budget enforcement"
+    problem: "SessionStart hook calls Anthropic count_tokens API synchronously on\
+      \ every session start \u2014 network latency/timeout blocks Claude Code startup.\
+      \ Fallback covers missing key but not slow/hanging API (no timeout specified).\
+      \ 30s API hang = 30s startup delay per session. Blast radius every user session\
+      \ every machine."
+    raised_by:
+    - adversarial
+    scope: class
+  - severity: Critical
+    location: "Slice 3.5 \xA7 turn-counter atomic write"
+    problem: "Q6 default os.replace atomic-write does NOT handle concurrent Claude\
+      \ Code sessions in same repo. Read-modify-write race: A reads counter=4, B reads\
+      \ counter=4, both write counter=5 \u2014 Nth-turn fires once instead of twice\
+      \ OR fires twice. State file shared across sessions has no file-lock; atomic-write\
+      \ only protects against torn writes not lost updates."
+    raised_by:
+    - adversarial
+    scope: class
+  - severity: Critical
+    location: "Slice 4.1 \xA7 sys.executable interpreter resolution"
+    problem: "sys.executable captured statically into settings.json. User reinstalls\
+      \ venv \u2192 captured path stale, hooks fail silently or fail-loud per slice\
+      \ 3.6 \u2014 Claude Code startup proceeds without TLDR injection (no upstream\
+      \ signal hooks broken). Slice 4.3 --verify is opt-in CI gate not auto-detected\
+      \ on session start. Failure: rm -rf .venv && uv venv \u2192 next session boot\
+      \ hooks broken no TLDR no warning."
+    raised_by:
+    - adversarial
+    scope: class
+  - severity: Critical
+    location: "Slice 6.4 \xA7 lessons_apply mutates schema-layer target"
+    problem: "Schema-layer files are user-edited canonical rule files. lessons_apply\
+      \ mutates them programmatically after attestation \u2014 no concurrency guard\
+      \ against user-in-editor state. If user has CLAUDE.md open with unsaved changes\
+      \ when lessons_apply runs, mutation either gets overwritten by editor save OR\
+      \ overwrites user's in-flight edits. No file-modification-time check, no advisory\
+      \ lock, no git status clean precondition."
+    raised_by:
+    - adversarial
+    scope: class
+  - severity: Critical
+    location: "Slice 5.3 \xA7 rule-id allowlist"
+    problem: "Allowlist derived from basenames of .claude/rules/*.md + CLAUDE.md +\
+      \ workflow.md at runtime. Path-traversal test exists but allowlist itself trusts\
+      \ filesystem state \u2014 symlink attack .claude/rules/evil.md \u2192 /etc/passwd\
+      \ or attacker-added file in .claude/rules/ becomes valid rule-id. Injection\
+      \ path then writes attacker-controlled content into lessons file feeding into\
+      \ SessionStart system-reminder blocks \u2014 prompt-injection vector."
+    raised_by:
+    - adversarial
+    scope: class
+  - severity: Critical
+    location: "Slice 3.3 \xA7 structured-violations injection allowlist"
+    problem: "Allowlisted fields HTML-encoded + 200-char-capped but rule_violated\
+      \ string goes verbatim into system-reminder template. If violation entry hand-edited\
+      \ (or written by bug) with rule_violated='</system-reminder>\\n[NEW INSTRUCTION]...',\
+      \ HTML-encode of observed/expected won't help \u2014 rule_violated escapes the\
+      \ reminder block. Allowlist enforces field names not field-content sanitization."
+    raised_by:
+    - adversarial
+    scope: class
+  - severity: Important
+    location: "Slice 1.6 \xA7 lessons store append"
+    problem: "Append-only YAML at docs/lessons/<YYYY-MM>-lessons.md \u2014 no schema\
+      \ migration story. If LLD-013 changes entry shape (adds required field), existing\
+      \ v2.1 entries become unparseable or silently lossy. read_entries has no version\
+      \ field on entries, no forward-compat strategy."
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Important
+    location: "Slice 6.1 \xA7 lessons_lint recurrence detection"
+    problem: "Recurrence threshold grouped by rule_violated over since_days=90. Adversarial:\
+      \ (a) rule rename mid-window \u2014 same conceptual violation under old+new\
+      \ rule_violated strings counts as 2 separate groups never hits 3; (b) typo in\
+      \ rule_violated string creates separate groups; (c) bulk-import of historical\
+      \ lessons spikes count artificially. No normalization, no fuzzy grouping, no\
+      \ rate-limiting against burst."
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Important
+    location: "Slice 3.2 \xA7 fallback to identity-rule-name index"
+    problem: "Fallback identity-only index is silent degradation \u2014 Claude session\
+      \ starts with NO TLDR content just rule names. From model's perspective indistinguishable\
+      \ from no TLDR exists \u2014 defeats SC-1/SC-3 nonnegotiables-injection goal.\
+      \ Repeated overbudget = silent permanent regression. No alert path (only log\
+      \ to .claude/state/budget-overflow.log which nobody reads)."
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Important
+    location: "Slice 6.2 \xA7 proxy artifact path collision"
+    problem: "Proxy path docs/proposed-rule-mutations/<rule>-<date>.md \u2014 multiple\
+      \ recurrences same rule same day collide. Second lint run overwrites first proxy\
+      \ without warning. lessons_apply iteration lookup reads Iteration: N from proxy,\
+      \ but if proxy overwritten between user spec-review and apply, attestation file\
+      \ may reference stale Iteration N while proxy says N+1. Slice 6.3 attestation\
+      \ lookup mismatches \u2192 refuse but root cause (path collision) unstated."
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Important
+    location: "Slice 9.1 \xA7 self-install"
+    problem: "Self-installing hooks on this repo means orchestra developers have dev\
+      \ sessions instrumented with code they're developing. Bug in slice 3.x hook\
+      \ handler \u2192 every subsequent dev session in this repo broken, including\
+      \ session where you'd fix the bug. No 'disable orchestra hooks for orchestra-dev'\
+      \ escape hatch. Bootstrap-paradox."
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Important
+    location: "Slice 6.6 \xA7 compaction_probe"
+    problem: "compact_20260112 is dated identifier \u2014 Anthropic may version-roll\
+      \ (compact_20260712). Probe hardcodes the dated string; on Anthropic side-rolling\
+      \ probe silently passes against OLD compact behavior while real /compact uses\
+      \ NEW. Drift undetectable. No version-pinning policy or compat-test."
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Important
+    location: "Slice 3.5 \xA7 ORCHESTRA_REINJECT_EVERY env var"
+    problem: "User-tunable N via env var default 5 \u2014 no validation. N=0 \u2192\
+      \ modulo-zero exception hook crashes every prompt \u2192 no Claude prompts succeed.\
+      \ N=-1 / N=abc / N=99999 all unspecified. Single env-var misconfiguration bricks\
+      \ Claude Code in repo."
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Important
+    location: "Slice 4.4 \xA7 merge with existing settings"
+    problem: Identification of orchestra entries by cli.hooks.* command prefix is
+      fragile. If another plugin invokes python -m cli.hooks.foo (different cli package
+      on PYTHONPATH), --uninstall removes it. No namespace marker (comment-key or
+      dedicated orchestra-managed wrapper). Cross-plugin collision risk grows with
+      ecosystem.
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Important
+    location: "Slice 7.2 \xA7 force-mode read-existing fail-closed"
+    problem: "Malformed YAML detection: if YAML parse fails abort overwrite. What\
+      \ defines malformed? Empty file (0 bytes) \u2014 does yaml.safe_load return\
+      \ None (clean) or raise? Truncated file mid-document \u2014 parse succeeds yielding\
+      \ partial data. Tabs vs spaces edge case. Underspecified contract."
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Important
+    location: "Header \xA7 Architecture bullet 3"
+    problem: "Portable interpreter resolution via sys.executable at install \u2014\
+      \ install may be invoked through pipx run, uv tool run, ephemeral container\
+      \ where sys.executable is a wrapper. Wrapper may not be long-lived path. No\
+      \ validation resolved interpreter is one user expects. --verify catches stale\
+      \ post-hoc; doesn't catch wrong-path at install."
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Important
+    location: "Phase 2 \xA7 TLDR authoring"
+    problem: "TLDR \u22647 bullets / \u226480 chars hard upper bound. Phase 6 compaction_probe\
+      \ is only behavioral check that compaction preserves keywords. TLDR authoring\
+      \ one-shot in Phase 2 \u2014 if probe fails Phase 9.2 with \u22652 file failures,\
+      \ plan says STOP interview possible LLD-r3. Phase 2 work potentially throwaway.\
+      \ No iterative authoring \u2192 probe-test loop within Phase 2. Risk register\
+      \ acknowledges but Phase 9 is where it surfaces \u2014 late."
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Important
+    location: "Slice 9.6 \xA7 tag ordering"
+    problem: "Tag points to slice 9.5 commit (Status flip). If HANDOFF spec-review\
+      \ fails (conditional_pass or fail), 9.5 may need revision before tagging \u2014\
+      \ but plan asserts slice 9.5 commit will be single small whitelist edit low\
+      \ risk. No contingency for HANDOFF spec-review failing \u2192 tag chain blocked\
+      \ indefinitely with no rollback procedure."
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Minor
+    location: "Slice 6.5 \xA7 keyword extraction"
+    problem: "First 4+ char noun per bullet \u2014 noun detection by what mechanism?\
+      \ No NLP dep declared; regex-based-on-capitalization fails on lower-case TLDR\
+      \ bullets. POS-tagger is new heavy dep not in slice 1.0. Underspecified."
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Minor
+    location: "Slice 1.4 \xA7 overflow rejects with diagnostic"
+    problem: "Reject if bullets >7 OR any bullet >80 chars \u2014 char-count includes\
+      \ or excludes leading - markdown bullet marker? Empty/whitespace lines counted\
+      \ as bullets? Off-by-one drift between authoring tool view and extractor view."
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Minor
+    location: "Slice 1.2 \xA7 missing close marker"
+    problem: 'Take content to EOF on missing close marker is fail-open: rule file
+      missing marker silently picks up ALL subsequent content as TLDR (potentially
+      100s of lines). Logs WARN but proceeds. Behavior should arguably be fail-loud
+      (reject) given TLDR is security-adjacent surface (gets system-reminder privilege).'
+    raised_by:
+    - adversarial
+    scope: instance
+- id: repo-context
+  model: claude-opus-4-7
+  mandatory: false
+  rubric_version: repo-context-v1
+  status: completed
+  verdict: fail
+  findings:
+  - severity: Critical
+    location: "Header \xA7 Rebased against"
+    problem: Plan asserts rebase target HEAD c56e85d but actual repo HEAD is a35a0f7
+      (verified git log). None of cited LLD-011 Phase 2 ship SHAs appear in recent
+      log. Rebased-against anchor stale or invalid; all Phase 7 line-number citations
+      calibrated to HEAD not current.
+    raised_by:
+    - repo-context
+    scope: class
+  - severity: Critical
+    location: "Phase 7 \xA7 Edit perimeter"
+    problem: Plan cites cli/spec_review.py lines 696-707 as v1.0-frozen-historical
+      refuse branch. Actual location at current HEAD is lines 717-728. Phase 7 reader
+      following plan will not find cited block at stated lines.
+    raised_by:
+    - repo-context
+    scope: class
+  - severity: Critical
+    location: "Phase 7 \xA7 Edit perimeter"
+    problem: Plan cites no force-passed exists refuse branch at lines 709-714. Actual
+      location at current HEAD is lines 730-735. Phase 7 insertion-perimeter described
+      between two cites both stale ~20 lines.
+    raised_by:
+    - repo-context
+    scope: class
+  - severity: Critical
+    location: "Risk register \xA7 cli/spec_review.py interaction surface"
+    problem: 'Plan cites PDSA gate at lines 720-724. Actual at current HEAD: PDSA
+      gate comment block begins at line 737 (lines 720-724 are inside v1.0-freeze
+      error message, not PDSA gate). Cite points to wrong code region.'
+    raised_by:
+    - repo-context
+    scope: class
+  - severity: Important
+    location: "File Structure \xA7 Files NOT touched"
+    problem: "Plan cites canonicalize_doc_path at cli/spec_review.py:408-422 (iter-2\
+      \ fixed 402\u2192408). Actual function signature at current HEAD is at line\
+      \ 416; body spans 416-434. Both iter-1 (376-394, 402-422) and iter-2 (408-422)\
+      \ line ranges stale \u2014 function at 416-434."
+    raised_by:
+    - repo-context
+    scope: instance
+  - severity: Important
+    location: "Files modified \xA7 plugin.json + marketplace.json"
+    problem: ".claude-plugin/plugin.json at 2.0.0 verified; marketplace.json plugins[0].version\
+      \ at 2.0.0 verified \u2014 claim accurate. However pyproject.toml version still\
+      \ 1.7.0 at HEAD and NOT enumerated in Files modified. If v2.1.0 ship intends\
+      \ plugin version bump, pyproject.toml version drift is missing file in modification\
+      \ list."
+    raised_by:
+    - repo-context
+    scope: instance
+  - severity: Important
+    location: "Header \xA7 LLD-011 Phase 2 state + Acceptance \xA7 Pytest baseline\
+      \ 412"
+    problem: "Plan claims commits 4c831c2, ab65734, 1b438da, 8f700d3, 9e4b3e0, c56e85d\
+      \ constitute LLD-011 Phase 2 ship with pytest baseline 412. These SHAs not present\
+      \ in last 20 commits at HEAD a35a0f7. Acceptance criterion 412 at HEAD c56e85d\
+      \ unverifiable from current repo \u2014 baseline figure may be inherited from\
+      \ divergent branch not landed on main."
+    raised_by:
+    - repo-context
+    scope: instance
+  - severity: Minor
+    location: "File Structure \xA7 Files created table"
+    problem: "New test files listed. Verified none of tests/test_tldr_extractor.py,\
+      \ tests/test_lessons_store.py, tests/test_install_claude_hooks.py, tests/integration/test_hook_emission.py\
+      \ exist at HEAD \u2014 consistent with new-files status. No accuracy issue,\
+      \ surfaced to confirm clean slate."
+    raised_by:
+    - repo-context
+    scope: instance
+- id: architectural-fit
+  model: claude-opus-4-7
+  mandatory: false
+  rubric_version: architectural-fit-v1
+  status: completed
+  verdict: conditional_pass
+  findings:
+  - severity: Important
+    location: "Header \xA7 LLD reference"
+    problem: "Plan header cites source LLD as Iteration 3 Status Draft but on-disk\
+      \ LLD frontmatter shows Iteration: 2. LLD Changelog confirms iter-3 bump was\
+      \ reverted to 2. Plan asserts cross-doc fact LLD itself contradicts \u2014 risk\
+      \ of reader confusion or auto-tooling lookup-miss for non-existent iter-3 review\
+      \ artifact."
+    raised_by:
+    - architectural-fit
+    scope: instance
+  - severity: Important
+    location: "Files NOT touched \xA7 canonicalize_doc_path"
+    problem: "Plan cites canonicalize_doc_path at cli/spec_review.py:408-422; LLD-012\
+      \ r2-final cites same function at cli/spec_review.py:376-394. Same architectural\
+      \ surface divergent locations across plan + LLD. Plan acknowledges post-c56e85d\
+      \ state but LLD was not re-rebased \u2014 leaves LLD/plan pair internally inconsistent\
+      \ on canonical-scope trust boundary both docs cite as foundational to proxy-artifact\
+      \ route (codex finding #1 mitigation)."
+    raised_by:
+    - architectural-fit
+    scope: instance
+  - severity: Minor
+    location: "Header \xA7 Architecture bullet 11"
+    problem: Plan's Architecture summary labels Phase 7 as Schema-v1 attestation overwrite
+      fail-closed but Phase 7 body correctly narrows scope to v2.0 attestations (v1.0
+      already frozen by LLD-011 slice 1.7). Summary contradicts perimeter; downstream
+      readers indexing on summary miss partial-supersession scoping.
+    raised_by:
+    - architectural-fit
+    scope: instance
+  - severity: Minor
+    location: "Phase 2 \xA7 Slice 2.6"
+    problem: "orchestra-philosophy-r2.md (Status Current Iteration 2) has no prior\
+      \ Karpathy entry in its Changelog. LLD-012 \xA7Related Documents already inlines\
+      \ K1/K2/K3/K4/K8 glosses claiming Design Doc reflects this lineage. Plan correctly\
+      \ schedules Changelog whitelist-append in Slice 2.6. LLD currently making forward\
+      \ reference to row that does not yet exist on target Design Doc \u2014 sequencing\
+      \ means cross-ref becomes true only after Phase 2 commits."
+    raised_by:
+    - architectural-fit
+    scope: instance
+findings_aggregated:
+- severity: Important
+  location: "Acceptance \xA7 Pytest baseline"
+  problem: "Estimate ~437 (estimate; final count depends on subtest granularity) is\
+    \ vague success criterion. Acceptance for ship gate should give exact expected\
+    \ count or explicit tolerance band; ~25 new tests \xB1 subtest granularity provides\
+    \ no measurable pass/fail line for CI."
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Minor
+  location: "Changelog \xA7 iter-1 entry"
+  problem: 'Iter-1 Changelog entry uses TaskList tracking ID inline (task #14); per
+    repo CLAUDE.md task-tracking rule tasks are Claude-native ephemeral; pinning task
+    IDs in canon docs creates stale references once tasks complete/expire.'
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Minor
+  location: "Changelog \xA7 iter-2 entry"
+  problem: "Changelog entry states Iteration bumped 2 \u2192 3 but header Iteration\
+    \ field still shows 2. Changelog and header inconsistent per STANDARDS.md (header\
+    \ fields must reflect current state)."
+  raised_by:
+  - gate-compliance
+  scope: instance
+- severity: Minor
+  location: "File Structure \xA7 Files created table"
+  problem: "New test files listed. Verified none of tests/test_tldr_extractor.py,\
+    \ tests/test_lessons_store.py, tests/test_install_claude_hooks.py, tests/integration/test_hook_emission.py\
+    \ exist at HEAD \u2014 consistent with new-files status. No accuracy issue, surfaced\
+    \ to confirm clean slate."
+  raised_by:
+  - repo-context
+  scope: instance
+- severity: Important
+  location: "File Structure \xA7 Files NOT touched"
+  problem: "Plan cites canonicalize_doc_path at cli/spec_review.py:408-422 (iter-2\
+    \ fixed 402\u2192408). Actual function signature at current HEAD is at line 416;\
+    \ body spans 416-434. Both iter-1 (376-394, 402-422) and iter-2 (408-422) line\
+    \ ranges stale \u2014 function at 416-434."
+  raised_by:
+  - repo-context
+  scope: instance
+- severity: Important
+  location: "Files modified \xA7 plugin.json + marketplace.json"
+  problem: ".claude-plugin/plugin.json at 2.0.0 verified; marketplace.json plugins[0].version\
+    \ at 2.0.0 verified \u2014 claim accurate. However pyproject.toml version still\
+    \ 1.7.0 at HEAD and NOT enumerated in Files modified. If v2.1.0 ship intends plugin\
+    \ version bump, pyproject.toml version drift is missing file in modification list."
+  raised_by:
+  - repo-context
+  scope: instance
+- severity: Important
+  location: "Files NOT touched \xA7 canonicalize_doc_path"
+  problem: "Plan cites canonicalize_doc_path at cli/spec_review.py:408-422; LLD-012\
+    \ r2-final cites same function at cli/spec_review.py:376-394. Same architectural\
+    \ surface divergent locations across plan + LLD. Plan acknowledges post-c56e85d\
+    \ state but LLD was not re-rebased \u2014 leaves LLD/plan pair internally inconsistent\
+    \ on canonical-scope trust boundary both docs cite as foundational to proxy-artifact\
+    \ route (codex finding #1 mitigation)."
+  raised_by:
+  - architectural-fit
+  scope: instance
+- severity: Important
+  location: "Files NOT touched \xA7 cli/spec_review.py canonical-scope"
+  problem: 'Note references task #14 / pending BUG-NEW; fresh reader cannot resolve
+    task #14 without external session context (TaskList).'
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Minor
+  location: "Header \xA7 Architecture bullet 11"
+  problem: Plan's Architecture summary labels Phase 7 as Schema-v1 attestation overwrite
+    fail-closed but Phase 7 body correctly narrows scope to v2.0 attestations (v1.0
+    already frozen by LLD-011 slice 1.7). Summary contradicts perimeter; downstream
+    readers indexing on summary miss partial-supersession scoping.
+  raised_by:
+  - architectural-fit
+  scope: instance
+- severity: Important
+  location: "Header \xA7 Architecture bullet 3"
+  problem: "Portable interpreter resolution via sys.executable at install \u2014 install\
+    \ may be invoked through pipx run, uv tool run, ephemeral container where sys.executable\
+    \ is a wrapper. Wrapper may not be long-lived path. No validation resolved interpreter\
+    \ is one user expects. --verify catches stale post-hoc; doesn't catch wrong-path\
+    \ at install."
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Important
+  location: "Header \xA7 LLD reference"
+  problem: "Plan header cites source LLD as Iteration 3 Status Draft but on-disk LLD\
+    \ frontmatter shows Iteration: 2. LLD Changelog confirms iter-3 bump was reverted\
+    \ to 2. Plan asserts cross-doc fact LLD itself contradicts \u2014 risk of reader\
+    \ confusion or auto-tooling lookup-miss for non-existent iter-3 review artifact."
+  raised_by:
+  - architectural-fit
+  scope: instance
+- severity: Important
+  location: "Header \xA7 LLD-011 Phase 2 state"
+  problem: Claim lessons_apply schema-version-agnostic with v1.0 read-only support
+    has no corresponding test in Files-created table for v1.0 fallback path; Slice
+    6.3 only tests iteration-aware v2.0 lookup.
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Important
+  location: "Header \xA7 LLD-011 Phase 2 state + Acceptance \xA7 Pytest baseline 412"
+  problem: "Plan claims commits 4c831c2, ab65734, 1b438da, 8f700d3, 9e4b3e0, c56e85d\
+    \ constitute LLD-011 Phase 2 ship with pytest baseline 412. These SHAs not present\
+    \ in last 20 commits at HEAD a35a0f7. Acceptance criterion 412 at HEAD c56e85d\
+    \ unverifiable from current repo \u2014 baseline figure may be inherited from\
+    \ divergent branch not landed on main."
+  raised_by:
+  - repo-context
+  scope: instance
+- severity: Important
+  location: "Header \xA7 metadata block"
+  problem: "Doc Status Draft at Iteration 2 but Changelog records iter-2 with verdict\
+    \ fail and rebase+iter-3 fix pass. Iteration header reads 2 while Changelog bottom\
+    \ describes iter-2 findings already applied and iteration bumped 2 \u2192 3. Header\
+    \ should read 3 to match Changelog narrative (or Changelog should reflect reverted\
+    \ iter-2)."
+  raised_by:
+  - gate-compliance
+  scope: instance
+- severity: Critical
+  location: "Header \xA7 Rebased against"
+  problem: Plan asserts rebase target HEAD c56e85d but actual repo HEAD is a35a0f7
+    (verified git log). None of cited LLD-011 Phase 2 ship SHAs appear in recent log.
+    Rebased-against anchor stale or invalid; all Phase 7 line-number citations calibrated
+    to HEAD not current.
+  raised_by:
+  - repo-context
+  scope: class
+- severity: Important
+  location: "Header \xA7 Tech stack"
+  problem: Anthropic SDK pin anthropic>=0.40,<1.0 cited in Slice 1.0 has no evidence/citation
+    confirming this range supports count_tokens + compact_20260112 APIs in slices
+    3.2 and 6.6; should-work assertion without verification.
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Important
+  location: "Metadata block \xA7 header"
+  problem: Doc ID 2026-05-11-lld-012-v18-implementation does not match Plan grammar
+    YYYY-MM-DD-name.md (the -v18- token embeds version suffix). Filename should be
+    2026-05-11-lld-012-implementation.md OR Doc ID match disk filename.
+  raised_by:
+  - structure
+  scope: instance
+- severity: Important
+  location: "Metadata block \xA7 header"
+  problem: No Mermaid phase-dependency / flow diagram. STANDARDS.md mandates flow/sequence
+    diagram for Implementation Plans. Nine sequential phases with conditional gates
+    + parallel-session dependency requires phase-dependency diagram.
+  raised_by:
+  - structure
+  scope: instance
+- severity: Important
+  location: "Open questions \xA7 Q2"
+  problem: "Q2 says no Claude Code docs URL verified for claude --print-current-model\
+    \ yet Slice 3.2 proceeds with API-key-based count_tokens path without explicit\
+    \ decision on whether this CLI is invoked at all; slice impl does not state which\
+    \ model identifier passed to count_tokens \u2014 unresolved input."
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Minor
+  location: "Phase 2 \xA7 Slice 2.1"
+  problem: "python -m cli.tldr_extractor as one-shot CLI surfaced for verification\
+    \ \u2014 Files-created table describes cli/tldr_extractor.py as pure-parsing regex\
+    \ no I/O, contradicts having __main__ CLI surface."
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Minor
+  location: "Phase 2 \xA7 Slice 2.6"
+  problem: "orchestra-philosophy-r2.md (Status Current Iteration 2) has no prior Karpathy\
+    \ entry in its Changelog. LLD-012 \xA7Related Documents already inlines K1/K2/K3/K4/K8\
+    \ glosses claiming Design Doc reflects this lineage. Plan correctly schedules\
+    \ Changelog whitelist-append in Slice 2.6. LLD currently making forward reference\
+    \ to row that does not yet exist on target Design Doc \u2014 sequencing means\
+    \ cross-ref becomes true only after Phase 2 commits."
+  raised_by:
+  - architectural-fit
+  scope: instance
+- severity: Minor
+  location: "Phase 2 \xA7 Slices 2.3 2.4 2.5"
+  problem: Stub entries (single-word lines) with no Test/Impl/Commit fields, breaking
+    structural pattern established by every other slice. Commit message should be
+    spelled out for consistency.
+  raised_by:
+  - structure
+  scope: instance
+- severity: Important
+  location: "Phase 2 \xA7 TLDR authoring"
+  problem: "TLDR \u22647 bullets / \u226480 chars hard upper bound. Phase 6 compaction_probe\
+    \ is only behavioral check that compaction preserves keywords. TLDR authoring\
+    \ one-shot in Phase 2 \u2014 if probe fails Phase 9.2 with \u22652 file failures,\
+    \ plan says STOP interview possible LLD-r3. Phase 2 work potentially throwaway.\
+    \ No iterative authoring \u2192 probe-test loop within Phase 2. Risk register\
+    \ acknowledges but Phase 9 is where it surfaces \u2014 late."
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Important
+  location: "Phase 3 \xA7 Slice 3.2"
+  problem: Slice claims reuse session_start_inject's emit helper, but Slice 3.1 impl
+    description does not name an emit helper as exported symbol; cross-slice dependency
+    on unnamed function is implicit contract fresh reader cannot verify exists.
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Important
+  location: "Phase 6 \xA7 Slice 6.2"
+  problem: "Tests reference LLD-012 \xA7lessons_lint step 3 tie-break and overflow\
+    \ consolidate-first rule \u2014 neither marker name nor rule semantics restated\
+    \ in plan; fresh reader cannot verify test asserts right thing without round-tripping\
+    \ to LLD."
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Minor
+  location: "Phase 6 \xA7 Slice 6.5"
+  problem: Test asserts ORCHESTRA-TLDR- prefix on collision; LLD-012 SC-5 cited but
+    plan does not restate what collision-risk with common English means operationally
+    (frequency list? regex match?). Fresh reader cannot author test from plan alone.
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Critical
+  location: "Phase 7 \xA7 Edit perimeter"
+  problem: Plan cites cli/spec_review.py lines 696-707 as v1.0-frozen-historical refuse
+    branch. Actual location at current HEAD is lines 717-728. Phase 7 reader following
+    plan will not find cited block at stated lines.
+  raised_by:
+  - repo-context
+  scope: class
+- severity: Critical
+  location: "Phase 7 \xA7 Edit perimeter"
+  problem: Plan cites no force-passed exists refuse branch at lines 709-714. Actual
+    location at current HEAD is lines 730-735. Phase 7 insertion-perimeter described
+    between two cites both stale ~20 lines.
+  raised_by:
+  - repo-context
+  scope: class
+- severity: Minor
+  location: "Phase 7 \xA7 Slice 7.1"
+  problem: Slice 7.1 lists Test and Impl block but no Commit line, unlike every other
+    slice. Missing commit message field breaks consistency.
+  raised_by:
+  - structure
+  scope: instance
+- severity: Important
+  location: "Phase 9 \xA7 Slice 9.2"
+  problem: "Rollback If 1 file fails supersede only that file's TLDR via Phase-2-style\
+    \ commit assumes Phase-2 commits individually revertable, but Phase 2 commits\
+    \ each modify single file \u2014 semantics are rewrite in place not revert. Wording\
+    \ ambiguous: new commit re-authoring TLDR, or git revert?"
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Critical
+  location: "Risk register \xA7 cli/spec_review.py interaction surface"
+  problem: 'Plan cites PDSA gate at lines 720-724. Actual at current HEAD: PDSA gate
+    comment block begins at line 737 (lines 720-724 are inside v1.0-freeze error message,
+    not PDSA gate). Cite points to wrong code region.'
+  raised_by:
+  - repo-context
+  scope: class
+- severity: Minor
+  location: "Slice 1.2 \xA7 missing close marker"
+  problem: 'Take content to EOF on missing close marker is fail-open: rule file missing
+    marker silently picks up ALL subsequent content as TLDR (potentially 100s of lines).
+    Logs WARN but proceeds. Behavior should arguably be fail-loud (reject) given TLDR
+    is security-adjacent surface (gets system-reminder privilege).'
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Minor
+  location: "Slice 1.4 \xA7 overflow rejects with diagnostic"
+  problem: "Reject if bullets >7 OR any bullet >80 chars \u2014 char-count includes\
+    \ or excludes leading - markdown bullet marker? Empty/whitespace lines counted\
+    \ as bullets? Off-by-one drift between authoring tool view and extractor view."
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Important
+  location: "Slice 1.6 \xA7 lessons store append"
+  problem: "Append-only YAML at docs/lessons/<YYYY-MM>-lessons.md \u2014 no schema\
+    \ migration story. If LLD-013 changes entry shape (adds required field), existing\
+    \ v2.1 entries become unparseable or silently lossy. read_entries has no version\
+    \ field on entries, no forward-compat strategy."
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Important
+  location: "Slice 3.2 \xA7 fallback to identity-rule-name index"
+  problem: "Fallback identity-only index is silent degradation \u2014 Claude session\
+    \ starts with NO TLDR content just rule names. From model's perspective indistinguishable\
+    \ from no TLDR exists \u2014 defeats SC-1/SC-3 nonnegotiables-injection goal.\
+    \ Repeated overbudget = silent permanent regression. No alert path (only log to\
+    \ .claude/state/budget-overflow.log which nobody reads)."
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Critical
+  location: "Slice 3.2 \xA7 Token budget enforcement"
+  problem: "SessionStart hook calls Anthropic count_tokens API synchronously on every\
+    \ session start \u2014 network latency/timeout blocks Claude Code startup. Fallback\
+    \ covers missing key but not slow/hanging API (no timeout specified). 30s API\
+    \ hang = 30s startup delay per session. Blast radius every user session every\
+    \ machine."
+  raised_by:
+  - adversarial
+  scope: class
+- severity: Critical
+  location: "Slice 3.3 \xA7 structured-violations injection allowlist"
+  problem: "Allowlisted fields HTML-encoded + 200-char-capped but rule_violated string\
+    \ goes verbatim into system-reminder template. If violation entry hand-edited\
+    \ (or written by bug) with rule_violated='</system-reminder>\\n[NEW INSTRUCTION]...',\
+    \ HTML-encode of observed/expected won't help \u2014 rule_violated escapes the\
+    \ reminder block. Allowlist enforces field names not field-content sanitization."
+  raised_by:
+  - adversarial
+  scope: class
+- severity: Important
+  location: "Slice 3.5 \xA7 ORCHESTRA_REINJECT_EVERY env var"
+  problem: "User-tunable N via env var default 5 \u2014 no validation. N=0 \u2192\
+    \ modulo-zero exception hook crashes every prompt \u2192 no Claude prompts succeed.\
+    \ N=-1 / N=abc / N=99999 all unspecified. Single env-var misconfiguration bricks\
+    \ Claude Code in repo."
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Critical
+  location: "Slice 3.5 \xA7 turn-counter atomic write"
+  problem: "Q6 default os.replace atomic-write does NOT handle concurrent Claude Code\
+    \ sessions in same repo. Read-modify-write race: A reads counter=4, B reads counter=4,\
+    \ both write counter=5 \u2014 Nth-turn fires once instead of twice OR fires twice.\
+    \ State file shared across sessions has no file-lock; atomic-write only protects\
+    \ against torn writes not lost updates."
+  raised_by:
+  - adversarial
+  scope: class
+- severity: Critical
+  location: "Slice 4.1 \xA7 sys.executable interpreter resolution"
+  problem: "sys.executable captured statically into settings.json. User reinstalls\
+    \ venv \u2192 captured path stale, hooks fail silently or fail-loud per slice\
+    \ 3.6 \u2014 Claude Code startup proceeds without TLDR injection (no upstream\
+    \ signal hooks broken). Slice 4.3 --verify is opt-in CI gate not auto-detected\
+    \ on session start. Failure: rm -rf .venv && uv venv \u2192 next session boot\
+    \ hooks broken no TLDR no warning."
+  raised_by:
+  - adversarial
+  scope: class
+- severity: Important
+  location: "Slice 4.4 \xA7 merge with existing settings"
+  problem: Identification of orchestra entries by cli.hooks.* command prefix is fragile.
+    If another plugin invokes python -m cli.hooks.foo (different cli package on PYTHONPATH),
+    --uninstall removes it. No namespace marker (comment-key or dedicated orchestra-managed
+    wrapper). Cross-plugin collision risk grows with ecosystem.
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Critical
+  location: "Slice 5.3 \xA7 rule-id allowlist"
+  problem: "Allowlist derived from basenames of .claude/rules/*.md + CLAUDE.md + workflow.md\
+    \ at runtime. Path-traversal test exists but allowlist itself trusts filesystem\
+    \ state \u2014 symlink attack .claude/rules/evil.md \u2192 /etc/passwd or attacker-added\
+    \ file in .claude/rules/ becomes valid rule-id. Injection path then writes attacker-controlled\
+    \ content into lessons file feeding into SessionStart system-reminder blocks \u2014\
+    \ prompt-injection vector."
+  raised_by:
+  - adversarial
+  scope: class
+- severity: Important
+  location: "Slice 6.1 \xA7 lessons_lint recurrence detection"
+  problem: "Recurrence threshold grouped by rule_violated over since_days=90. Adversarial:\
+    \ (a) rule rename mid-window \u2014 same conceptual violation under old+new rule_violated\
+    \ strings counts as 2 separate groups never hits 3; (b) typo in rule_violated\
+    \ string creates separate groups; (c) bulk-import of historical lessons spikes\
+    \ count artificially. No normalization, no fuzzy grouping, no rate-limiting against\
+    \ burst."
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Important
+  location: "Slice 6.2 \xA7 proxy artifact path collision"
+  problem: "Proxy path docs/proposed-rule-mutations/<rule>-<date>.md \u2014 multiple\
+    \ recurrences same rule same day collide. Second lint run overwrites first proxy\
+    \ without warning. lessons_apply iteration lookup reads Iteration: N from proxy,\
+    \ but if proxy overwritten between user spec-review and apply, attestation file\
+    \ may reference stale Iteration N while proxy says N+1. Slice 6.3 attestation\
+    \ lookup mismatches \u2192 refuse but root cause (path collision) unstated."
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Critical
+  location: "Slice 6.4 \xA7 lessons_apply mutates schema-layer target"
+  problem: "Schema-layer files are user-edited canonical rule files. lessons_apply\
+    \ mutates them programmatically after attestation \u2014 no concurrency guard\
+    \ against user-in-editor state. If user has CLAUDE.md open with unsaved changes\
+    \ when lessons_apply runs, mutation either gets overwritten by editor save OR\
+    \ overwrites user's in-flight edits. No file-modification-time check, no advisory\
+    \ lock, no git status clean precondition."
+  raised_by:
+  - adversarial
+  scope: class
+- severity: Minor
+  location: "Slice 6.5 \xA7 keyword extraction"
+  problem: "First 4+ char noun per bullet \u2014 noun detection by what mechanism?\
+    \ No NLP dep declared; regex-based-on-capitalization fails on lower-case TLDR\
+    \ bullets. POS-tagger is new heavy dep not in slice 1.0. Underspecified."
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Important
+  location: "Slice 6.6 \xA7 compaction_probe"
+  problem: "compact_20260112 is dated identifier \u2014 Anthropic may version-roll\
+    \ (compact_20260712). Probe hardcodes the dated string; on Anthropic side-rolling\
+    \ probe silently passes against OLD compact behavior while real /compact uses\
+    \ NEW. Drift undetectable. No version-pinning policy or compat-test."
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Important
+  location: "Slice 7.2 \xA7 force-mode read-existing fail-closed"
+  problem: "Malformed YAML detection: if YAML parse fails abort overwrite. What defines\
+    \ malformed? Empty file (0 bytes) \u2014 does yaml.safe_load return None (clean)\
+    \ or raise? Truncated file mid-document \u2014 parse succeeds yielding partial\
+    \ data. Tabs vs spaces edge case. Underspecified contract."
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Important
+  location: "Slice 9.1 \xA7 self-install"
+  problem: "Self-installing hooks on this repo means orchestra developers have dev\
+    \ sessions instrumented with code they're developing. Bug in slice 3.x hook handler\
+    \ \u2192 every subsequent dev session in this repo broken, including session where\
+    \ you'd fix the bug. No 'disable orchestra hooks for orchestra-dev' escape hatch.\
+    \ Bootstrap-paradox."
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Important
+  location: "Slice 9.6 \xA7 tag ordering"
+  problem: "Tag points to slice 9.5 commit (Status flip). If HANDOFF spec-review fails\
+    \ (conditional_pass or fail), 9.5 may need revision before tagging \u2014 but\
+    \ plan asserts slice 9.5 commit will be single small whitelist edit low risk.\
+    \ No contingency for HANDOFF spec-review failing \u2192 tag chain blocked indefinitely\
+    \ with no rollback procedure."
+  raised_by:
+  - adversarial
+  scope: instance
+overall_verdict: fail
+overall_verdict_basis:
+  worst_sub_judge_verdict: fail
+  excluded_sub_judges: []
+  mandatory_failures: []
+  reason: null
+attestation_integrity_hash: sha256:4b886d5f502c4dd8d27d04694d0b8c71560f9ff1d48ee3055ac017d11c152d51

@@ -1,0 +1,124 @@
+schema_version: '1.0'
+doc_subject:
+  path: docs/features/012-rule-durability-and-learning-layer.md
+  content_hash: sha256:d6d04d9468301715e75cf8ed0e4864efb113f5d3cd1b58abfd9647b29d329652
+  iteration: 2
+reviewer:
+  identifier: subagent:general-purpose+spec-review-v1
+  invoked_at: '2026-05-11T15:42:12Z'
+  context_isolation: fresh_subagent
+gates:
+  completeness:
+    verdict: pass
+    findings: []
+    justification: All required Feature LLD sections present and substantively filled.
+      No empty placeholders; no TODO markers without followup. Novel terms defined
+      inline at first use.
+  evidence:
+    verdict: fail
+    findings:
+    - severity: Critical
+      location: "Design \xA7 lessons_lint and auto-promotion"
+      problem: Stale file:line citation. Doc cites `cli/spec_review.py:269-287` as
+        the `canonicalize_doc_path` function location, but the function actually lives
+        at `cli/spec_review.py:376-394` at HEAD. Reader following the cite lands on
+        unrelated code.
+    - severity: Important
+      location: "Success Criteria \xA7 SC-13"
+      problem: Karpathy K-number citations (K1/K2/K3/K4/K8) appear as load-bearing
+        lineage but the doc provides no inline gloss for K2, K4, K8. Only K1 and K3
+        are grounded earlier.
+    - severity: Minor
+      location: "Problem Statement \xA7 hooks-as-law citation"
+      problem: "60\u219290% rule-compliance figure hedged honestly but Success Criteria\
+        \ do not include any measured compliance acceptance \u2014 uplift number asserted,\
+        \ never verified."
+  clarity:
+    verdict: conditional_pass
+    findings:
+    - severity: Important
+      location: "Design \xA7 Three-layer file taxonomy"
+      problem: '`State layer` is `Excluded from git` but Scope/In-scope item `.claude/state/`
+        and SC-14''s `.claude/state/turn-counter.json` do not state how non-commit
+        is enforced (no .gitignore entry mentioned).'
+    - severity: Minor
+      location: "Design \xA7 Lessons skill \xA7 Future v1.9+ ratification path"
+      problem: '`/orchestra:ratify-lesson <id>` mentioned as deferred to v1.9+ but
+        never restated in Out of Scope.'
+    - severity: Minor
+      location: "Edge Cases & Error Handling \xA7 Concurrent plugin SessionStart hooks"
+      problem: Disambiguation contract names `downstream readers` MAY match `[ORCHESTRA
+        TLDR]` marker, but runtime consumer not enumerated.
+  consistency:
+    verdict: fail
+    findings:
+    - severity: Critical
+      location: "Design \xA7 Architecture overview (mermaid)"
+      problem: 'Mermaid shows `Lint->>FS: draft TLDR mutation in target rule file`
+        and `Lint->>SR: trigger Gate 3 spec-review on drafted file`. Directly contradicts
+        SC-8 (Class-B reconciliation): lessons_lint writes a PROXY artifact and does
+        NOT auto-trigger spec-review. Diagram describes pre-Class-B behavior; load-bearing
+        self-contradiction with SCs.'
+    - severity: Critical
+      location: "Success Criteria \xA7 SC-7"
+      problem: 'SC-7 attributes `source: auto-promote` producer to `cli.lessons_lint`.
+        SC-8/SC-9 establish that lessons_lint only emits proxy artifacts and `cli.lessons_apply`
+        is the user-invoked CLI that mutates. Auto-promote producer is therefore lessons_apply,
+        not lessons_lint.'
+    - severity: Important
+      location: "Architecture overview \xA7 mermaid participant list"
+      problem: Mermaid omits UserPromptSubmit hook despite SC-14 + In-Scope. SC-14
+        is v1.8 deliverable; diagram does not depict full v1.8 hook surface.
+    - severity: Important
+      location: "Success Criteria \xA7 SC-12"
+      problem: SC-12 enumerates test coverage but does not list SC-14 UserPromptSubmit
+        turn-counter test. SC-14 specifies test inline; SC-12 master list omits it.
+    - severity: Important
+      location: "Testing Strategy \xA7 Unit tests (test_lessons_lint.py)"
+      problem: 'Description ends with `spec-review triggered on proxy path (mocked)`.
+        Contradicts SC-8 + Class-B: lessons_lint does NOT auto-trigger spec-review.'
+    - severity: Important
+      location: "Design \xA7 lessons_lint \xA7 Recursion guard line"
+      problem: "Forward reference `(See Lessons skill \xA7 source enum for the producer\
+        \ of source: auto-promote entries.)` is dangling. The Lessons skill section\
+        \ declares only `source: user` and never describes who writes `source: auto-promote`."
+    - severity: Minor
+      location: "API Changes \xA7 CLI surfaces table"
+      problem: '`cli.lessons_apply <proxy-path>` row hardcodes `-r1` attestation suffix.
+        Per LLD-006-r4 grammar, iter-2 proxy lands at `-r2.review.yaml`. Literal `-r1`
+        lookup misses higher-iter attestations.'
+    - severity: Minor
+      location: "Edge Cases & Error Handling \xA7 compaction_probe row"
+      problem: "Probe procedure references `Claude API's compact_20260112`. No URL\
+        \ or evidence cite \u2014 rest of doc cites every API surface (count_tokens,\
+        \ prompt-caching). `compact_20260112` appears unsourced."
+overall_verdict: fail
+required_followup:
+- "Fix stale citation: `cli/spec_review.py:269-287` \u2192 376-394 (live HEAD line\
+  \ range for canonicalize_doc_path)."
+- 'Update Architecture mermaid: lessons_lint writes proxy only (no auto-spec-review,
+  no target mutation); add cli.lessons_apply user-invoked step; add UserPromptSubmit
+  hook participant + flow per SC-14.'
+- 'Reconcile SC-7: assign auto-promote producer to cli.lessons_apply (per SC-9); align
+  cross-references.'
+- Add SC-14 UserPromptSubmit turn-counter test to SC-12 master list.
+- 'Update test_lessons_lint.py description: remove `spec-review triggered on proxy
+  path`; replace with `proxy artifact written + lessons_lint exits 0`.'
+- "Document `source: auto-promote` producer inside Design \xA7 Lessons skill (resolve\
+  \ dangling forward reference)."
+- Drop hardcoded `-r1` from cli.lessons_apply API row; document iteration-aware attestation
+  lookup.
+- Inline 1-line gloss for Karpathy K2/K4/K8 first time cited, OR drop from SC-13 if
+  decorative.
+notes: "Iter-2 status: Class A/B/C/D batch fixes LANDED on Problem Statement, API\
+  \ Changes table, Edge Cases, Security Considerations. SC-14 (UserPromptSubmit) and\
+  \ Out-of-Scope row for workflow.md/skills-registry.md present and well-stated.\n\
+  \nBatch fix introduced regressions iter-1 could not have caught: (1) Architecture\
+  \ mermaid NOT updated alongside SC-8/9 reconciliation \u2014 still shows pre-Class-B\
+  \ flow; (2) SC-14 UserPromptSubmit absent from mermaid participants; (3) test_lessons_lint.py\
+  \ description contradicts SC-8; (4) SC-7 attributes auto-promote producer wrong;\
+  \ (5) stale cli/spec_review.py:269-287 citation slipped through Class A.\n\nConcrete\
+  \ Design \u2194 Success Criteria contradictions. Would cause implementer to ship\
+  \ Class-B-violating code following the mermaid or test description literally. Recommend\
+  \ tight iter-3 focused on Architecture diagram rewrite + SC-7 producer reconciliation\
+  \ + citation fix; rest of doc in good shape.\n"

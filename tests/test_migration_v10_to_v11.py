@@ -82,6 +82,7 @@ def test_migrate_does_not_delete_v10(tmp_repo: Path) -> None:
     })
     settings.write_text(original_content)
     v10 = detect_v10_config(tmp_repo)
+    assert v10 is not None
     config = migrate_v10_to_v11(v10)
     write_v11_config(tmp_repo, config)
     # v1.0 block still there

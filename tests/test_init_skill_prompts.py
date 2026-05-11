@@ -68,3 +68,83 @@ def test_prompts_md_provides_option_labels_for_each_question():
     body = PROMPTS.read_text()
     for question_marker in ["Mode", "Doc types", "Add-ons"]:
         assert question_marker in body, f"prompts.md missing {question_marker} section."
+
+
+# ---------------------------------------------------------------------------
+# BUG-001 edge-path tightening (A-F leak coverage)
+# ---------------------------------------------------------------------------
+
+
+def test_master_step1_is_imperative_read():
+    """Issue A — Step-1 must imperatively use the Read tool (not an implicit 'check')."""
+    body = MASTER_INIT.read_text()
+    assert "Read tool" in body or "via `Read`" in body or "use the `Read` tool" in body, (
+        "Master init Step-1 must imperatively name the Read tool — implicit 'check for' "
+        "leaves room for Claude to skip the lookup or use Bash."
+    )
+
+
+def test_master_rerun_branch_has_askuserquestion_payload():
+    """Issue B — Step-2 re-run branch must spell out AskUserQuestion options, not improvise."""
+    body = MASTER_INIT.read_text()
+    assert "Re-run" in body, "Re-run branch must surface a Re-run option label."
+    assert "Migrate" in body, "Re-run branch must surface a Migrate option label."
+    assert "Abort" in body or "Keep current" in body, (
+        "Re-run branch must surface an abort/keep-current option."
+    )
+
+
+def test_design_docs_v10_detection_step_is_imperative_before_q1():
+    """Issue C — v1.0 detection must be STEP-0, imperative, before Q1."""
+    body = DESIGN_DOCS_INIT.read_text()
+    assert "STEP 0" in body or "Step 0" in body, (
+        "v1.0 detection must be labelled STEP 0 so it precedes Q1 in skill execution order."
+    )
+    assert ".claude/settings.local.json" in body
+    assert "before Q1" in body or "BEFORE Q1" in body, (
+        "STEP 0 must explicitly say it fires before Q1."
+    )
+
+
+def test_design_docs_uniform_label_strip_mapping_all_three_questions():
+    """Issue D — each Q's mapping must spell out '(Recommended)' stripping (not only Q1)."""
+    body = DESIGN_DOCS_INIT.read_text()
+    # Each Q must spell out that '(Recommended)' suffix is stripped before mapping
+    assert body.count("(Recommended)") >= 3, (
+        "Need consistent (Recommended) suffix-handling note across Q1/Q2/Q3."
+    )
+    assert "strip" in body.lower() or "ignore" in body.lower() or "starts with" in body.lower(), (
+        "Mapping must instruct Claude to strip/ignore (Recommended) suffix uniformly."
+    )
+
+
+def test_design_docs_subset_rename_v201_fallback_explicit():
+    """Issue E — subset-rename / full-custom v2.0.1 fallback must be operationally crisp."""
+    body = DESIGN_DOCS_INIT.read_text()
+    # Must explicitly say what to do when user picks subset-rename or full-custom in v2.0.1
+    assert "default-7" in body
+    fallback_phrases = [
+        "fall back to default-7",
+        "AskUserQuestion ONCE more",
+        "ask the user to confirm switching to default-7",
+        "fire a confirm AskUserQuestion",
+    ]
+    assert any(p.lower() in body.lower() for p in fallback_phrases), (
+        "Subset-rename/full-custom branch in v2.0.1 must specify a deterministic fallback "
+        "(confirm-switch-to-default-7 prompt or explicit abort), not 'surface ...' improvisation."
+    )
+
+
+def test_master_final_summary_references_prompts_md_section():
+    """Issue F — master Step-4 final-summary must point at prompts.md canonical format."""
+    body = MASTER_INIT.read_text()
+    assert "prompts.md" in body or "Final summary" in body, (
+        "Master skill must reference the canonical final-summary format "
+        "(prompts.md § Final summary) so Claude doesn't invent a different summary."
+    )
+
+
+def test_prompts_md_has_rerun_payload():
+    """Issue B coverage in prompts.md — re-run AskUserQuestion payload defined."""
+    body = PROMPTS.read_text()
+    assert "Re-run" in body, "prompts.md must define a Re-run option for the master Step-2 branch."

@@ -61,6 +61,53 @@ Answer mapping → CLI flag:
 - `yes` → `--addons yes`
 - `no` → `--addons no`
 
+## Q2 subset-rename / full-custom fallback (v2.0.1)
+
+Fires only if user picks `subset-rename` or `full-custom` in Q2. The
+descriptive wizards from prior versions are deferred to v2.1; for v2.0.1
+the skill MUST confirm-switch-to-default-7 or abort.
+
+- **question**: `Subset-rename / full-custom flows are deferred to v2.1. Switch to default-7 for now, or abort init?`
+- **header**: `Q2 fallback`
+- **multiSelect**: `false`
+- **options**:
+  - **label**: `Switch to default-7 (Recommended)`
+    **description**: `Use the canonical 7 doc types. You can re-run /orchestra:init in v2.1 to switch to a custom preset.`
+  - **label**: `Abort init`
+    **description**: `Exit without scaffolding. No files written. Wait for v2.1 to support subset-rename / full-custom.`
+
+Mapping:
+- `Switch to default-7` → `--preset default-7` (continue to Q3)
+- `Abort init` → emit chat message + exit skill before invoking cli.init
+
+## Re-run prompt (only if .claude/orchestra.json already exists)
+
+Fires from `skills/init/SKILL.md` Step 2 when a v1.1+ config is detected.
+Do NOT fire this prompt for a fresh init.
+
+- **question**: `Orchestra is already configured in this repo. What would you like to do?`
+- **header**: `Re-run`
+- **multiSelect**: `false`
+- **options**:
+  - **label**: `Re-run init`
+    **description**: `Regenerate STANDARDS.md and replace add-ons (CI workflow, AGENTS.md, llms.txt). Hand-edited STANDARDS.md will be overwritten. Equivalent to python -m cli.init --force.`
+  - **label**: `Migrate`
+    **description**: `Only meaningful if config schema is older than current. Copies fields to the new schema, leaves old block in place (non-destructive).`
+  - **label**: `Keep current (Recommended)`
+    **description**: `Abort. Leave config and scaffolding untouched.`
+
+Mapping (after stripping `(Recommended)` suffix):
+- `Re-run init` → `python -m cli.init --force` (then proceeds through
+  STEP 0 + Q1/Q2/Q3 as a forced re-init)
+- `Migrate` → run the schema migration path (NOT the 3-prompt flow);
+  detects `version` field, copies fields forward, exits without
+  scaffolding changes
+- `Keep current` → emit chat message + exit skill
+
+Suppress `Migrate` option from the AskUserQuestion call when the existing
+`.claude/orchestra.json` `version` field equals the current schema
+version (currently `1.1`).
+
 ## v1.0 migration prompt (only if v1.0 config detected)
 
 Fires BEFORE Q1, only if `.claude/settings.local.json` contains a v1.0

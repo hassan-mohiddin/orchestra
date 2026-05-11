@@ -23,17 +23,32 @@ Reserved branches (activated in later versions):
 
 When the user asks to "set up orchestra" or similar:
 
-1. Check for existing `.claude/orchestra.json` config in the project root.
-2. If present: report current orchestra setup status; ask the user (via the
-   `AskUserQuestion` tool) whether they want to re-run init or migrate to
-   a newer version.
-3. If absent: invoke `orchestra:design-docs:init` skill to run the 3-prompt
-   setup flow. That sub-skill is REQUIRED to drive the 3 prompts via the
-   `AskUserQuestion` tool — see its SKILL.md for the exact option text.
-4. After design-docs:init completes, report final status:
-   - Files created
-   - Files skipped (already existing)
-   - Next steps (write your first design doc, install pre-commit hook, etc.)
+1. **Read `.claude/orchestra.json` via the `Read` tool.** Do NOT use Bash
+   `cat`/`test`/`ls` — use the Read tool directly. If the file does not
+   exist, the Read tool returns an error → branch to Step 3 (fresh init).
+   If the file exists, branch to Step 2 (re-run / migrate flow).
+2. **Re-run / migrate branch (file present):** Read the `version` field
+   from `.claude/orchestra.json`. Then invoke the `AskUserQuestion` tool
+   ONCE with the payload defined in `skills/design-docs/init/prompts.md`
+   § "Re-run prompt (only if .claude/orchestra.json already exists)".
+   Required option labels are:
+   - `Re-run init` — regenerate STANDARDS.md, replace add-ons (`--force`)
+   - `Migrate` — only offered if `version` field is older than current
+     (currently `1.1`); copies old fields into new schema
+   - `Keep current` — abort, leave config untouched
+   Map the user's answer to the corresponding CLI flag or exit code; do
+   not improvise additional options.
+3. **Fresh-init branch (file absent):** Invoke the
+   `orchestra:design-docs:init` skill (read its SKILL.md and follow the
+   HARD RULE for the 3-prompt flow). That sub-skill REQUIRES driving the
+   3 prompts through the `AskUserQuestion` tool — see its SKILL.md for
+   the exact option text. Do not skip its STEP 0 (v1.0 detection).
+4. **After design-docs:init completes**, emit the canonical final-summary
+   chat message defined in
+   `skills/design-docs/init/prompts.md` § "Final summary (chat message
+   after CLI completes)". Copy that template verbatim — substitute only
+   the file counts and the list contents. Do NOT invent your own
+   summary format.
 
 ## Why AskUserQuestion is mandatory
 

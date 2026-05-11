@@ -16,6 +16,26 @@ descriptive markdown, never by silent defaults.
 - The `orchestra:design-docs` skill auto-detects missing `.claude/orchestra.json`
   and routes here (after user confirms `[y]` to the auto-prompt)
 
+## STEP 0 — v1.0 config detection (fires BEFORE Q1)
+
+Before issuing Q1, you MUST detect a v1.0 config:
+
+1. Read `.claude/settings.local.json` via the `Read` tool. If the file does
+   not exist OR does not contain a top-level `orchestra` key, skip the
+   rest of STEP 0 and go directly to Q1.
+2. If `.claude/settings.local.json` contains an `orchestra` key, invoke
+   the `AskUserQuestion` tool ONCE with the v1.0 migration payload
+   defined in `prompts.md § v1.0 migration prompt`. Do NOT auto-migrate;
+   do NOT skip; do NOT collapse this prompt into Q1.
+3. If user picks `Migrate`: proceed to Q1/Q2/Q3, surfacing the detected
+   v1.0 values in each AskUserQuestion description but still requiring
+   the user to answer each question. Never auto-fill.
+4. If user picks `Keep v1.0`: emit a chat message stating no changes
+   were made + exit the skill. Do NOT proceed to Q1.
+
+This STEP 0 is imperative: skipping it means a v1.0 user silently
+double-initialises into a v1.1 schema with default answers.
+
 ## The 3-prompt flow — HARD RULE
 
 You MUST invoke the `AskUserQuestion` tool **once per question**, in order
@@ -26,6 +46,15 @@ will treat them as distinct decisions.
 
 Each call below shows the exact options to pass to `AskUserQuestion`. The
 option text in `prompts.md` is the canonical wording — copy it verbatim.
+
+### Label-stripping rule (applies to ALL questions)
+
+`AskUserQuestion` option labels carry a `(Recommended)` suffix on the
+default option. When mapping an answer to a CLI flag, **strip the
+`(Recommended)` suffix first** (case-insensitive). Treat
+`solo (Recommended)` and `solo` as the same value. Same rule for Q2's
+`default-7 (Recommended)` and Q3's `yes (Recommended)`. Do NOT pass the
+`(Recommended)` suffix through to the CLI.
 
 ### Q1: Mode
 
@@ -54,13 +83,17 @@ Invoke AskUserQuestion with:
   - `{ label: "subset-rename", description: "Drop unused types and/or rename to formal alternatives (Tech Spec, Engineering Design, Decision Record, etc.). Informal renames rejected." }`
   - `{ label: "full-custom", description: "Define your own doc types with required sections, status enum, and naming pattern. Invariants enforced." }`
 
-Map the answer:
+Map the answer (strip `(Recommended)` suffix first — see Label-stripping rule):
 - `default-7` → `--preset default-7`
-- `subset-rename` → `--preset subset-rename` then run the subset-rename wizard
-  (toggle/rename per default type — currently out of scope for v2.0.1 hot path;
-  surface "use default-7 for now" if user picks this)
-- `full-custom` → `--preset full-custom` then run the full-custom wizard
-  (same out-of-scope note)
+- `subset-rename` → **v2.0.1 fallback**: fire a confirm AskUserQuestion
+  with the payload defined in `prompts.md § Q2 subset-rename / full-custom
+  fallback (v2.0.1)`. Two options: `Switch to default-7` (Recommended)
+  vs `Abort init`. On `Switch to default-7` → map to `--preset default-7`.
+  On `Abort init` → emit chat message explaining subset-rename wizard
+  is deferred to v2.1 + exit skill without running cli.init. Do NOT
+  run the legacy descriptive wizard.
+- `full-custom` → same v2.0.1 fallback as `subset-rename` (fire confirm
+  AskUserQuestion → `Switch to default-7` or `Abort init`).
 
 ### Q3: Add-ons
 
@@ -110,19 +143,9 @@ Programmatic invocation (CI, automation) bypasses the skill and calls
 
 ## v1.0 → v1.1 migration
 
-If `.claude/settings.local.json` has an `orchestra` key (v1.0 config
-location), this skill detects it during init. Before running the 3-prompt
-flow, invoke AskUserQuestion ONE EXTRA TIME:
-
-- **question**: `"v1.0 orchestra config detected at .claude/settings.local.json. Migrate to v1.1 schema (.claude/orchestra.json)?"`
-- **header**: `"v1.0 migration"`
-- **multiSelect**: `false`
-- **options**:
-  - `{ label: "Migrate (Recommended)", description: "Copy fields (mode + doc_paths + spec_review_skill) to v1.1 schema. v1.0 block left in place (non-destructive)." }`
-  - `{ label: "Keep v1.0", description: "Continue reading from settings.local.json — works but no v1.1 features." }`
-
-On Migrate: proceed to Q1/Q2/Q3 with detected defaults pre-suggested in
-the AskUserQuestion descriptions (still ask — never auto-fill).
+See STEP 0 above (imperative detection block). Canonical AskUserQuestion
+payload for the migration prompt lives in `prompts.md § v1.0 migration
+prompt`.
 
 ## Related skills
 

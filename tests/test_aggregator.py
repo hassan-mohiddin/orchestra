@@ -4,7 +4,38 @@ Aggregator merges findings across sub-judges, dedups by (location, problem_hash)
 unions raised_by, takes max severity. Pure Python, no LLM call, deterministic.
 """
 
-from cli.aggregator import aggregate_findings, fuzzy_hash, normalize_location
+from cli.aggregator import aggregate_findings, fuzzy_hash, normalize_location, sanitize_location
+
+
+def test_sanitize_location_passes_legit():
+    """Fix #4 — well-formed `Body § Intro` and `line 42` pass through unchanged."""
+    assert sanitize_location("Body § Intro") == "Body § Intro"
+    assert sanitize_location("line 42") == "line 42"
+
+
+def test_sanitize_location_rejects_etc_passwd():
+    """Fix #4 — `/etc/...` absolute system path triggers REJECTED-LOCATION."""
+    assert sanitize_location("Body § /etc/passwd:1") == "[REJECTED-LOCATION]"
+
+
+def test_sanitize_location_rejects_parent_escape():
+    """Fix #4 — `..`-traversal in location is rejected."""
+    assert sanitize_location("Body § ../../foo") == "[REJECTED-LOCATION]"
+
+
+def test_sanitize_location_rejects_html():
+    """Fix #4 — HTML/XML tags in location are rejected (chat-report injection guard)."""
+    assert sanitize_location("Body § <script>x</script>") == "[REJECTED-LOCATION]"
+
+
+def test_sanitize_location_rejects_javascript_url():
+    """Fix #4 — javascript: URL scheme in location is rejected."""
+    assert sanitize_location("Body § javascript:alert(1)") == "[REJECTED-LOCATION]"
+
+
+def test_sanitize_location_rejects_control_char():
+    """Fix #4 — control characters in location are rejected."""
+    assert sanitize_location("Body § foo\x01bar") == "[REJECTED-LOCATION]"
 
 
 def _sj(id_: str, findings: list[dict] | None = None, status: str = "completed") -> dict:

@@ -127,6 +127,46 @@ def test_e21_quarantine_ssh_private_key_path():
     assert "id_rsa" not in result.redacted_output
 
 
+def test_e21_quarantine_stripe_key():
+    """Fix #3 — Stripe live/test keys are redacted."""
+    output = "Found sk_live_4eC39HqLyjWDarjtT1zdp7dc in finding text"
+    result = failure_attestation.quarantine_output(output)
+    assert not result.clean
+    assert "sk_live_4eC39HqLyjWDarjtT1zdp7dc" not in result.redacted_output
+
+
+def test_e21_quarantine_github_token():
+    """Fix #3 — GitHub personal access tokens are redacted."""
+    output = "Token ghp_1234567890abcdefghijklmnopqrstuvwxyz1A in commit"
+    result = failure_attestation.quarantine_output(output)
+    assert not result.clean
+    assert "ghp_1234567890abcdefghijklmnopqrstuvwxyz1A" not in result.redacted_output
+
+
+def test_e21_quarantine_jwt():
+    """Fix #3 — JWT tokens (three base64 segments) are redacted."""
+    output = (
+        "Auth: eyJhbGciOiJIUzI1NiIsInR.eyJzdWIiOiIxMjM0NTY3OD.SflKxwRJSMeKKF2QT4"
+    )
+    result = failure_attestation.quarantine_output(output)
+    assert not result.clean
+
+
+def test_e21_quarantine_db_connection_uri():
+    """Fix #3 — DB URIs with embedded credentials are redacted."""
+    output = "Database: postgres://admin:supersecret@db.internal:5432/prod"
+    result = failure_attestation.quarantine_output(output)
+    assert not result.clean
+    assert "supersecret" not in result.redacted_output
+
+
+def test_e21_quarantine_pem_private_key():
+    """Fix #3 — PEM private key markers are redacted."""
+    output = "Found:\n-----BEGIN RSA PRIVATE KEY-----\nMIIE...\n"
+    result = failure_attestation.quarantine_output(output)
+    assert not result.clean
+
+
 # ---------------------------------------------------------------------------
 # Slice 3.21 — E21 optional sub-judge soft-fail
 # ---------------------------------------------------------------------------

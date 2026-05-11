@@ -166,18 +166,23 @@ text
 
 
 def test_citation_validity_pass(tmp_path, monkeypatch) -> None:
-    """Slice 2.4 — citation `<path>:<N>` with N in range → citations.passed=True."""
+    """Slice 2.4 — citation `<path>:<N>` with N in range → citations.passed=True.
+
+    Note: post-fix #2, only repo-relative cites resolve. Tests chdir into the
+    fixture root so `src/foo.py` is a valid repo-relative cite.
+    """
     from cli import pdsa
 
     target = tmp_path / "src" / "foo.py"
     target.parent.mkdir(parents=True)
     target.write_text("line1\nline2\nline3\nline4\nline5\n")
 
-    body = f"## Body\nReference: `{target}:3` — see line 3.\n"
+    body = "## Body\nReference: `src/foo.py:3` — see line 3.\n"
     doc = tmp_path / "random.md"
     doc.write_text(body)
 
     monkeypatch.setattr(pdsa, "_invoke_lint", lambda argv: 0)
+    monkeypatch.chdir(tmp_path)
     report = pdsa.run_pdsa(doc)
 
     assert report.checks["citations"].passed is True
@@ -191,11 +196,12 @@ def test_citation_validity_range_pass(tmp_path, monkeypatch) -> None:
     target.parent.mkdir(parents=True)
     target.write_text("\n".join(f"l{i}" for i in range(1, 21)) + "\n")
 
-    body = f"Reference: `{target}:5-10`\n"
+    body = "Reference: `src/foo.py:5-10`\n"
     doc = tmp_path / "random.md"
     doc.write_text(body)
 
     monkeypatch.setattr(pdsa, "_invoke_lint", lambda argv: 0)
+    monkeypatch.chdir(tmp_path)
     report = pdsa.run_pdsa(doc)
 
     assert report.checks["citations"].passed is True
@@ -224,11 +230,12 @@ def test_citation_validity_out_of_range(tmp_path, monkeypatch) -> None:
     target.parent.mkdir(parents=True)
     target.write_text("only one line\n")
 
-    body = f"Reference: `{target}:99`\n"
+    body = "Reference: `src/small.py:99`\n"
     doc = tmp_path / "random.md"
     doc.write_text(body)
 
     monkeypatch.setattr(pdsa, "_invoke_lint", lambda argv: 0)
+    monkeypatch.chdir(tmp_path)
     report = pdsa.run_pdsa(doc)
 
     assert report.checks["citations"].passed is False
@@ -251,6 +258,79 @@ def test_citation_range_inverted_fails(tmp_path, monkeypatch) -> None:
     report = pdsa.run_pdsa(doc)
 
     assert report.checks["citations"].passed is False
+
+
+def test_citation_absolute_path_rejected(tmp_path, monkeypatch) -> None:
+    """Fix #2 — absolute paths (`/etc/passwd:1`) are rejected even if file exists.
+
+    Defends against adversarial finding: PDSA executes read_text on every
+    cited file; an absolute path lets a doc trigger reads outside the repo.
+    """
+    from cli import pdsa
+
+    body = "Reference: `/etc/hosts.txt:1`\n"
+    doc = tmp_path / "random.md"
+    doc.write_text(body)
+
+    monkeypatch.setattr(pdsa, "_invoke_lint", lambda argv: 0)
+    monkeypatch.chdir(tmp_path)
+    report = pdsa.run_pdsa(doc)
+
+    assert report.checks["citations"].passed is False
+    assert "out-of-repo" in report.checks["citations"].detail or \
+        "unresolvable" in report.checks["citations"].detail
+
+
+def test_citation_parent_escape_rejected(tmp_path, monkeypatch) -> None:
+    """Fix #2 — `..`-escapes outside repo root are rejected post-resolve."""
+    from cli import pdsa
+
+    # Create a real file outside the would-be repo root
+    outside = tmp_path / "outside.txt"
+    outside.write_text("secrets\n")
+
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    doc = repo / "random.md"
+    doc.write_text("Reference: `../outside.txt:1`\n")
+
+    monkeypatch.setattr(pdsa, "_invoke_lint", lambda argv: 0)
+    monkeypatch.chdir(repo)
+    report = pdsa.run_pdsa(doc)
+
+    assert report.checks["citations"].passed is False
+
+
+def test_refs_absolute_rejected(tmp_path, monkeypatch) -> None:
+    """Fix #2 — absolute Refs: paths are rejected (same defense as citations)."""
+    from cli import pdsa
+
+    doc = tmp_path / "random.md"
+    doc.write_text("Refs: /etc/hosts\n")
+
+    monkeypatch.setattr(pdsa, "_invoke_lint", lambda argv: 0)
+    monkeypatch.chdir(tmp_path)
+    report = pdsa.run_pdsa(doc)
+
+    assert report.checks["refs"].passed is False
+
+
+def test_refs_parent_escape_rejected(tmp_path, monkeypatch) -> None:
+    """Fix #2 — Refs: with `..`-escape outside repo root rejected."""
+    from cli import pdsa
+
+    outside = tmp_path / "outside.md"
+    outside.write_text("# outside\n")
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    doc = repo / "random.md"
+    doc.write_text("Refs: ../outside.md\n")
+
+    monkeypatch.setattr(pdsa, "_invoke_lint", lambda argv: 0)
+    monkeypatch.chdir(repo)
+    report = pdsa.run_pdsa(doc)
+
+    assert report.checks["refs"].passed is False
 
 
 def test_citation_no_citations(tmp_path, monkeypatch) -> None:
@@ -323,18 +403,22 @@ def test_mixed_placeholders(tmp_path, monkeypatch) -> None:
 
 
 def test_refs_resolve_pass(tmp_path, monkeypatch) -> None:
-    """Slice 2.8 — Refs: line pointing at existing file → refs.passed=True."""
+    """Slice 2.8 — Refs: line pointing at existing file → refs.passed=True.
+
+    Post-fix #2: only repo-relative Refs values resolve. Tests chdir.
+    """
     from cli import pdsa
 
     target = tmp_path / "docs" / "features" / "100-bar.md"
     target.parent.mkdir(parents=True)
     target.write_text("# Bar\n")
 
-    body = f"## Body\n\nRefs: {target}\n"
+    body = "## Body\n\nRefs: docs/features/100-bar.md\n"
     doc = tmp_path / "random.md"
     doc.write_text(body)
 
     monkeypatch.setattr(pdsa, "_invoke_lint", lambda argv: 0)
+    monkeypatch.chdir(tmp_path)
     report = pdsa.run_pdsa(doc)
 
     assert report.checks["refs"].passed is True

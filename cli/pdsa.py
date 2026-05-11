@@ -128,6 +128,42 @@ _CITATION_RE = re.compile(
     r"`([^\s`]+\.[A-Za-z0-9]+):(\d+)(?:-(\d+))?`"
 )
 
+
+def _resolve_inside_repo(cited_path_str: str, doc_path: Path) -> Path | None:
+    """Resolve a cited path and confirm it lies inside the repo (cwd) tree.
+
+    Returns the resolved Path if it exists AND its resolved absolute form is
+    under Path.cwd(). Returns None when the cite is absolute (`/etc/passwd`),
+    when `..` escapes the repo (`../../../etc/shadow`), or when the file does
+    not exist under either repo-relative or doc-relative resolution.
+
+    Defends against the adversarial finding "PDSA reads /etc/passwd": the
+    cited path is canonicalized BEFORE any read, and reads outside the repo
+    tree are rejected.
+    """
+    raw = Path(cited_path_str)
+    repo_root = Path.cwd().resolve()
+
+    if raw.is_absolute():
+        # Absolute paths are explicitly out-of-bounds for the PDSA trust model.
+        # No exception for paths-that-happen-to-be-inside-the-repo (operators
+        # writing cites should use repo-relative form for portability).
+        return None
+
+    candidates = (repo_root / raw, doc_path.parent / raw)
+    for c in candidates:
+        try:
+            resolved = c.resolve()
+        except (OSError, RuntimeError):
+            continue
+        try:
+            resolved.relative_to(repo_root)
+        except ValueError:
+            continue  # outside repo — reject
+        if resolved.exists():
+            return resolved
+    return None
+
 _PLACEHOLDER_RE = re.compile(r"\b(TBD|TODO|FIXME)\b(.*)$", re.MULTILINE)
 _OWNER_SUFFIX_RE = re.compile(r"^\s*(?::|by)\s+\S+", re.IGNORECASE)
 
@@ -249,19 +285,21 @@ def _check_filename_grammar(doc_path: Path) -> CheckResult:
 
 
 def _check_refs(doc_path: Path) -> CheckResult:
-    """Per LLD-011 §PDSA item 6 — each Refs: <path> line must resolve."""
+    """Per LLD-011 §PDSA item 6 — each Refs: <path> line must resolve inside the repo.
+
+    Uses _resolve_inside_repo to defend against absolute-path and `..`-escape
+    Refs values (adversarial finding: "Refs: ../../../etc/hosts passes cleanly
+    because exists() resolves the escape"). Absolute Refs values are rejected
+    even when they happen to land inside the repo — repo-relative form is the
+    only supported syntax.
+    """
     body = doc_path.read_text()
     failures: list[str] = []
 
     for m in _REFS_LINE_RE.finditer(body):
         ref_path_str = m.group(1)
-        ref_path = Path(ref_path_str)
-        if not ref_path.is_absolute():
-            candidate = (doc_path.parent / ref_path).resolve()
-            if not candidate.exists():
-                candidate = Path.cwd() / ref_path
-            ref_path = candidate
-        if not ref_path.exists():
+        resolved = _resolve_inside_repo(ref_path_str, doc_path)
+        if resolved is None:
             failures.append(f"unresolved Refs: {ref_path_str}")
 
     if failures:
@@ -307,19 +345,11 @@ def _check_citations(doc_path: Path) -> CheckResult:
 
     for m in _CITATION_RE.finditer(body):
         cited_path_str, n_str, m_str = m.group(1), m.group(2), m.group(3)
-        cited_path = Path(cited_path_str)
-        if not cited_path.is_absolute():
-            # Try resolution in order: cwd (repo root), doc parent. Doc-relative
-            # citations are uncommon; repo-root-relative is the canon (`cli/lint.py:42`).
-            for candidate in (Path.cwd() / cited_path, doc_path.parent / cited_path):
-                if candidate.exists():
-                    cited_path = candidate
-                    break
-            else:
-                cited_path = (doc_path.parent / cited_path).resolve()
-
-        if not cited_path.exists():
-            failures.append(f"nonexistent path: {cited_path_str}")
+        cited_path = _resolve_inside_repo(cited_path_str, doc_path)
+        if cited_path is None:
+            failures.append(
+                f"unresolvable or out-of-repo citation: {cited_path_str}"
+            )
             continue
 
         try:

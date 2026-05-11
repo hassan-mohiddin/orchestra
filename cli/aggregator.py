@@ -68,6 +68,38 @@ def normalize_location(loc: str) -> str:
     return s
 
 
+# Patterns that signal a sub-judge-emitted location is being used to smuggle
+# content into the chat report or persisted attestation. Fix #4 for the
+# adversarial finding that locations flow through with no path-shape rejection.
+_LOCATION_REJECTION_PATTERNS: tuple[re.Pattern[str], ...] = (
+    re.compile(r"/(?:etc|var|root|home|sys|proc|dev)/"),  # absolute system paths
+    re.compile(r"\.{2}/"),                                  # `..` traversal
+    re.compile(r"<[a-zA-Z/!?][^>]{0,200}>"),                # HTML / XML tags
+    re.compile(r"javascript:", re.IGNORECASE),
+    re.compile(r"data:[^,]+,", re.IGNORECASE),
+    re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f]"),            # control chars (allow \t,\n)
+    re.compile(r"^[\s\S]{500,}$"),                          # implausibly long location
+)
+
+
+def sanitize_location(loc: str) -> str:
+    """Return a safe display form of `loc`. Suspicious shapes → `[REJECTED-LOCATION]`.
+
+    Defends against prompt-injected sub-judge output that smuggles path-shapes,
+    HTML, or control chars into the persisted attestation / chat report via
+    the location field. Schema regex enforces `<section> § <subsection>` or
+    `line N`, but the `(.+)` on each side of `§` is permissive enough to allow
+    `Body § <script>...` or `line 1 § /etc/passwd:1`. This pass tightens the
+    contract before the value reaches users.
+    """
+    if not isinstance(loc, str):
+        return "[REJECTED-LOCATION]"
+    for pat in _LOCATION_REJECTION_PATTERNS:
+        if pat.search(loc):
+            return "[REJECTED-LOCATION]"
+    return loc
+
+
 def fuzzy_hash(problem: str) -> str:
     """Stable hash of a finding's problem text after tokenization.
 
@@ -103,6 +135,10 @@ def aggregate_findings(sub_judges: list[dict]) -> list[dict]:
         if sj.get("status") != "completed":
             continue
         for f in sj.get("findings", []):
+            # Fix #4 — sanitize before dedup. Suspicious shapes (`/etc/...`,
+            # HTML tags, control chars) collapse to a single REJECTED bucket
+            # so injection attempts cannot fan out into the report.
+            f["location"] = sanitize_location(f["location"])
             key = (normalize_location(f["location"]), fuzzy_hash(f["problem"]))
             bucket.setdefault(key, []).append((sj["id"], f))
 

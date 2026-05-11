@@ -514,15 +514,32 @@ def _run_aggregate_and_write(
         print("error: stdin_shape_invalid: `sub_judges` must be a list", file=sys.stderr)
         return 1
 
+    # Default scope to `instance` when sub-judge omits it. Schema requires
+    # scope on every finding (slice 2.13); the safe default for sub-judges
+    # that don't pick a tier is `instance` (single fix in this iteration).
+    # Authors / reviewers can promote findings to `class` in iter-2 by hand.
+    for sj in sub_judges:
+        for f in sj.get("findings", []) or []:
+            f.setdefault("scope", "instance")
+
     canonical_relpath = str(canonical_path.relative_to(repo_root))
 
     # Provenance (LLD-011 §Design Provenance) — persist iter blob to .git/objects
     # so iter-2 delta-review can retrieve iter-1 bytes deterministically.
     try:
         iter_blob_sha = _persist_doc_blob(canonical_path, repo_root)
-    except subprocess.CalledProcessError as exc:
+    except (subprocess.CalledProcessError, FileNotFoundError, PermissionError) as exc:
+        # Fail-closed per LLD-011 Risk Register. Read-only checkout, non-writable
+        # .git/objects/, non-git working tree, or missing git binary all hit
+        # this path; emit recovery guidance so the operator can choose between
+        # restoring write access or running a fresh full-doc iter-2 review.
         print(
-            f"error: git_object_write_failed: cannot persist iter-{iteration} blob: {exc}",
+            f"error: git_object_write_failed: cannot persist iter-{iteration} blob "
+            f"(`git hash-object -w` failed: {exc}). "
+            f"Recovery: (a) ensure the working repo has writable .git/objects/ and "
+            f"`git` is installed in PATH, OR (b) re-dispatch a fresh full-doc review "
+            f"(no delta-review provenance for the failed iter; iter-2 cannot reproduce "
+            f"iter-1 bytes deterministically).",
             file=sys.stderr,
         )
         return 1

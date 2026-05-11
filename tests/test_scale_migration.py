@@ -9,7 +9,7 @@ from __future__ import annotations
 import shutil
 from pathlib import Path
 
-from tests.scale_migration_helper import assert_post_state, migrate
+from tools.scale_migration_core import assert_post_state, migrate
 
 FIXTURE = Path(__file__).resolve().parent / "fixtures" / "scale-pre-migration"
 

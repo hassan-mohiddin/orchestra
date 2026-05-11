@@ -23,9 +23,8 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 
-# Reuse the core migration logic from tests/scale_migration_helper.py
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from tests.scale_migration_helper import (
+from tools.scale_migration_core import (  # noqa: E402
     GATE_4_5_POINTER,
     QUICK_REF_GATE_4_5_POINTER,
     REGISTRY_ROW,

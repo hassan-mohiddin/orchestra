@@ -25,9 +25,11 @@ Read the cited attestation paths in `docs/reviews/` for each LLD/plan iteration;
 - orchestra v1.7.0 tag at `6a4ea94`; this BUG filed in commit `20132da` (one commit after the tag, post-cleanup batch)
 - Pytest baseline at v1.7.0 ship: 259. Current (post-BUG-016 + post-T2): 521.
 
-## Root Cause
+## Root Cause Analysis
 
 User-delegated interview-gate decision per `feedback_spec_review_aggregation.md` memory: ship v1.7.0 with Critical/HIGH closed; defer Minor paperwork. Trade-off accepted to land tiered narrow-change + framework detection + SCALE migration in one window.
+
+The aggregate-tracker pattern itself is the systemic root cause: each multi-LLD release window produces Minor findings that don't gate the tag but do accumulate. Without an explicit cross-release tracker BUG, Minor findings vanish into per-attestation-YAML silos and never get a closure pass. BUG-012 is the first instance of the tracker discipline; future v1.x.y+ releases inherit the pattern (each release's deferred-Minor sweep gets its own BUG-NNN tracker, filed before tag).
 
 ## Fix Description
 

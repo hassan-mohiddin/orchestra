@@ -3,7 +3,8 @@
 Reads YAML attestation from stdin (subagent output piped in by the skill body).
 Validates against `skills/spec-review/attestation-schema-v1.0.json`.
 Performs path canonicalization, hash binding, verdict authoritative-compute,
-stale-state check, and atomic-write to `docs/reviews/<doc-id>-rN.review.yaml`.
+stale-state check, and atomic-write to
+`docs/reviews/<doc-id>-rN.orchestra.review.yaml` (canon §4.11).
 
 Exit codes:
   0 — pass / conditional_pass attestation written
@@ -108,7 +109,12 @@ def prior_attestations_exist(doc_path: Path, repo_root: Path) -> bool:
     reviews = repo_root / "docs" / "reviews"
     if not reviews.exists():
         return False
-    return any(reviews.glob(f"{base}-r*.review.yaml"))
+    # Post-slice-6 canon §4.11: attestations are `<stem>.orchestra.review.yaml`.
+    # Match both the new form and the legacy form for transitional safety
+    # (any uncommitted legacy files still on disk count as prior attestations).
+    return any(reviews.glob(f"{base}-r*.orchestra.review.yaml")) or any(
+        reviews.glob(f"{base}-r*.review.yaml")
+    )
 
 
 _CODEX_SEVERITY_MAP: dict[str, str] = {
@@ -179,7 +185,8 @@ def render_cross_judge_report(
     lines.append("")
     lines.append("| Judge | Critical | Important | Minor | File |")
     lines.append("|---|---|---|---|---|")
-    orchestra_path = f"docs/reviews/{doc_id}-r{iteration}.orchestra.review.yaml"
+    # Slice 7: derive paths via compute_attestation_path canonical builder.
+    orchestra_path = str(compute_attestation_path(Path(doc_path), int(iteration)))
     lines.append(
         f"| orchestra | {orchestra_counts['Critical']} | "
         f"{orchestra_counts['Important']} | {orchestra_counts['Minor']} | "
@@ -188,7 +195,8 @@ def render_cross_judge_report(
 
     if codex_md:
         codex_counts = parse_codex_findings(codex_md)
-        codex_path = f"docs/reviews/{doc_id}-r{iteration}.codex.md"
+        # Canon §4.11: codex prose review filename `<doc-id>-rN.codex.review.md`.
+        codex_path = f"docs/reviews/{doc_id}-r{iteration}.codex.review.md"
         lines.append(
             f"| codex | {codex_counts['Critical']} | "
             f"{codex_counts['Important']} | {codex_counts['Minor']} | "
@@ -427,10 +435,14 @@ def canonicalize_doc_path(input_path: str, repo_root: Path) -> Path:
 
 
 def compute_attestation_path(doc_path: Path, iteration: int) -> Path:
-    """Repo-relative attestation path for a doc + iteration."""
+    """Repo-relative attestation path for a doc + iteration.
+
+    Per canon §4.11: `<doc-id>-rN.<judge>.review.<ext>`. orchestra writes
+    `.orchestra.review.yaml` form (slice 7 of BUG-016 migration).
+    """
     name = doc_path.stem
     base = re.sub(r"-r\d+$", "", name)
-    return Path("docs/reviews") / f"{base}-r{iteration}.review.yaml"
+    return Path("docs/reviews") / f"{base}-r{iteration}.orchestra.review.yaml"
 
 
 def render_prompt_from_text(doc_text: str, schema: dict) -> str:
@@ -652,7 +664,7 @@ def main(argv=None) -> int:
             "v2 entrypoint: read `{sub_judges: [...]}` mapping from stdin, "
             "aggregate findings, compute overall verdict per tiered policy, "
             "build provenance + integrity hash, validate against v2.0 schema, "
-            "and atomically write `docs/reviews/<doc-id>-rN.review.yaml`. "
+            "and atomically write `docs/reviews/<doc-id>-rN.orchestra.review.yaml`. "
             "Used by skills/spec-review/SKILL.md step 6 after parallel "
             "sub-judge dispatch via Task tool."
         ),

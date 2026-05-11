@@ -6,12 +6,12 @@ import pytest
 
 
 def test_attestation_path_no_suffix():
-    """T7 / S1 — A6: docs/features/007-x.md → docs/reviews/007-r1.review.yaml."""
+    """T7 / S1 — A6: docs/features/007-x.md → docs/reviews/007-r1.orchestra.review.yaml."""
     from cli.spec_review import compute_attestation_path
 
     doc_path = Path("docs/features/007-spec-review-architecture.md")
     result = compute_attestation_path(doc_path, iteration=1)
-    assert result == Path("docs/reviews/007-spec-review-architecture-r1.review.yaml")
+    assert result == Path("docs/reviews/007-spec-review-architecture-r1.orchestra.review.yaml")
 
 
 def test_attestation_path_anchored_to_repo_root(tmp_path):
@@ -57,7 +57,7 @@ def test_plans_path_accepted_in_schema():
 
 
 def test_attestation_path_with_rN_suffix():
-    """T8 / S2 — A6: docs/features/006-foo-r4.md Iter=4 → docs/reviews/006-foo-r4.review.yaml.
+    """T8 / S2 — A6: docs/features/006-foo-r4.md Iter=4 → docs/reviews/006-foo-r4.orchestra.review.yaml.
 
     Filename -rN suffix is stripped before re-applying iteration suffix.
     Iteration value comes from doc metadata (Iteration: field), NOT filename.
@@ -67,5 +67,5 @@ def test_attestation_path_with_rN_suffix():
     doc_path = Path("docs/features/006-archive-and-supersession-conventions-r4.md")
     result = compute_attestation_path(doc_path, iteration=4)
     assert result == Path(
-        "docs/reviews/006-archive-and-supersession-conventions-r4.review.yaml"
+        "docs/reviews/006-archive-and-supersession-conventions-r4.orchestra.review.yaml"
     )

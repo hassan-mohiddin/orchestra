@@ -71,7 +71,7 @@ def test_iteration_missing_with_prior_fails_closed(tmp_path, monkeypatch, capsys
     reviews = tmp_path / "docs" / "reviews"
     reviews.mkdir(parents=True)
     # Prior iter-1 attestation exists
-    (reviews / "008-foo-r1.review.yaml").write_text(
+    (reviews / "008-foo-r1.orchestra.review.yaml").write_text(
         'schema_version: "2.0"\noverall_verdict: pass\n'
     )
 
@@ -162,7 +162,7 @@ def test_iter2_dispatches(tmp_path, monkeypatch):
     _fresh_doc(tmp_path, 2)
     reviews = tmp_path / "docs" / "reviews"
     reviews.mkdir(parents=True)
-    (reviews / "008-foo-r1.review.yaml").write_text(
+    (reviews / "008-foo-r1.orchestra.review.yaml").write_text(
         'schema_version: "2.0"\noverall_verdict: pass\n'
     )
     dispatched = _wire_stubs(monkeypatch, tmp_path, spec_review, pdsa)
@@ -183,8 +183,8 @@ def test_iter3_blocked_without_override(tmp_path, monkeypatch, capsys):
     _fresh_doc(tmp_path, 3)
     reviews = tmp_path / "docs" / "reviews"
     reviews.mkdir(parents=True)
-    (reviews / "008-foo-r1.review.yaml").write_text('schema_version: "2.0"\n')
-    (reviews / "008-foo-r2.review.yaml").write_text('schema_version: "2.0"\n')
+    (reviews / "008-foo-r1.orchestra.review.yaml").write_text('schema_version: "2.0"\n')
+    (reviews / "008-foo-r2.orchestra.review.yaml").write_text('schema_version: "2.0"\n')
 
     dispatched = _wire_stubs(monkeypatch, tmp_path, spec_review, pdsa)
 
@@ -207,8 +207,8 @@ def test_override_cap_allows_iter3(tmp_path, monkeypatch):
     _fresh_doc(tmp_path, 3)
     reviews = tmp_path / "docs" / "reviews"
     reviews.mkdir(parents=True)
-    (reviews / "008-foo-r1.review.yaml").write_text('schema_version: "2.0"\n')
-    (reviews / "008-foo-r2.review.yaml").write_text('schema_version: "2.0"\n')
+    (reviews / "008-foo-r1.orchestra.review.yaml").write_text('schema_version: "2.0"\n')
+    (reviews / "008-foo-r2.orchestra.review.yaml").write_text('schema_version: "2.0"\n')
 
     dispatched = _wire_stubs(monkeypatch, tmp_path, spec_review, pdsa)
 
@@ -229,8 +229,8 @@ def test_override_cap_logged_in_notes(tmp_path, monkeypatch):
     _fresh_doc(tmp_path, 3)
     reviews = tmp_path / "docs" / "reviews"
     reviews.mkdir(parents=True)
-    (reviews / "008-foo-r1.review.yaml").write_text('schema_version: "2.0"\n')
-    (reviews / "008-foo-r2.review.yaml").write_text('schema_version: "2.0"\n')
+    (reviews / "008-foo-r1.orchestra.review.yaml").write_text('schema_version: "2.0"\n')
+    (reviews / "008-foo-r2.orchestra.review.yaml").write_text('schema_version: "2.0"\n')
 
     monkeypatch.setattr(spec_review, "_resolve_repo_root", lambda: tmp_path)
     monkeypatch.setattr(pdsa, "_invoke_lint", lambda argv: 0)
@@ -269,7 +269,7 @@ def test_override_cap_logged_in_notes(tmp_path, monkeypatch):
     rc = spec_review.main(["docs/features/008-foo.md", "--override-cap"])
     assert rc == 0, "iter-3 with override should write attestation"
 
-    out_path = reviews / "008-foo-r3.review.yaml"
+    out_path = reviews / "008-foo-r3.orchestra.review.yaml"
     assert out_path.exists()
     written = yaml_mod.safe_load(out_path.read_text())
     notes = written.get("notes", [])
@@ -308,7 +308,7 @@ def test_iter3_no_override_emits_actionable_error(tmp_path, monkeypatch, capsys)
     reviews = tmp_path / "docs" / "reviews"
     reviews.mkdir(parents=True)
     for r in (1, 2, 3):
-        (reviews / f"008-foo-r{r}.review.yaml").write_text('schema_version: "2.0"\n')
+        (reviews / f"008-foo-r{r}.orchestra.review.yaml").write_text('schema_version: "2.0"\n')
 
     _wire_stubs(monkeypatch, tmp_path, spec_review, pdsa)
 
@@ -327,7 +327,7 @@ def test_explicit_iteration_with_prior_proceeds(tmp_path, monkeypatch):
 
     reviews = tmp_path / "docs" / "reviews"
     reviews.mkdir(parents=True)
-    (reviews / "008-foo-r1.review.yaml").write_text(
+    (reviews / "008-foo-r1.orchestra.review.yaml").write_text(
         'schema_version: "2.0"\noverall_verdict: pass\n'
     )
 

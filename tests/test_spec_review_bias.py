@@ -34,7 +34,7 @@ def test_force_required_for_same_iteration_overwrite(tmp_path, capsys, monkeypat
 
     reviews = tmp_path / "docs" / "reviews"
     reviews.mkdir(parents=True)
-    out = reviews / "008-foo-r1.review.yaml"
+    out = reviews / "008-foo-r1.orchestra.review.yaml"
     out.write_text("existing\n")
 
     monkeypatch.setattr(spec_review, "_resolve_repo_root", lambda: tmp_path)

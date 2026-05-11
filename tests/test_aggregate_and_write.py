@@ -12,7 +12,7 @@ YAMLs as a single mapping `{sub_judges: [...]}` to `cli.spec_review
 4. Builds the v2.0 attestation: provenance (iter_blob_sha + iter_commit_sha),
    content_hash, attestation_integrity_hash.
 5. Validates against attestation-schema-v2.0.json.
-6. Atomic write to docs/reviews/<doc-id>-rN.review.yaml.
+6. Atomic write to docs/reviews/<doc-id>-rN.orchestra.review.yaml.
 """
 
 from __future__ import annotations
@@ -74,7 +74,7 @@ def _two_passing_subjudges() -> list[dict]:
 
 
 def test_aggregate_and_write_pass(tmp_path, monkeypatch):
-    """Self-application — happy path: pass attestation written to docs/reviews/<doc-id>-r1.review.yaml."""
+    """Self-application — happy path: pass attestation written to docs/reviews/<doc-id>-r1.orchestra.review.yaml."""
     from cli import pdsa, spec_review
 
     _init_repo(tmp_path)
@@ -93,7 +93,7 @@ def test_aggregate_and_write_pass(tmp_path, monkeypatch):
     rc = spec_review.main(["--aggregate-and-write", "docs/features/008-foo.md"])
     assert rc == 0, "expected pass attestation write to exit 0"
 
-    out_path = tmp_path / "docs" / "reviews" / "008-foo-r1.review.yaml"
+    out_path = tmp_path / "docs" / "reviews" / "008-foo-r1.orchestra.review.yaml"
     assert out_path.exists(), "attestation file must be created"
 
     written = yaml.safe_load(out_path.read_text())
@@ -125,7 +125,7 @@ def test_aggregate_and_write_validates_against_v2_schema(tmp_path, monkeypatch):
     spec_review.main(["--aggregate-and-write", "docs/features/008-foo.md"])
 
     written = yaml.safe_load(
-        (tmp_path / "docs" / "reviews" / "008-foo-r1.review.yaml").read_text()
+        (tmp_path / "docs" / "reviews" / "008-foo-r1.orchestra.review.yaml").read_text()
     )
     schema = json.loads(spec_review.SCHEMA_V2_PATH.read_text())
     jsonschema.validate(written, schema)
@@ -162,7 +162,7 @@ def test_aggregate_and_write_aggregates_findings(tmp_path, monkeypatch):
 
     spec_review.main(["--aggregate-and-write", "docs/features/008-foo.md"])
     written = yaml.safe_load(
-        (tmp_path / "docs" / "reviews" / "008-foo-r1.review.yaml").read_text()
+        (tmp_path / "docs" / "reviews" / "008-foo-r1.orchestra.review.yaml").read_text()
     )
     assert len(written["findings_aggregated"]) == 1
     assert written["findings_aggregated"][0]["severity"] == "Important"
@@ -196,7 +196,7 @@ def test_aggregate_and_write_mandatory_failure(tmp_path, monkeypatch):
     assert rc == 1, "mandatory failure must exit 1"
 
     written = yaml.safe_load(
-        (tmp_path / "docs" / "reviews" / "008-foo-r1.review.yaml").read_text()
+        (tmp_path / "docs" / "reviews" / "008-foo-r1.orchestra.review.yaml").read_text()
     )
     assert written["overall_verdict"] == "fail"
     assert written["overall_verdict_basis"]["reason"] == "mandatory_subjudge_failed"

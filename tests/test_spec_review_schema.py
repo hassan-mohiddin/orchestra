@@ -162,7 +162,7 @@ def test_valid_yaml_passes(tmp_path, monkeypatch, capsys):
     """T4 / S20 — A5: valid attestation → exit 0 + file written."""
     rc, cap, _ = _run(tmp_path, monkeypatch, capsys, [_valid_attestation_yaml()])
     assert rc == 0, f"stderr={cap.err}"
-    out_path = tmp_path / "docs" / "reviews" / "008-foo-r1.review.yaml"
+    out_path = tmp_path / "docs" / "reviews" / "008-foo-r1.orchestra.review.yaml"
     assert out_path.exists()
 
 

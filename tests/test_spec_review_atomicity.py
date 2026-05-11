@@ -25,7 +25,7 @@ def test_no_partial_write_on_pre_write_failure(tmp_path, capsys, monkeypatch):
     rc = spec_review.main(["docs/features/008-foo.md"])
     assert rc == 1
 
-    out_path = tmp_path / "docs" / "reviews" / "008-foo-r1.review.yaml"
+    out_path = tmp_path / "docs" / "reviews" / "008-foo-r1.orchestra.review.yaml"
     assert not out_path.exists()
     reviews = tmp_path / "docs" / "reviews"
     if reviews.exists():
@@ -73,7 +73,7 @@ def test_no_partial_write_on_io_exception(tmp_path, capsys, monkeypatch):
     err = capsys.readouterr().err
     assert "atomic_write_failed" in err
 
-    out_path = tmp_path / "docs" / "reviews" / "008-foo-r1.review.yaml"
+    out_path = tmp_path / "docs" / "reviews" / "008-foo-r1.orchestra.review.yaml"
     assert not out_path.exists()
     reviews = tmp_path / "docs" / "reviews"
     leftovers = list(reviews.glob("*.tmp.*"))

@@ -21,7 +21,7 @@ def test_v1_attestation_readable(tmp_path: Path) -> None:
         "  content_hash: sha256:" + "a" * 64 + "\n"
         "  iteration: 1\n"
     )
-    p = tmp_path / "v1.review.yaml"
+    p = tmp_path / "v1.orchestra.review.yaml"
     p.write_text(v1_yaml)
     assert spec_review._detect_schema_version(p) == "1.0"
 
@@ -31,7 +31,7 @@ def test_v2_attestation_detected(tmp_path: Path) -> None:
     from cli import spec_review
 
     v2_yaml = 'schema_version: "2.0"\n'
-    p = tmp_path / "v2.review.yaml"
+    p = tmp_path / "v2.orchestra.review.yaml"
     p.write_text(v2_yaml)
     assert spec_review._detect_schema_version(p) == "2.0"
 
@@ -40,7 +40,7 @@ def test_nonexistent_returns_none(tmp_path: Path) -> None:
     """Slice 1.6 — missing file returns None."""
     from cli import spec_review
 
-    p = tmp_path / "missing.review.yaml"
+    p = tmp_path / "missing.orchestra.review.yaml"
     assert spec_review._detect_schema_version(p) is None
 
 
@@ -48,7 +48,7 @@ def test_malformed_returns_none(tmp_path: Path) -> None:
     """Slice 1.6 — malformed YAML returns None (no crash)."""
     from cli import spec_review
 
-    p = tmp_path / "broken.review.yaml"
+    p = tmp_path / "broken.orchestra.review.yaml"
     p.write_text("not: valid: yaml: structure: [")
     assert spec_review._detect_schema_version(p) is None
 
@@ -61,7 +61,7 @@ def _setup_repo_with_v1_attestation(tmp_path: Path) -> None:
     doc.write_text("# foo\n\n> **Iteration:** 1\n\n## Body\n\nHello.\n")
     reviews = tmp_path / "docs" / "reviews"
     reviews.mkdir(parents=True)
-    v1 = reviews / "008-foo-r1.review.yaml"
+    v1 = reviews / "008-foo-r1.orchestra.review.yaml"
     v1.write_text(
         'schema_version: "1.0"\n'
         "doc_subject:\n"

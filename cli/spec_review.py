@@ -79,6 +79,45 @@ def parse_iteration_from_text(text: str) -> int:
     return int(m.group(1))
 
 
+def _compute_attestation_integrity_hash(payload: dict) -> str:
+    """SHA-256 over canonical YAML payload with the hash field zeroed (LLD-011 slice 1.23).
+
+    Algorithm:
+        1. Deep-copy payload.
+        2. Remove `attestation_integrity_hash` field (so its own value cannot
+           affect the hash — this is the standard self-referential-hash pattern).
+        3. Serialize to canonical YAML: sort_keys=True, no flow style.
+        4. SHA-256 hex digest of UTF-8 bytes. Prefix with "sha256:".
+
+    Detects post-write tampering with any field other than the hash itself.
+    Does NOT prevent authenticated spoof (rewrite-everything including hash) —
+    that's the documented limitation in LLD-011 §Security S8.
+    """
+    import copy
+
+    canonical_payload = copy.deepcopy(payload)
+    canonical_payload.pop("attestation_integrity_hash", None)
+    canonical_yaml = yaml.safe_dump(
+        canonical_payload, sort_keys=True, default_flow_style=False
+    )
+    digest = hashlib.sha256(canonical_yaml.encode("utf-8")).hexdigest()
+    return "sha256:" + digest
+
+
+def _verify_attestation_integrity_hash(payload: dict) -> bool:
+    """Re-compute hash and compare to stored value (LLD-011 slices 1.24-1.25).
+
+    Returns:
+        True if the stored hash matches the recomputed canonical-payload hash.
+        False if the field is missing, malformed, or tampered.
+    """
+    stored = payload.get("attestation_integrity_hash")
+    if not isinstance(stored, str):
+        return False
+    computed = _compute_attestation_integrity_hash(payload)
+    return computed == stored
+
+
 def _get_iter_commit_sha(repo_root: Path) -> str:
     """Get current git HEAD SHA (LLD-011 slice 1.19).
 

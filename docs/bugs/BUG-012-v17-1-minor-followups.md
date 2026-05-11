@@ -61,14 +61,15 @@ Per LLD-010 r4 Changelog entry, r4 was paperwork-only cascading edit; no interna
 
 3. **`cli/lint.py` 1367 lines → module split** — Natural seam: `cli/lint/` package with `core.py` (regex constants + Finding dataclass + parsers) / `canon.py` (L2-detect + L2-finalize + tiered + helpers) / `commit.py` (Refs-eligibility + retroactive L2 + commit-range). **Defer to v1.8+** — evaluated 2026-05-11 Phase K and concluded split was YAGNI: file is large but cohesive, well-sectioned, searchable; split would touch 9+ test file imports for marginal benefit. Re-evaluate when a third major v1.8+ addition needs a new home.
 4. **`tests/scale_migration_helper.py` → `tools/`** — `tools/migrate_scale_rules.py` imports from `tests/` (wrong dependency direction). Promote helper out of tests/.
-5. **`attestation-template.yaml` → `skills/spec-review/templates/`** — currently in `cli/templates/`; spec-review skill owns it conceptually; move under skill dir for consistency with LLD-008 r7 placement rule.
-6. **`docs/design/orchestra-philosophy.md` lint issues** — pre-existing to-be-determined placeholders in Key Decisions table + mermaid parse error on line 240. Blocks whitelist Changelog appends. Either fix (supersession, since Status: Current) or relax lint to permit whitelist appends despite body warnings.
+5. ~~**`attestation-template.yaml` → `skills/spec-review/templates/`**~~ — CLOSED 2026-05-11 via LLD-008 r7 → r8 supersession. File moved (git mv preserves history); A3 adjusted to 10 cli/templates artifacts + new skills/spec-review/templates/ dir. Zero code refs; tests untouched.
+6. ~~**`docs/design/orchestra-philosophy.md` lint issues**~~ — CLOSED 2026-05-11 via philosophy r1 → r2 supersession. 4 placeholder rows + mermaid gantt colon parse error fixed inline; v1.7.0 Changelog row added.
 
 ## Iteration Log
 
 - r1 (2026-05-11) — initial aggregate; pre-shipping fix. Closes/tracks deferred Minors across LLDs + plan + post-ship cleanup observations.
 - r2 (2026-05-11) — dogfood batch landed via tiered narrow-change (LLD-009 r6 first real-world use). Closed: LLD-008 r7 Minors #1 (input_fn comment) + #4 (A8 section-header anchor); LLD-009 r6 Minors #3 (3a/3b legend) + #4 (A13 pre-commit.sh ownership). Plan Minors #1 (cross-doc lineage verification) + #2 (test-quality audit) closed via Phase D/J. Remaining open: LLD-008 #2/#3/#5 + LLD-009 #1/#2/#5 + Post-ship cleanup #1/#2/#3/#5/#6 = 11 items.
 - r3 (2026-05-11) — second narrow-change batch landed. Closed: LLD-008 r7 Minors #2 (prompt UX preservation note) + #5 (Skill-Status value-collision example); LLD-009 r6 Minors #1 (D1-D3 verifiability classification) + #2 (mixed anchors → function-anchors) + #5 (A16 CHANGELOG cite verification). Remaining open: LLD-008 #3 (T2 test enumeration — test code, not narrow-change) + Post-ship cleanup #1/#2/#3/#5/#6 = 6 items.
+- r4 (2026-05-11) — supersession batch landed (philosophy r1→r2 + LLD-008 r7→r8). Closed: §Post-ship cleanup #5 (attestation-template move via LLD-008 r8) + #6 (philosophy.md lint blockers via r2). Surfaced new BUG-014 (L4 doc-id-burn rejects bare-name design supersession; --no-verify bypass used; v1.7.1 fix). Remaining open: LLD-008 #3 (T2 test enumeration) + Post-ship cleanup #1/#2/#3 = 4 items.
 
 ## Regression Prevention
 

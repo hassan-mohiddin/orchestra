@@ -367,6 +367,76 @@ def test_refs_no_refs_line(tmp_path, monkeypatch) -> None:
     assert report.checks["refs"].passed is True
 
 
+def test_filename_grammar_feature_pass(tmp_path, monkeypatch) -> None:
+    """Slice 2.9 — feature doc `NNN-name.md` matches LLD-006-r4 grammar."""
+    from cli import pdsa
+
+    doc = tmp_path / "docs" / "features" / "008-commit-skill.md"
+    doc.parent.mkdir(parents=True)
+    doc.write_text("# Foo\n")
+
+    monkeypatch.setattr(pdsa, "_invoke_lint", lambda argv: 0)
+    report = pdsa.run_pdsa(doc)
+
+    assert report.checks["filename_grammar"].passed is True
+
+
+def test_filename_grammar_feature_rev_pass(tmp_path, monkeypatch) -> None:
+    """Slice 2.9 — feature `NNN-name-rN.md` supersession variant passes."""
+    from cli import pdsa
+
+    doc = tmp_path / "docs" / "features" / "008-commit-skill-r8.md"
+    doc.parent.mkdir(parents=True)
+    doc.write_text("# Foo\n")
+
+    monkeypatch.setattr(pdsa, "_invoke_lint", lambda argv: 0)
+    report = pdsa.run_pdsa(doc)
+
+    assert report.checks["filename_grammar"].passed is True
+
+
+def test_filename_grammar_feature_fail(tmp_path, monkeypatch) -> None:
+    """Slice 2.9 — feature `name.md` without NNN prefix fails."""
+    from cli import pdsa
+
+    doc = tmp_path / "docs" / "features" / "no-prefix.md"
+    doc.parent.mkdir(parents=True)
+    doc.write_text("# Foo\n")
+
+    monkeypatch.setattr(pdsa, "_invoke_lint", lambda argv: 0)
+    report = pdsa.run_pdsa(doc)
+
+    assert report.checks["filename_grammar"].passed is False
+
+
+def test_filename_grammar_bug_pass(tmp_path, monkeypatch) -> None:
+    """Slice 2.9 — bug `BUG-NNN-name.md` matches grammar."""
+    from cli import pdsa
+
+    doc = tmp_path / "docs" / "bugs" / "BUG-014-l4-bare-name.md"
+    doc.parent.mkdir(parents=True)
+    doc.write_text("# Foo\n")
+
+    monkeypatch.setattr(pdsa, "_invoke_lint", lambda argv: 0)
+    report = pdsa.run_pdsa(doc)
+
+    assert report.checks["filename_grammar"].passed is True
+
+
+def test_filename_grammar_design_bare_name_pass(tmp_path, monkeypatch) -> None:
+    """Slice 2.9 — design doc bare-name with -rN supersession passes (BUG-014 gap)."""
+    from cli import pdsa
+
+    doc = tmp_path / "docs" / "design" / "orchestra-philosophy-r2.md"
+    doc.parent.mkdir(parents=True)
+    doc.write_text("# Foo\n")
+
+    monkeypatch.setattr(pdsa, "_invoke_lint", lambda argv: 0)
+    report = pdsa.run_pdsa(doc)
+
+    assert report.checks["filename_grammar"].passed is True
+
+
 def test_required_sections_unknown_doc_type(tmp_path, monkeypatch) -> None:
     """Slice 2.3 — unknown doc type → required_sections.passed=True (skip check, no spec to enforce)."""
     from cli import pdsa

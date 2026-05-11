@@ -133,6 +133,32 @@ _OWNER_SUFFIX_RE = re.compile(r"^\s*(?::|by)\s+\S+", re.IGNORECASE)
 
 _REFS_LINE_RE = re.compile(r"^Refs:\s+(\S+)", re.MULTILINE)
 
+_FILENAME_GRAMMAR: dict[str, re.Pattern[str]] = {
+    "feature": re.compile(r"^\d{3}-[a-z0-9][a-z0-9-]*(-r\d+)?\.md$"),
+    "bug": re.compile(r"^BUG-\d{3}-[a-z0-9][a-z0-9-]*(-r\d+)?\.md$"),
+    "adr": re.compile(r"^ADR-\d{3}-[a-z0-9][a-z0-9-]*(-r\d+)?\.md$"),
+    "postmortem": re.compile(r"^\d{3}-[a-z0-9][a-z0-9-]*(-r\d+)?\.md$"),
+    "runbook": re.compile(r"^\d{3}-[a-z0-9][a-z0-9-]*(-r\d+)?\.md$"),
+    "design": re.compile(r"^[a-z0-9][a-z0-9-]*(-r\d+)?\.md$"),
+    "plan": re.compile(r"^\d{4}-\d{2}-\d{2}-[a-z0-9][a-z0-9-]*\.md$"),
+}
+
+
+def _check_filename_grammar(doc_path: Path) -> CheckResult:
+    """Per LLD-006-r4 — filename grammar per doc type."""
+    doc_type = _detect_doc_type(doc_path)
+    if doc_type is None or doc_type not in _FILENAME_GRAMMAR:
+        return CheckResult(passed=True, detail="unknown doc type — grammar check skipped")
+
+    name = doc_path.name
+    pattern = _FILENAME_GRAMMAR[doc_type]
+    if not pattern.match(name):
+        return CheckResult(
+            passed=False,
+            detail=f"{name} does not match {doc_type} grammar {pattern.pattern}",
+        )
+    return CheckResult(passed=True, detail=f"{doc_type} grammar OK")
+
 
 def _check_refs(doc_path: Path) -> CheckResult:
     """Per LLD-011 §PDSA item 6 — each Refs: <path> line must resolve."""
@@ -292,5 +318,6 @@ def run_pdsa(doc_path: Path) -> PdsaReport:
     report.checks["citations"] = _check_citations(doc_path)
     report.checks["placeholders"] = _check_placeholders(doc_path)
     report.checks["refs"] = _check_refs(doc_path)
+    report.checks["filename_grammar"] = _check_filename_grammar(doc_path)
 
     return report

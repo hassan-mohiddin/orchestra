@@ -79,6 +79,21 @@ SUPERSESSION_ITERATION_RE = re.compile(r"^(\d+)-([a-z][a-z0-9-]*)-r(\d+)\.md$")
 FIRST_ITERATION_BUG_RE = re.compile(r"^BUG-(\d+)-([a-z][a-z0-9-]*)\.md$")
 SUPERSESSION_ITERATION_BUG_RE = re.compile(r"^BUG-(\d+)-([a-z][a-z0-9-]*)-r(\d+)\.md$")
 
+# Slice 4 (BUG-014 closure) — bare-name design + POSTMORTEM/RUNBOOK prefix
+# patterns from canon §4.10 via cli.vocabulary.FILENAME_GRAMMAR. Hand-tuned
+# capture-group variants here because lint_doc_id_burn needs `(base, r)`
+# slots; canon regexes are membership-only (no groups).
+DESIGN_BARE_NAME_RE = re.compile(r"^([a-z][a-z0-9-]*)\.md$")
+DESIGN_BARE_NAME_SUPERSESSION_RE = re.compile(r"^([a-z][a-z0-9-]*)-r(\d+)\.md$")
+POSTMORTEM_FIRST_ITERATION_RE = re.compile(
+    r"^POSTMORTEM-(\d{4}-\d{2}-\d{2})-([a-z][a-z0-9-]*)\.md$"
+)
+POSTMORTEM_SUPERSESSION_RE = re.compile(
+    r"^POSTMORTEM-(\d{4}-\d{2}-\d{2})-([a-z][a-z0-9-]*)-r(\d+)\.md$"
+)
+RUNBOOK_FIRST_ITERATION_RE = re.compile(r"^RUNBOOK-([a-z][a-z0-9-]*)\.md$")
+RUNBOOK_SUPERSESSION_RE = re.compile(r"^RUNBOOK-([a-z][a-z0-9-]*)-r(\d+)\.md$")
+
 # ---------------------------------------------------------------------------
 # L2 required-section helpers (slice 3 — canon §4.8 + tolerant prefix-match)
 # ---------------------------------------------------------------------------
@@ -717,6 +732,50 @@ def _infer_doc_type_dir(path: Path) -> str | None:
     return None
 
 
+def _check_supersession_with_base(
+    new_doc_path: Path,
+    canon_dir: Path,
+    archive_dir: Path,
+    first_iter_name: str,
+    base_for_glob: str,
+    new_r: int,
+    super_re: re.Pattern[str],
+) -> list[Finding]:
+    """Shared supersession check: base exists + r-suffix uniqueness."""
+    first_exists = any(
+        (d / first_iter_name).exists() for d in (canon_dir, archive_dir)
+    )
+    if not first_exists:
+        return [Finding(
+            "error", str(new_doc_path),
+            f"supersession-iteration {new_doc_path.name} references base "
+            f"{first_iter_name!r} which does not exist in canon or archive. "
+            "Cannot supersede a non-existent doc.",
+        )]
+    new_doc_resolved = new_doc_path.resolve() if new_doc_path.exists() else new_doc_path
+    existing_rs: list[int] = []
+    for d in (canon_dir, archive_dir):
+        if not d.exists():
+            continue
+        for p in d.glob(f"{base_for_glob}-r*.md"):
+            if p.exists() and p.resolve() == new_doc_resolved:
+                continue
+            m = super_re.match(p.name)
+            if m and m.groups()[-2] == base_for_glob.split("-r")[0].rsplit("-", 1)[-1]:
+                # Group ordering varies by regex; fall back to direct check below
+                pass
+            if m:
+                existing_rs.append(int(m.groups()[-1]))
+    max_r = max(existing_rs, default=1)
+    if new_r <= max_r:
+        return [Finding(
+            "error", str(new_doc_path),
+            f"supersession-iteration r{new_r} reuses or precedes existing r-suffix "
+            f"(max r={max_r}). Next available: r{max_r + 1}.",
+        )]
+    return []
+
+
 def lint_doc_id_burn(new_doc_path: Path, repo_root: Path) -> list[Finding]:
     """L4 — first-iteration strict-greater id; supersession-iteration r-suffix uniqueness.
 
@@ -731,6 +790,69 @@ def lint_doc_id_burn(new_doc_path: Path, repo_root: Path) -> list[Finding]:
     canon_dir = repo_root / "docs" / doc_type
     archive_dir = repo_root / "docs" / "archive" / doc_type
 
+    # Slice 4 — bare-name design (BUG-014 closure)
+    if doc_type == "design":
+        m_super = DESIGN_BARE_NAME_SUPERSESSION_RE.match(name)
+        if m_super:
+            base = m_super.group(1)
+            new_r = int(m_super.group(2))
+            return _check_supersession_with_base(
+                new_doc_path, canon_dir, archive_dir,
+                first_iter_name=f"{base}.md",
+                base_for_glob=base,
+                new_r=new_r,
+                super_re=DESIGN_BARE_NAME_SUPERSESSION_RE,
+            )
+        if DESIGN_BARE_NAME_RE.match(name):
+            return []  # bare-name first-iter — no numeric id to burn
+        return [Finding(
+            "error", str(new_doc_path),
+            f"filename {name!r} does not match design bare-name pattern "
+            "(canon §4.10)",
+        )]
+
+    # Slice 4 — POSTMORTEM-YYYY-MM-DD-name
+    if doc_type == "postmortems":
+        m_super = POSTMORTEM_SUPERSESSION_RE.match(name)
+        if m_super:
+            date, base, new_r_str = m_super.group(1), m_super.group(2), m_super.group(3)
+            return _check_supersession_with_base(
+                new_doc_path, canon_dir, archive_dir,
+                first_iter_name=f"POSTMORTEM-{date}-{base}.md",
+                base_for_glob=f"POSTMORTEM-{date}-{base}",
+                new_r=int(new_r_str),
+                super_re=POSTMORTEM_SUPERSESSION_RE,
+            )
+        if POSTMORTEM_FIRST_ITERATION_RE.match(name):
+            return []
+        return [Finding(
+            "error", str(new_doc_path),
+            f"filename {name!r} does not match POSTMORTEM-YYYY-MM-DD-name pattern "
+            "(canon §4.10)",
+        )]
+
+    # Slice 4 — RUNBOOK-name
+    if doc_type == "runbooks":
+        m_super = RUNBOOK_SUPERSESSION_RE.match(name)
+        if m_super:
+            base = m_super.group(1)
+            new_r = int(m_super.group(2))
+            return _check_supersession_with_base(
+                new_doc_path, canon_dir, archive_dir,
+                first_iter_name=f"RUNBOOK-{base}.md",
+                base_for_glob=f"RUNBOOK-{base}",
+                new_r=new_r,
+                super_re=RUNBOOK_SUPERSESSION_RE,
+            )
+        if RUNBOOK_FIRST_ITERATION_RE.match(name):
+            return []
+        return [Finding(
+            "error", str(new_doc_path),
+            f"filename {name!r} does not match RUNBOOK-name pattern "
+            "(canon §4.10)",
+        )]
+
+    # Existing NNN- / BUG-NNN- flow (features, bugs, adr)
     m_first = FIRST_ITERATION_RE.match(name) or FIRST_ITERATION_BUG_RE.match(name)
     m_super = SUPERSESSION_ITERATION_RE.match(name) or SUPERSESSION_ITERATION_BUG_RE.match(name)
 

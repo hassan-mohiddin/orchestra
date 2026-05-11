@@ -322,6 +322,51 @@ def test_mixed_placeholders(tmp_path, monkeypatch) -> None:
     assert "FIXME" in report.checks["placeholders"].detail
 
 
+def test_refs_resolve_pass(tmp_path, monkeypatch) -> None:
+    """Slice 2.8 — Refs: line pointing at existing file → refs.passed=True."""
+    from cli import pdsa
+
+    target = tmp_path / "docs" / "features" / "100-bar.md"
+    target.parent.mkdir(parents=True)
+    target.write_text("# Bar\n")
+
+    body = f"## Body\n\nRefs: {target}\n"
+    doc = tmp_path / "random.md"
+    doc.write_text(body)
+
+    monkeypatch.setattr(pdsa, "_invoke_lint", lambda argv: 0)
+    report = pdsa.run_pdsa(doc)
+
+    assert report.checks["refs"].passed is True
+
+
+def test_refs_resolve_fail(tmp_path, monkeypatch) -> None:
+    """Slice 2.8 — Refs: line points at nonexistent file → refs.passed=False."""
+    from cli import pdsa
+
+    body = "Refs: docs/features/does-not-exist.md\n"
+    doc = tmp_path / "random.md"
+    doc.write_text(body)
+
+    monkeypatch.setattr(pdsa, "_invoke_lint", lambda argv: 0)
+    report = pdsa.run_pdsa(doc)
+
+    assert report.checks["refs"].passed is False
+
+
+def test_refs_no_refs_line(tmp_path, monkeypatch) -> None:
+    """Slice 2.8 — no Refs: lines → refs.passed=True (nothing to validate)."""
+    from cli import pdsa
+
+    doc = tmp_path / "random.md"
+    doc.write_text("# foo\n\nbody.\n")
+
+    monkeypatch.setattr(pdsa, "_invoke_lint", lambda argv: 0)
+    report = pdsa.run_pdsa(doc)
+
+    assert report.checks["refs"].passed is True
+
+
 def test_required_sections_unknown_doc_type(tmp_path, monkeypatch) -> None:
     """Slice 2.3 — unknown doc type → required_sections.passed=True (skip check, no spec to enforce)."""
     from cli import pdsa

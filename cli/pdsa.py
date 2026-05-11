@@ -131,6 +131,29 @@ _CITATION_RE = re.compile(
 _PLACEHOLDER_RE = re.compile(r"\b(TBD|TODO|FIXME)\b(.*)$", re.MULTILINE)
 _OWNER_SUFFIX_RE = re.compile(r"^\s*(?::|by)\s+\S+", re.IGNORECASE)
 
+_REFS_LINE_RE = re.compile(r"^Refs:\s+(\S+)", re.MULTILINE)
+
+
+def _check_refs(doc_path: Path) -> CheckResult:
+    """Per LLD-011 §PDSA item 6 — each Refs: <path> line must resolve."""
+    body = doc_path.read_text()
+    failures: list[str] = []
+
+    for m in _REFS_LINE_RE.finditer(body):
+        ref_path_str = m.group(1)
+        ref_path = Path(ref_path_str)
+        if not ref_path.is_absolute():
+            candidate = (doc_path.parent / ref_path).resolve()
+            if not candidate.exists():
+                candidate = Path.cwd() / ref_path
+            ref_path = candidate
+        if not ref_path.exists():
+            failures.append(f"unresolved Refs: {ref_path_str}")
+
+    if failures:
+        return CheckResult(passed=False, detail="; ".join(failures))
+    return CheckResult(passed=True, detail="all Refs: lines resolve")
+
 
 def _check_placeholders(doc_path: Path) -> CheckResult:
     """Detect bare TBD/TODO/FIXME without owner-suffix.
@@ -268,5 +291,6 @@ def run_pdsa(doc_path: Path) -> PdsaReport:
     report.checks["required_sections"] = _check_required_sections(doc_path)
     report.checks["citations"] = _check_citations(doc_path)
     report.checks["placeholders"] = _check_placeholders(doc_path)
+    report.checks["refs"] = _check_refs(doc_path)
 
     return report

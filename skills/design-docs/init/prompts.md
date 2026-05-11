@@ -37,14 +37,12 @@ Answer mapping → CLI flag:
   - **label**: `full-custom`
     **description**: `Define your own doc types with required sections, status enum, and naming pattern. Invariants enforced regardless: Changelog section MANDATORY; Status enum >= 3 states (with terminal state); Naming pattern in NNN-kebab.md / YYYY-MM-DD-kebab.md / kebab.md.`
 
-Answer mapping → CLI flag:
+Answer mapping → CLI flag (strip `(Recommended)` suffix first — see SKILL.md § Label-stripping rule):
 - `default-7` → `--preset default-7`
-- `subset-rename` → `--preset subset-rename` then enter subset-rename wizard
-- `full-custom` → `--preset full-custom` then enter full-custom wizard
-
-(Wizard sub-flows still authored in legacy descriptive form; both will
-graduate to AskUserQuestion-driven sub-prompts in a follow-up — see the
-v2.1 backlog. For the v2.0.1 hot path, `default-7` is the supported answer.)
+- `subset-rename` → fire v2.0.1 fallback AskUserQuestion (see § Q2
+  subset-rename / full-custom fallback below). Do NOT use legacy
+  descriptive wizard — that path is deferred to v2.1.
+- `full-custom` → same v2.0.1 fallback as `subset-rename`.
 
 ## Q3: Add-ons
 
@@ -97,11 +95,21 @@ Do NOT fire this prompt for a fresh init.
     **description**: `Abort. Leave config and scaffolding untouched.`
 
 Mapping (after stripping `(Recommended)` suffix):
-- `Re-run init` → `python -m cli.init --force` (then proceeds through
-  STEP 0 + Q1/Q2/Q3 as a forced re-init)
-- `Migrate` → run the schema migration path (NOT the 3-prompt flow);
-  detects `version` field, copies fields forward, exits without
-  scaffolding changes
+- `Re-run init` → **re-fire STEP 0 + Q1 + Q2 + Q3** via the sub-skill
+  body, collect fresh answers, THEN invoke:
+  `python -m cli.init --force --mode <a1> --preset <a2> --addons <a3>`.
+  Do NOT shortcut to `python -m cli.init --force` alone — the CLI would
+  use argparse defaults and the prompts would never fire, re-introducing
+  the BUG-001 root cause for the re-run path.
+- `Migrate` → invoke the schema migration path. Read v1.0 fields from
+  `.claude/settings.local.json`, then re-fire STEP 0 + Q1 + Q2 + Q3
+  surfacing the detected v1.0 values as suggested defaults in each
+  AskUserQuestion description (still ask — never auto-fill). After Q3,
+  invoke: `python -m cli.init --migrate-v10 --mode <a1> --preset <a2>
+  --addons <a3>`. The `--migrate-v10` flag tells the CLI to use
+  `migrate_v10_to_v11` as the base config and override
+  `mode/preset/addons` from the flags, preserving the v1.0
+  `spec_review_skill` + `doc_paths`.
 - `Keep current` → emit chat message + exit skill
 
 Suppress `Migrate` option from the AskUserQuestion call when the existing

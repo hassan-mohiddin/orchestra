@@ -148,3 +148,123 @@ def test_prompts_md_has_rerun_payload():
     """Issue B coverage in prompts.md — re-run AskUserQuestion payload defined."""
     body = PROMPTS.read_text()
     assert "Re-run" in body, "prompts.md must define a Re-run option for the master Step-2 branch."
+
+
+# ---------------------------------------------------------------------------
+# BUG-001 dry-run #3 leaks (G/H/I)
+# ---------------------------------------------------------------------------
+
+
+def test_prompts_md_rerun_mapping_refires_prompts_before_cli_g():
+    """Leak G — Re-run init mapping must re-fire STEP 0 + Q1/Q2/Q3 BEFORE cli.init,
+    not shortcut directly to cli.init --force (would re-introduce BUG-001 root cause)."""
+    body = PROMPTS.read_text()
+    # Find the Re-run prompt section
+    assert "## Re-run prompt" in body
+    rerun_section = body.split("## Re-run prompt")[1].split("##")[0]
+    # Re-run init mapping must mention re-firing prompts, not direct cli.init --force
+    assert "STEP 0" in rerun_section or "Q1" in rerun_section or "re-fire" in rerun_section.lower(), (
+        "Re-run init mapping must explicitly say it re-fires the prompt flow before "
+        "invoking cli.init. Direct shortcut to 'python -m cli.init --force' re-introduces "
+        "the BUG-001 root cause (CLI uses argparse defaults, no prompts fire)."
+    )
+    # Must include --force flag passed alongside answer flags (not alone)
+    has_force_with_flags = (
+        "--force --mode" in rerun_section
+        or "--mode" in rerun_section and "--force" in rerun_section
+    )
+    assert has_force_with_flags, (
+        "Re-run init mapping must pass --force ALONGSIDE --mode/--preset/--addons "
+        "answers gathered from the re-fired prompts, not --force alone."
+    )
+
+
+def test_prompts_md_q2_mapping_synced_with_v201_fallback_i():
+    """Leak I — prompts.md Q2 'Answer mapping' must NOT route subset-rename / full-custom
+    to a legacy wizard. Must route to v2.0.1 fallback (Switch / Abort) like SKILL.md."""
+    body = PROMPTS.read_text()
+    q2_section = body.split("## Q2: Doc types")[1].split("## Q3")[0]
+    assert "enter subset-rename wizard" not in q2_section, (
+        "Leak I: prompts.md still routes subset-rename to a legacy wizard. "
+        "Must point at the v2.0.1 fallback section (see SKILL.md Q2 mapping)."
+    )
+    assert "enter full-custom wizard" not in q2_section, (
+        "Leak I: prompts.md still routes full-custom to a legacy wizard. "
+        "Must point at the v2.0.1 fallback section."
+    )
+    # Should reference fallback section explicitly
+    assert "fallback" in q2_section.lower() or "v2.0.1" in q2_section.lower(), (
+        "Q2 mapping must reference the v2.0.1 fallback path."
+    )
+
+
+def test_cli_init_migrate_v10_flag_exists_h():
+    """Leak H — cli/init.py main() must accept --migrate-v10 flag."""
+    import subprocess
+    result = subprocess.run(
+        [".venv/bin/python", "-m", "cli.init", "--help"],
+        capture_output=True,
+        text=True,
+        cwd=str(REPO_ROOT),
+    )
+    assert "--migrate-v10" in result.stdout, (
+        "Leak H: cli.init must expose --migrate-v10 flag so the skill STEP 0 Migrate path "
+        "actually copies v1.0 fields. Promise of 'Copy fields' currently unkept."
+    )
+
+
+def test_cli_init_migrate_v10_copies_v10_fields_h(tmp_path, monkeypatch):
+    """Leak H — running cli.init with --migrate-v10 + v1.0 settings file copies v1.0 fields
+    (spec_review_skill, doc_paths) into the new orchestra.json."""
+    import json
+    import subprocess
+
+    # tmp_path needs to be a git repo for hook bootstrap
+    subprocess.run(
+        ["git", "init", "--quiet", "--initial-branch=main", str(tmp_path)],
+        check=True, capture_output=True,
+    )
+
+    # Set up fake v1.0 config under tmp_path/.claude/settings.local.json
+    claude_dir = tmp_path / ".claude"
+    claude_dir.mkdir()
+    v10_settings = {
+        "orchestra": {
+            "mode": "team",  # overridden by --mode flag
+            "doc_paths": {"features": "docs/custom-features"},
+            "spec_review_skill": "custom:spec-reviewer",
+        }
+    }
+    (claude_dir / "settings.local.json").write_text(json.dumps(v10_settings))
+
+    result = subprocess.run(
+        [
+            ".venv/bin/python", "-m", "cli.init",
+            "--repo", str(tmp_path),
+            "--mode", "solo",  # override v1.0's "team"
+            "--preset", "default-7",
+            "--addons", "yes",
+            "--migrate-v10",
+        ],
+        capture_output=True,
+        text=True,
+        cwd=str(REPO_ROOT),
+    )
+    assert result.returncode == 0, f"cli.init failed: {result.stderr}"
+
+    orchestra_json_path = tmp_path / ".claude" / "orchestra.json"
+    assert orchestra_json_path.exists(), "orchestra.json not written"
+    config = json.loads(orchestra_json_path.read_text())
+
+    # --mode flag override wins
+    assert config["orchestra"]["mode"] == "solo", "mode override should beat v1.0 value"
+
+    # v1.0 spec_review_skill preserved
+    dd = config["skills"]["design-docs"]
+    assert dd["spec_review_skill"] == "custom:spec-reviewer", (
+        "v1.0 spec_review_skill must be preserved by --migrate-v10"
+    )
+    # v1.0 doc_paths preserved (merged with defaults)
+    assert dd["doc_paths"]["features"] == "docs/custom-features", (
+        "v1.0 doc_paths must be preserved by --migrate-v10"
+    )

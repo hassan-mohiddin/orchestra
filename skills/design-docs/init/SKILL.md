@@ -29,7 +29,15 @@ Before issuing Q1, you MUST detect a v1.0 config:
    do NOT skip; do NOT collapse this prompt into Q1.
 3. If user picks `Migrate`: proceed to Q1/Q2/Q3, surfacing the detected
    v1.0 values in each AskUserQuestion description but still requiring
-   the user to answer each question. Never auto-fill.
+   the user to answer each question. Never auto-fill. After Q3 collect
+   the three answers and invoke the CLI with the `--migrate-v10` flag:
+   `python -m cli.init --migrate-v10 --mode <a1> --preset <a2>
+   --addons <a3>`. The `--migrate-v10` flag tells the CLI to use
+   `migrate_v10_to_v11` as the base config, preserving the v1.0
+   `spec_review_skill` + `doc_paths` while overriding mode/preset/addons
+   from the user's fresh answers. Do NOT omit `--migrate-v10` on the
+   Migrate path — without it the CLI builds a fresh v1.1 default and
+   the v1.0 fields are silently lost.
 4. If user picks `Keep v1.0`: emit a chat message stating no changes
    were made + exit the skill. Do NOT proceed to Q1.
 

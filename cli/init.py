@@ -331,10 +331,45 @@ def default_config(mode: str = "solo", preset: str = "default-7",
     }
 
 
+def _build_config_with_v10_overrides(
+    root: Path, mode: str, preset: str, addons: bool
+) -> dict:
+    """Build v1.1 config from detected v1.0 settings + override mode/preset/addons.
+
+    Preserves v1.0 `spec_review_skill` + `doc_paths`; overrides
+    `orchestra.mode`, `doc_types.preset`, and the three addon-installed
+    flags from the CLI-provided flags. Falls back to default_config if
+    no v1.0 config is detected (silent no-op).
+    """
+    v10 = detect_v10_config(root)
+    if v10 is None:
+        return default_config(mode=mode, preset=preset, addons=addons)
+    base = migrate_v10_to_v11(v10)
+    base["orchestra"]["mode"] = mode
+    dd = base["skills"]["design-docs"]
+    dd["doc_types"]["preset"] = preset
+    dd["ci_workflow_installed"] = addons
+    dd["agents_md_installed"] = addons
+    dd["llms_txt_installed"] = addons
+    return base
+
+
 def run_init(root: Path, mode: str = "solo", preset: str = "default-7",
-             addons: bool = True, force: bool = False) -> ScaffoldResult:
-    """Run full init flow: bucket 1 + bucket 2 + write config."""
-    config = default_config(mode=mode, preset=preset, addons=addons)
+             addons: bool = True, force: bool = False,
+             migrate_v10: bool = False) -> ScaffoldResult:
+    """Run full init flow: bucket 1 + bucket 2 + write config.
+
+    If `migrate_v10=True` and a v1.0 config is detected at
+    `.claude/settings.local.json`, the resulting v1.1 config preserves
+    the v1.0 `spec_review_skill` + `doc_paths` while overriding
+    `mode/preset/addons` from the explicit flags.
+    """
+    if migrate_v10:
+        config = _build_config_with_v10_overrides(
+            root, mode=mode, preset=preset, addons=addons
+        )
+    else:
+        config = default_config(mode=mode, preset=preset, addons=addons)
     r1 = scaffold_bucket_1(config, root, force=force)
     r2 = scaffold_bucket_2(config, root, force=force)
     write_v11_config(root, config)
@@ -354,12 +389,17 @@ def main(argv: list[str] | None = None) -> int:
                         default="default-7")
     parser.add_argument("--addons", choices=["yes", "no"], default="yes")
     parser.add_argument("--force", action="store_true", help="Overwrite existing files")
+    parser.add_argument("--migrate-v10", action="store_true",
+                        help="If a v1.0 config is detected at .claude/settings.local.json, "
+                             "preserve its spec_review_skill + doc_paths in the new "
+                             "v1.1 config (other fields come from --mode/--preset/--addons).")
     parser.add_argument("--repo", default=".", help="Repo root (default: cwd)")
     args = parser.parse_args(argv)
 
     root = Path(args.repo).resolve()
     result = run_init(root, mode=args.mode, preset=args.preset,
-                      addons=(args.addons == "yes"), force=args.force)
+                      addons=(args.addons == "yes"), force=args.force,
+                      migrate_v10=args.migrate_v10)
 
     print(f"created: {len(result.created)}, skipped: {len(result.skipped)}")
     for p in result.created:

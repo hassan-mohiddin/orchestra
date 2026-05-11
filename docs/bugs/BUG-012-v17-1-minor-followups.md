@@ -34,18 +34,18 @@ Iterate through the items below; close per LLD-006-r4 narrow-change whitelist (C
 
 ### LLD-008 r7 deferred Minors
 
-1. **`input_fn=input` pseudocode clarification** — design § install_one_hook pseudocode uses `input_fn=input` as default arg; not all readers will recognize this as the test-injection seam. Add one-line comment.
+1. ~~**`input_fn=input` pseudocode clarification**~~ — CLOSED 2026-05-11 (commit dogfood batch 1). Inline comment added to install_one_hook pseudocode.
 2. **Prompt UX preservation note** — A5 covers `--on-conflict={skip,replace,append}` flag; existing interactive prompt path retained for TTY users. Document explicitly that prompt-string wording was preserved verbatim.
 3. **T2 11-file enumeration assertion** — A3 lists 11 init-related artifacts retained in `cli/templates/`; test currently asserts presence of representative subset only. Add full enumeration assertion.
-4. **A8 section-header citation** — A8 cites line ranges (109-128) for documentation-gate.md Quick Reference block; line ranges drift. Replace with section-header anchor.
+4. ~~**A8 section-header citation**~~ — CLOSED 2026-05-11 (commit dogfood batch 1). Line range 109-128 replaced with `## Quick Reference` section-header anchor.
 5. **Skill-Status value-collision documentation** — `Skill-Status` field is intentionally distinct from doc-lifecycle `Status` to prevent future value-collision if `skills/` is ever added to `REFS_ELIGIBLE_PREFIXES`. Documented in design § references/ governance; lacks an explicit value-collision example in glossary.
 
 ### LLD-009 r6 deferred Minors
 
 1. **D1-D3 verifiability classification** — Deliverables D1-D3 listed without explicit verification mechanism (lint-checkable vs. manual). Mark each.
 2. **Mixed line/function anchors** — Related Documents section mixes `cli/lint.py:128-130` (line range) with `cli/lint.py § extract_changelog_and_strip` (function anchor). Pick one convention.
-3. **3a/3b sub-numbering convention** — Edge Cases § uses 3a/3b/3 for `--amend` variants; convention not documented. Add legend.
-4. **pre-commit.sh canonical content inline** — A13 references pre-commit.sh template; currently file is shipped via LLD-008 path; inlining content in LLD-009 A13 would mirror LLD-009 A12 for commit-msg.sh (single-source).
+3. ~~**3a/3b sub-numbering convention**~~ — CLOSED 2026-05-11 (commit dogfood batch 2). One-line legend added to Edge Cases § 3a/3b.
+4. ~~**pre-commit.sh canonical content inline**~~ — CLOSED 2026-05-11 (commit dogfood batch 2). A13 reworded to clarify LLD-008 ships file / LLD-009 specifies content (mirrors A12 commit-msg.sh split).
 5. **A16 third-place CHANGELOG cite verification** — A16 cites pytest target lineage; cite includes "third-place" reference that should be verified post-impl matches actual CHANGELOG row.
 
 ### LLD-010 r4 deferred Minors
@@ -54,8 +54,8 @@ Per LLD-010 r4 Changelog entry, r4 was paperwork-only cascading edit; no interna
 
 ### Plan r2/r3 deferred Minors
 
-1. **Cross-doc number lineage Slice 5.2** — Originally Plan r3 orchestra Minor; fixed in r4. Verify CHANGELOG entry baseline number cross-references match all 3 LLDs.
-2. **Test-count audit** — Phase 0 deferred per plan §Phase 0 30-min time-box. File `docs/plans/2026-05-11-test-quality-audit.md` per output contract.
+1. ~~**Cross-doc number lineage Slice 5.2**~~ — CLOSED 2026-05-11 in Phase J: verified Plan §Goal (≥252), LLD-008 A9/A10 (150+17=167), LLD-009 A16 (167+53=220 → ≥252), CHANGELOG v1.7.0 entry (150→259) all consistent.
+2. ~~**Test-count audit**~~ — CLOSED 2026-05-11 via `docs/plans/2026-05-11-test-quality-audit.md` (commit `a1932bd`). All 132 audited tests KEEP-disposition.
 
 ### Post-ship cleanup observations (2026-05-11)
 
@@ -67,6 +67,7 @@ Per LLD-010 r4 Changelog entry, r4 was paperwork-only cascading edit; no interna
 ## Iteration Log
 
 - r1 (2026-05-11) — initial aggregate; pre-shipping fix. Closes/tracks deferred Minors across LLDs + plan + post-ship cleanup observations.
+- r2 (2026-05-11) — dogfood batch landed via tiered narrow-change (LLD-009 r6 first real-world use). Closed: LLD-008 r7 Minors #1 (input_fn comment) + #4 (A8 section-header anchor); LLD-009 r6 Minors #3 (3a/3b legend) + #4 (A13 pre-commit.sh ownership). Plan Minors #1 (cross-doc lineage verification) + #2 (test-quality audit) closed via Phase D/J. Remaining open: LLD-008 #2/#3/#5 + LLD-009 #1/#2/#5 + Post-ship cleanup #1/#2/#3/#5/#6 = 11 items.
 
 ## Regression Prevention
 

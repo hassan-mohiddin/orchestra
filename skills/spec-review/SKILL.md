@@ -1,15 +1,26 @@
 ---
 name: spec-review
-description: Use when reviewing any orchestra design doc (Feature LLD, Bug Report, ADR, Postmortem, Runbook, Design Doc, Plan) against the 4-gate rubric (Completeness / Evidence / Clarity / Consistency). Judge-1 default — orchestra ships exactly one judge; user manually invokes additional judges (codex, cavecrew, superpowers) for multi-judge consensus. Triggers when user runs `/orchestra:spec-review <doc-path>` or asks "spec review this doc."
+description: Use when reviewing any orchestra design doc (Feature LLD, Bug Report, ADR, Postmortem, Runbook, Design Doc, Plan) via the v2 multi-sub-judge ensemble. Dispatches 6 sub-judges in parallel (structure, semantic [mandatory], gate-compliance, adversarial [mandatory], repo-context, architectural-fit). Produces one schema-v2.0 attestation. User invokes additional peer judges (codex, etc.) separately for cross-judge consensus. Triggers when user runs `/orchestra:spec-review <doc-path>` or asks "spec review this doc."
 ---
 
-# orchestra Spec Review (Judge-1)
+# orchestra Spec Review v2 (LLD-011)
 
 ## Overview
 
-Adversarial spec review using a fresh-context subagent. Produces one schema-validated YAML attestation per invocation at `docs/reviews/<doc-id>-rN.review.yaml`. Multi-judge with **manual chair** — user invokes other judges separately and decides verdict.
+Multi-sub-judge ensemble spec review. Produces one schema-v2.0 YAML attestation per invocation at `docs/reviews/<doc-id>-rN.orchestra.review.yaml`. The 6 sub-judges run in parallel (single-message Task tool fanout), are aggregated mechanically (no LLM merge), and emit a cross-judge comparison report + interview-gate.
 
-**Bias mitigations:** position-bias (ordering instruction), self-preference (`--force` required for same-iteration overwrite), length-bias (output token cap 4000), same-model bias (documented; user runs `/codex:adversarial-review` as judge-2 manually).
+**Sub-judge ensemble:**
+
+| ID | Model | Tool set | Mandatory? | Rubric slice |
+|---|---|---|---|---|
+| structure | Sonnet 4.6 | Read | optional | format, sections, filename grammar, Mermaid |
+| semantic | Opus 4.7 | Read | **mandatory** | 4-gate continuity (inherits v1) |
+| gate-compliance | Sonnet 4.6 | Read | optional | orchestra Gates 1-3 + canon-frozen + lifecycle |
+| adversarial | Opus 4.7 | Read | **mandatory** | red-team, blast-radius, invariants, edge cases |
+| repo-context | Opus 4.7 | Read + Grep + Glob | optional | citation validity, impl-doc match, test coverage |
+| architectural-fit | Opus 4.7 | Read + Grep | optional | Design Doc + ADR consistency |
+
+**Mandatory tier**: failure of `semantic` or `adversarial` forces `overall_verdict: fail` with `reason: mandatory_subjudge_failed`. Optional sub-judges soft-fail (recorded as `status: error|timeout`, excluded from aggregation).
 
 ## Invocation
 
@@ -19,95 +30,113 @@ User runs:
 /orchestra:spec-review <doc-path>
 ```
 
-Where `<doc-path>` is repo-relative (e.g., `docs/features/007-spec-review-architecture.md`). Skill resolves via `commands/spec-review.md` slash-command shim.
+Where `<doc-path>` is repo-relative (e.g., `docs/features/011-spec-review-v2.md`).
+
+Flags:
+- `--force` — overwrite existing same-iteration attestation (still refused for v1.0 historical attestations per LLD-011 §slice 1.7)
+- `--override-cap` — bypass 2-iter post-commit cap (fires interview-gate before dispatch)
 
 ## Dispatch flow
 
-When invoked, the main agent (Claude) MUST follow these exact steps:
+When invoked, the main agent (Claude) MUST follow these steps in order:
 
-### Step 1 — render prompt
+### Step 1 — PDSA (Pre-Dispatch Self-Audit)
 
-Read `skills/spec-review/prompt-template.md`. Inline the target doc text where the template marker `<doc text inlined here at dispatch time>` appears.
+Invoke `cli.spec_review --pdsa <doc-path>`. If PDSA fails, report mechanical findings to the author and halt — sub-judges DO NOT dispatch. (PDSA scope: lint, required sections, citation validity, placeholder detection, cross-doc Refs: resolution, filename grammar. Glossary check is non-gating warn-only until BUG-016 vocab canon ships.)
 
-### Step 2 — dispatch subagent via Task tool
+### Step 2 — Iteration check
 
-Invoke the Claude Code `Task` tool with the following kwargs (verbatim):
+Read `> **Iteration:** N` from doc metadata.
+
+- **iter 1**: fresh full-doc dispatch (Step 3 below)
+- **iter 2**: delta-review dispatch (read iter-1 attestation, verify integrity hash, retrieve iter-1 bytes via `git cat-file -p <iter_blob_sha>`, diff, pass changed sections + iter-1 findings to sub-judges)
+- **iter ≥ 3**: HARD BLOCK. Refuse unless `--override-cap` was passed; override fires `AskUserQuestion` interview-gate before proceeding.
+
+### Step 3 — Render sub-judge prompts
+
+For each of the 6 sub-judges, read `skills/spec-review/judges/<id>/prompt.md` and inline the target doc text where the template marker `<doc text inlined here at dispatch time>` appears. For iter-2 delta-review, also inline the diff + iter-1 findings list.
+
+### Step 4 — Parallel dispatch via Task tool
+
+**Dispatch ALL 6 sub-judges in a single message with 6 parallel Task tool invocations.** This is the critical parallelism step — sequential dispatch would multiply latency. Per-Task kwargs:
 
 ```
 subagent_type: general-purpose
-max_tokens: 4000
-prompt: <rendered prompt from step 1>
+model: claude-opus-4-7 | claude-sonnet-4-6   # per cast table above
+prompt: <rendered sub-judge prompt>
+# NO max_tokens cap — length-bias mitigation lives in prompt instruction, not output cap
 ```
 
-The `general-purpose` subagent runs in fresh context (no main-thread history). The 4000 token cap is the length-bias mitigation per LLD-007 § Bias mitigations and bounds output to one schema-conformant YAML document.
+Tool set per sub-judge is enforced via prompt-level instruction (Claude Code's Task tool does not natively filter tools per subagent). Sub-judges with broader tool access (`repo-context`, `architectural-fit`) declare their scope in their prompt; the `cli.spec_review` output-quarantine step rejects tool-trace violations per LLD-011 §Security S1 + §E21.
 
-### Step 3 — capture YAML output
+### Step 5 — Collect sub-judge YAML outputs + persist provenance
 
-Take the subagent's response (one YAML document, schema v1.0 — see `attestation-schema-v1.0.json`). Subagent is instructed to output YAML only, no preamble.
+Once all 6 Task tool calls return, collect the 6 YAML chunks into a list. Before any aggregation:
 
-### Step 4 — pipe to cli.spec_review for validation + write
+- Compute `iter_commit_sha` via `git rev-parse HEAD` (recorded for audit; '<uncommitted>' if no HEAD)
+- Compute `iter_blob_sha` via `git hash-object -w <doc-path>` (PERSISTS blob to `.git/objects/`; required for iter-2 retrieval)
 
-Invoke (Bash):
+### Step 6 — Aggregate + validate + write
 
-```bash
-echo "<yaml-output>" | python -m cli.spec_review <doc-path>
+Pipe sub-judge YAMLs to `cli.spec_review --aggregate-and-write <doc-path>` via stdin. CLI performs:
+
+- Schema validation of each sub-judge entry (v2.0 schema fragment per LLD-011)
+- Mechanical aggregator (`cli/aggregator.py`) — dedup by (location, problem_hash), max severity, union raised_by
+- Path canonicalization (F1+F5 inherited from v1)
+- Authoritative field write (`content_hash`, `iter_commit_sha`, `iter_blob_sha`, `attestation_integrity_hash`, `overall_verdict`, `overall_verdict_basis`)
+- Stale-state byte-compare (F6+F8 inherited)
+- Atomic write of `docs/reviews/<doc-id>-rN.orchestra.review.yaml`
+
+**Failure-attestation invariant**: even when sub-judges fail (all-fail, mandatory-fail, doc-disappeared E18, prompt-missing E11), an attestation file is ALWAYS persisted with `overall_verdict: fail` + `reason:` + sub-judge statuses. The audit trail never has a gap.
+
+### Step 7 — Read codex peer-judge file if present
+
+If `docs/reviews/<doc-id>-rN.codex.md` exists, read it. Used for cross-judge comparison in Step 8. Native format — no normalization to v2 YAML (rejected per LLD-011 §Out-of-scope due to misinterpretation risk).
+
+### Step 8 — Cross-judge comparison report
+
+Emit a markdown table to chat (NOT a persistent file):
+
+```markdown
+## Spec-Review v2 Report — <doc-id>-rN
+
+| Judge | Critical | Important | Minor | File |
+|---|---|---|---|---|
+| orchestra | C1 | I1 | M1 | docs/reviews/<doc-id>-rN.orchestra.review.yaml |
+| codex     | C2 | I2 | M2 | docs/reviews/<doc-id>-rN.codex.md |
+
+**Cross-judge overlap:** ...
+**Unique to orchestra:** ...
+**Unique to codex:** ...
+
+**Top 5 by severity (cross-judge, deduped):**
+1. ...
 ```
 
-`cli.spec_review` performs schema validation, path canonicalization, hash binding, verdict authoritative-compute, stale-state check, and atomic-write of attestation YAML to `docs/reviews/<doc-id>-rN.review.yaml`. Exit codes:
+### Step 9 — Interview-gate
 
-- `0` — pass / conditional_pass attestation written
-- `1` — fail attestation written OR validation/identity/verdict mismatch
-- `2` — path traversal blocked
-
-### Step 5 — surface result to user
-
-Read the attestation file. Report `overall_verdict` and any findings to the user. User decides next step (commit, iterate, invoke additional judges).
-
-## Multi-judge protocol (manual chair)
-
-orchestra ships ONLY judge-1. User manually invokes additional judges as needed:
+If aggregate `findings_aggregated[*].severity` contains any `Critical` or `Important`, fire `AskUserQuestion`:
 
 ```
-/codex:adversarial-review <doc-path>     # different model — bypasses Opus self-preference
-/caveman:cavecrew-reviewer <doc-path>    # one-line/severity-emoji format
-/superpowers:requesting-code-review <doc-path>
+Findings need direction. Options:
+  - Address all findings now
+  - Defer some to BUG-NNN (which?)
+  - Mark won't-fix (which?)
+  - Re-review after author response
 ```
 
-Each judge produces independent output. orchestra does NOT auto-aggregate verdicts. User reads all outputs and decides:
-
-- All pass → commit + advance Status
-- Any fail → revise + bump `Iteration:` field → re-review
-- Disagreement → user policy (default: any fail = doc fails)
-
-Max 3 iterations per doc per LLD-006-r4 convention. Iteration 4+ → interview-gate fires (suspect context drift; surface to user).
-
-## Iteration handling
-
-Skill reads `> **Iteration:** N` from doc metadata block. Emits matching `iteration: N` in attestation. Mismatch → exit 1. **Author bumps Iteration before re-invoking** — skill does not auto-increment.
-
-## Existing attestation handling
-
-If `docs/reviews/<doc-id>-rN.review.yaml` already exists for the same iteration:
-
-- Default: skill exits 1 with explicit error
-- Override: pass `--force` to overwrite (use only for testing / replay)
-
-## Bias mitigations summary
-
-| # | Mitigation | Where enforced |
-|---|---|---|
-| 1 | Position bias | Prompt template instructs ordering by location, not severity |
-| 2 | Self-preference | `--force` required for same-iteration overwrite (cli.spec_review) |
-| 3 | Length bias | `max_tokens: 4000` Task kwarg (this skill body, step 2) |
-| 4 | Same-model bias | Documented — STANDARDS recommends user runs codex as judge-2 |
+Skip gate when only Minor findings present.
 
 ## Schema
 
-Attestation schema v1.0 lives at `skills/spec-review/attestation-schema-v1.0.json`. Validated by `cli.spec_review` before write. Schema bumps require new skill version + migration.
+v2.0 schema at `skills/spec-review/attestation-schema-v2.0.json` (JSON Schema draft-07). v1.0 schema at `attestation-schema-v1.0.json` remains frozen for historical read-only support.
 
 ## References
 
-- `prompt-template.md` — 7-element adversarial prompt
-- `attestation-schema-v1.0.json` — JSON-schema for YAML attestations
-- `references/4-gate-rubric.md` — pass/fail criteria per gate
-- `docs/features/007-spec-review-architecture.md` — full LLD
+- `judges/<id>/prompt.md` — per-sub-judge prompt template (6 files)
+- `judges/<id>/rubric-v1.md` — per-sub-judge rubric body (6 files)
+- `attestation-schema-v2.0.json` — JSON Schema for v2.0 attestations
+- `attestation-schema-v1.0.json` — frozen v1.0 schema (read-only)
+- `references/4-gate-rubric.md` — semantic sub-judge inherits this
+- `docs/features/011-spec-review-v2.md` — full v2 LLD
+- `docs/features/007-spec-review-architecture-r5.md` — v1 LLD (superseded by 011)

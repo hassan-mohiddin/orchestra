@@ -42,3 +42,32 @@ def test_judge_rubric_files_present():
         path = JUDGES_DIR / jid / "rubric-v1.md"
         assert path.exists(), f"missing rubric-v1.md for sub-judge {jid}: {path}"
         assert path.read_text().strip(), f"rubric-v1.md is empty for sub-judge {jid}"
+
+
+SKILL_MD = (
+    Path(__file__).parent.parent / "skills" / "spec-review" / "SKILL.md"
+)
+
+
+def test_skill_md_describes_v2_dispatch():
+    """Slice 1.26 — SKILL.md describes v2 parallel dispatch protocol.
+
+    The skill body is consumed by Claude Code at invocation time. We test by
+    content presence: it must mention all 6 sub-judge IDs and the parallel-
+    dispatch instruction. The actual dispatch behavior is integration-tested
+    at skill-invocation time (outside pytest).
+    """
+    body = SKILL_MD.read_text()
+    # All 6 sub-judges named
+    for jid in SUB_JUDGE_IDS:
+        assert jid in body, f"SKILL.md missing reference to sub-judge {jid}"
+    # Parallel-dispatch instruction
+    assert "parallel" in body.lower()
+    assert "single message" in body.lower() or "single-message" in body.lower()
+    # Schema v2.0 reference
+    assert "v2.0" in body
+    # Provenance + integrity primitives mentioned
+    assert "iter_blob_sha" in body or "git hash-object -w" in body
+    assert "attestation_integrity_hash" in body or "integrity hash" in body.lower()
+    # Failure-attestation invariant
+    assert "failure" in body.lower()

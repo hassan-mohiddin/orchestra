@@ -12,15 +12,65 @@ Contributions welcome. Read this first to keep PRs frictionless.
 
 ## Pre-commit hook (required for contributors)
 
-orchestra dogfoods its own canon-inplace enforcement. After cloning, install the pre-commit hook:
+orchestra dogfoods its own commit-discipline. After cloning, install the hooks:
+
+### Raw path (no pre-commit framework installed)
 
 ```bash
-python -m cli.install_hooks --repo .
+python -m cli.install_hooks --all
 ```
 
-This installs `.git/hooks/pre-commit` which runs `python -m cli.lint --pre-commit` (calls `lint_staged()` invoking L1 Refs-eligibility + L2 canon-inplace narrow-change + L3 attestation-path-resolution + L4 doc-id-burn) before each commit.
+Installs `.git/hooks/{pre-commit,commit-msg}`. Pre-commit runs `python -m cli.lint --pre-commit` (L1 Refs-eligibility + L2-detect canon-inplace annotation + L3 attestation-path + L4 doc-id-burn). commit-msg runs Refs:-line check + `python -m cli.lint --commit-msg-finalize` (v1.7+ L2-finalize tiered narrow-change per BUG-011).
 
-Canon-inplace violations on Status: Implemented/Verified/Current/... docs are rejected; supersession workflow required (see `docs/features/006-archive-and-supersession-conventions-r4.md` and `docs/runbooks/RUNBOOK-canon-inplace-violation-recovery.md`). Bypass via `--no-verify` is discouraged; if the hook fires you almost certainly need supersession not in-place edit.
+### Framework path (pre-commit.com installed)
+
+```bash
+python -m cli.install_hooks --apply
+```
+
+Auto-merges orchestra entries into `.pre-commit-config.yaml` (creates one if absent), runs `pre-commit install --hook-type pre-commit --hook-type commit-msg`, and verifies. On failure: rolls back from `.pre-commit-config.yaml.orchestra-backup`.
+
+Verify post-install:
+
+```bash
+python -m cli.install_hooks --verify
+```
+
+### Bypass / overrides
+
+- `python -m cli.install_hooks --force-raw` — bypass framework detection; install raw hooks even if `.pre-commit-config.yaml` present.
+- `ORCHESTRA_BYPASS=1 git commit -m "..." -m "Bypass: <reason>"` — emergency override; rejected in CI (multi-var detection: `CI`, `GITHUB_ACTIONS`, `GITLAB_CI`, `BUILDKITE`, `CIRCLECI`, `TRAVIS`, `JENKINS_URL`); audit-logged to `.git/orchestra-bypass-audit.log`.
+- `ORCHESTRA_STRICT=1` — opt-in fail-closed at commit-msg-time when pending file absent (closes `--no-verify` bypass surface).
+- `ORCHESTRA_INIT_STRICT=1` — opt-in fail-closed for `cli.init` bootstrap when hook install fails.
+- `git commit --no-verify` — sanctioned mechanical bypass (per LLD-008 Glossary `mechanical backstop`); pre-commit skipped → pending file never written → L2-finalize fail-opens. User accepts responsibility.
+
+### Tiered narrow-change rule (v1.7+, BUG-011)
+
+Canon-frozen docs (`Status` ∈ `{Approved, Implemented, Verified, Fix Applied, Current}`):
+
+- **Critical** finding → supersession REQUIRED (no exception).
+- **Important** ≤3 findings → narrow-change permitted with `Addresses:` lines + per-finding Changelog row.
+- **Important** ≥4 findings → supersession REQUIRED.
+- **Minor** any count → narrow-change permitted with `Addresses:` lines + per-finding Changelog row.
+
+`Addresses:` line format:
+
+```
+Addresses: docs/reviews/<doc-id>-rN.review.yaml gate <completeness|evidence|clarity|consistency> finding <N> (Minor|Important|Critical)
+```
+
+See `skills/commit/references/supersession-decision.md` for the full decision tree.
+
+### Manual uninstall
+
+```bash
+# Raw mode
+rm .git/hooks/pre-commit .git/hooks/commit-msg
+
+# Framework mode
+pre-commit uninstall --hook-type pre-commit --hook-type commit-msg
+# Then remove the `- repo: local` block with orchestra-lint + orchestra-commit-msg ids from .pre-commit-config.yaml
+```
 
 **Why it matters**: orchestra repo previously did not install its own hook (BUG-010). Two canon-inplace violations landed (`653db4e` + `bc359e7` 2026-05-10) before user observation caught them. Pre-commit hook is the first-line defense; `cli.lint --commit <SHA>` (BUG-009 retroactive L2) is the post-hoc backstop.
 

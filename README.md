@@ -40,7 +40,8 @@ The Orchestra umbrella will absorb additional skills over time. Planned:
 |-------|---------|--------|
 | `orchestra:design-docs` | Typed docs + 4-gate review (this release) | ✅ v1.0 |
 | `orchestra:spec-review` | Multi-judge spec review (judge-1 default) — `/orchestra:spec-review <doc-path>` | ✅ v1.6 |
-| `orchestra:workflow` | Master workflow file with situation-language routing | 🟡 v1.1 |
+| `orchestra:commit` | Commit-discipline (Refs: rules, canon-frozen tiered narrow-change, doc/code separation, supersession decision) — `/orchestra:commit` | ✅ v1.7 |
+| `orchestra:workflow` | Master workflow file with situation-language routing | 🟡 v2.0 |
 | `orchestra:skills-registry` | Situation → skill binding table + override rules | 🟡 v1.1 |
 | `orchestra:tasks` | Task-tracking discipline + cross-agent state | 🟡 v1.2 |
 | `orchestra:gates` | Pre-commit / CI gate enforcement (broader than docs) | 🟡 v1.2 |
@@ -177,20 +178,21 @@ The skill that handles Step 4.5 spec review. Default points at `superpowers:requ
 python -m cli.lint --commit HEAD                       # Lint a commit
 python -m cli.lint --range main..HEAD                  # Lint a commit range
 python -m cli.lint --doc docs/bugs/BUG-014-leak.md     # Lint a single doc
-python -m cli.lint --pre-commit                        # Pre-commit hook mode
+python -m cli.lint --pre-commit                        # Pre-commit hook mode (L1+L2-detect+L3+L4)
+python -m cli.lint --commit-msg-finalize <msg-file>    # v1.7+ L2-finalize tiered narrow-change
+python -m cli.lint --pre-stage-check <doc> --commit-msg-draft "<msg>"  # Author pre-stage check
 ```
 
-Add to `.pre-commit-config.yaml`:
+### `orchestra install-hooks` (v1.7+ framework-aware)
 
-```yaml
-- repo: local
-  hooks:
-    - id: orchestra-lint
-      name: orchestra lint
-      entry: python -m cli.lint --pre-commit
-      language: python
-      stages: [pre-commit]
+```bash
+python -m cli.install_hooks --all                      # Raw hook install (.git/hooks/*)
+python -m cli.install_hooks --apply                    # Pre-commit framework: auto-merge into .pre-commit-config.yaml + transactional rollback
+python -m cli.install_hooks --verify                   # Hybrid verify (substring fingerprint + entrypoint pattern)
+python -m cli.install_hooks --force-raw                # Bypass framework detection; install raw hooks
 ```
+
+For pre-commit.com framework users: `--apply` deep-merges the orchestra entry, runs `pre-commit install --hook-type pre-commit --hook-type commit-msg`, verifies, and rolls back on failure.
 
 GitHub Action template ships at `.github/workflows/lint.yml`.
 

@@ -144,6 +144,20 @@ _FILENAME_GRAMMAR: dict[str, re.Pattern[str]] = {
 }
 
 
+def _check_glossary(doc_path: Path) -> CheckResult:
+    """Glossary completeness — NON-GATING per LLD-011 §PDSA item 4.
+
+    Placeholder until BUG-016 controlled-vocabulary canon ships. When canon is
+    available, this check will compare doc terms against the canon and warn on
+    drift; for now it always reports pass with informational detail.
+    """
+    return CheckResult(
+        passed=True,
+        detail="glossary check deferred to BUG-016 canon",
+        gating=False,
+    )
+
+
 def _check_filename_grammar(doc_path: Path) -> CheckResult:
     """Per LLD-006-r4 — filename grammar per doc type."""
     doc_type = _detect_doc_type(doc_path)
@@ -273,10 +287,11 @@ def _check_required_sections(doc_path: Path) -> CheckResult:
 
 @dataclass
 class CheckResult:
-    """One PDSA check outcome."""
+    """One PDSA check outcome. `gating=False` checks emit info but never block dispatch."""
 
     passed: bool
     detail: str = ""
+    gating: bool = True
 
 
 @dataclass
@@ -288,8 +303,8 @@ class PdsaReport:
 
     @property
     def passed(self) -> bool:
-        """True only when every gating check passed."""
-        return all(c.passed for c in self.checks.values())
+        """True only when every GATING check passed. Non-gating fails are warnings."""
+        return all(c.passed for c in self.checks.values() if c.gating)
 
 
 def _invoke_lint(argv: list[str]) -> int:
@@ -319,5 +334,6 @@ def run_pdsa(doc_path: Path) -> PdsaReport:
     report.checks["placeholders"] = _check_placeholders(doc_path)
     report.checks["refs"] = _check_refs(doc_path)
     report.checks["filename_grammar"] = _check_filename_grammar(doc_path)
+    report.checks["glossary"] = _check_glossary(doc_path)
 
     return report

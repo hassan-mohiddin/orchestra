@@ -437,6 +437,47 @@ def test_filename_grammar_design_bare_name_pass(tmp_path, monkeypatch) -> None:
     assert report.checks["filename_grammar"].passed is True
 
 
+def test_glossary_non_gating(tmp_path, monkeypatch) -> None:
+    """Slice 2.10 — glossary check exists, marked non-gating; report.passed unaffected by glossary fail.
+
+    Per LLD-011 §PDSA item 4: glossary check warns but does NOT block dispatch
+    until BUG-016 controlled-vocabulary canon ships.
+    """
+    from cli import pdsa
+
+    doc = tmp_path / "random.md"
+    doc.write_text("# Title\n\nbody.\n")
+
+    monkeypatch.setattr(pdsa, "_invoke_lint", lambda argv: 0)
+
+    # Force the glossary check to "fail" by monkeypatching a fail-returning replacement.
+    def fake_glossary(_p: Path) -> pdsa.CheckResult:
+        return pdsa.CheckResult(passed=False, detail="missing term: foo", gating=False)
+
+    monkeypatch.setattr(pdsa, "_check_glossary", fake_glossary)
+    report = pdsa.run_pdsa(doc)
+
+    assert "glossary" in report.checks
+    assert report.checks["glossary"].passed is False
+    assert report.checks["glossary"].gating is False
+    # Non-gating fail must NOT make report.passed False
+    assert report.passed is True
+
+
+def test_glossary_default_pass(tmp_path, monkeypatch) -> None:
+    """Slice 2.10 — default glossary impl passes (placeholder until BUG-016)."""
+    from cli import pdsa
+
+    doc = tmp_path / "random.md"
+    doc.write_text("# Title\n\nbody.\n")
+
+    monkeypatch.setattr(pdsa, "_invoke_lint", lambda argv: 0)
+    report = pdsa.run_pdsa(doc)
+
+    assert "glossary" in report.checks
+    assert report.checks["glossary"].gating is False
+
+
 def test_required_sections_unknown_doc_type(tmp_path, monkeypatch) -> None:
     """Slice 2.3 — unknown doc type → required_sections.passed=True (skip check, no spec to enforce)."""
     from cli import pdsa

@@ -35,18 +35,18 @@ Iterate through the items below; close per LLD-006-r4 narrow-change whitelist (C
 ### LLD-008 r7 deferred Minors
 
 1. ~~**`input_fn=input` pseudocode clarification**~~ — CLOSED 2026-05-11 (commit dogfood batch 1). Inline comment added to install_one_hook pseudocode.
-2. **Prompt UX preservation note** — A5 covers `--on-conflict={skip,replace,append}` flag; existing interactive prompt path retained for TTY users. Document explicitly that prompt-string wording was preserved verbatim.
-3. **T2 11-file enumeration assertion** — A3 lists 11 init-related artifacts retained in `cli/templates/`; test currently asserts presence of representative subset only. Add full enumeration assertion.
+2. ~~**Prompt UX preservation note**~~ — CLOSED 2026-05-11 (LLD-008 batch 3). A5 inline note documenting v1.5+ prompt UX preservation added.
+3. **T2 11-file enumeration assertion** — A3 lists 11 init-related artifacts retained in `cli/templates/`; test currently asserts presence of representative subset only. Add full enumeration assertion. (Test code change; non-narrow.)
 4. ~~**A8 section-header citation**~~ — CLOSED 2026-05-11 (commit dogfood batch 1). Line range 109-128 replaced with `## Quick Reference` section-header anchor.
-5. **Skill-Status value-collision documentation** — `Skill-Status` field is intentionally distinct from doc-lifecycle `Status` to prevent future value-collision if `skills/` is ever added to `REFS_ELIGIBLE_PREFIXES`. Documented in design § references/ governance; lacks an explicit value-collision example in glossary.
+5. ~~**Skill-Status value-collision documentation**~~ — CLOSED 2026-05-11 (LLD-008 batch 3). Explicit value-collision example added to Skill-Status field-name divergence note.
 
 ### LLD-009 r6 deferred Minors
 
-1. **D1-D3 verifiability classification** — Deliverables D1-D3 listed without explicit verification mechanism (lint-checkable vs. manual). Mark each.
-2. **Mixed line/function anchors** — Related Documents section mixes `cli/lint.py:128-130` (line range) with `cli/lint.py § extract_changelog_and_strip` (function anchor). Pick one convention.
+1. ~~**D1-D3 verifiability classification**~~ — CLOSED 2026-05-11 (LLD-009 batch 3). Verification mechanism marked per deliverable (manual / doc-deliverable).
+2. ~~**Mixed line/function anchors**~~ — CLOSED 2026-05-11 (LLD-009 batch 3). Glossary + A6 + Related Documents converted to function-anchors (§ CANON_FROZEN_STATUSES, § CONVENTIONAL_PREFIX_RE).
 3. ~~**3a/3b sub-numbering convention**~~ — CLOSED 2026-05-11 (commit dogfood batch 2). One-line legend added to Edge Cases § 3a/3b.
 4. ~~**pre-commit.sh canonical content inline**~~ — CLOSED 2026-05-11 (commit dogfood batch 2). A13 reworded to clarify LLD-008 ships file / LLD-009 specifies content (mirrors A12 commit-msg.sh split).
-5. **A16 third-place CHANGELOG cite verification** — A16 cites pytest target lineage; cite includes "third-place" reference that should be verified post-impl matches actual CHANGELOG row.
+5. ~~**A16 third-place CHANGELOG cite verification**~~ — CLOSED 2026-05-11 (LLD-009 batch 3). CHANGELOG.md v1.7.0 entry (150 → 259) verified matches A16 cite; post-ship actual numbers added inline.
 
 ### LLD-010 r4 deferred Minors
 
@@ -68,6 +68,7 @@ Per LLD-010 r4 Changelog entry, r4 was paperwork-only cascading edit; no interna
 
 - r1 (2026-05-11) — initial aggregate; pre-shipping fix. Closes/tracks deferred Minors across LLDs + plan + post-ship cleanup observations.
 - r2 (2026-05-11) — dogfood batch landed via tiered narrow-change (LLD-009 r6 first real-world use). Closed: LLD-008 r7 Minors #1 (input_fn comment) + #4 (A8 section-header anchor); LLD-009 r6 Minors #3 (3a/3b legend) + #4 (A13 pre-commit.sh ownership). Plan Minors #1 (cross-doc lineage verification) + #2 (test-quality audit) closed via Phase D/J. Remaining open: LLD-008 #2/#3/#5 + LLD-009 #1/#2/#5 + Post-ship cleanup #1/#2/#3/#5/#6 = 11 items.
+- r3 (2026-05-11) — second narrow-change batch landed. Closed: LLD-008 r7 Minors #2 (prompt UX preservation note) + #5 (Skill-Status value-collision example); LLD-009 r6 Minors #1 (D1-D3 verifiability classification) + #2 (mixed anchors → function-anchors) + #5 (A16 CHANGELOG cite verification). Remaining open: LLD-008 #3 (T2 test enumeration — test code, not narrow-change) + Post-ship cleanup #1/#2/#3/#5/#6 = 6 items.
 
 ## Regression Prevention
 

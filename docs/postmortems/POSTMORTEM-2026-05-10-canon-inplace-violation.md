@@ -5,7 +5,7 @@
 > **DRI:** Hassan Mohiddin
 > **Type:** Postmortem
 > **Severity:** SEV4 production / MEDIUM process (process incident — no production user impact; revertable; remediated within same session — but second canon-discipline failure in same session per Impact §)
-> **Status:** Implemented
+> **Status:** Action Items Tracked
 
 > Blameless. Roles only ("the agent", "the user"), no names.
 
@@ -135,3 +135,4 @@ Sourced from `git log --date=iso` and `git reflog --date=iso`:
 |---|---|
 | 2026-05-10 | Postmortem written immediately post-supersession-redo. Captures canon-inplace violation, root cause, action items, lessons. Status: Draft → spec-review pending. SEV4 process incident; no production impact; remediated within session. |
 | 2026-05-10 | r1 spec-review (verdict: conditional_pass; 6 findings: 3 Important / 3 Minor). All addressed inline (Status: Draft, full edit allowed): Severity tag clarified to "SEV4 production / MEDIUM process"; Duration 30→25 min reconciled with Timeline; Timeline header gained UTC offset note; Root Cause § contributing-cause-1 gained line-citations to lint.py:668-682 (lint_commit) + lint.py:705-728 (lint_staged) + lint.py:490-521 (L2 fn def); user-observation event moved from What-Went-Well → Where-We-Got-Lucky (per blameless convention, sole-safety-net = luck); Action Items table allocated BUG-009 (lint_commit l2 retroactive), BUG-010 (orchestra self-install hook), POSTMORTEM-session-process-drift, LLD-008 (supersession tier refinement) with TBD-allocate deadlines. Status: Draft → Implemented. |
+| 2026-05-11 | Status narrow-change: Implemented → Action Items Tracked. Canon §4.1 postmortem enum does not include "Implemented" (it has Draft/Reviewed/Action Items Tracked/Closed/Rejected/Superseded). Surfaced by BUG-016 slice 5 L5 strict-enum-match sweep. Action items remain open (BUG-008/009/010/011) so canon-matching value is Action Items Tracked. |

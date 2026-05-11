@@ -5,7 +5,7 @@
 > **DRI:** Hassan Mohiddin
 > **Type:** Postmortem
 > **Severity:** SEV3 production / HIGH process (consolidates 3+ same-pattern incidents over 5 days; pattern is durable; trust-on-process degraded; no production user impact)
-> **Status:** Implemented
+> **Status:** Action Items Tracked
 
 > Blameless. Roles only ("the agent", "the user"). Consolidates incidents already postmortemed individually; this doc captures the cross-incident pattern.
 
@@ -148,3 +148,4 @@ Sourced from `git log --date=iso` and prior postmortems:
 |---|---|
 | 2026-05-10 | Postmortem written immediately post-canon-inplace-supersession-redo. Consolidates 3+ same-pattern incidents into single durable record. Action items reference 4 filed BUGs (008, 009, 010, 011) + 1 SCALE-side rule. SEV3 production / HIGH process. |
 | 2026-05-10 | r1 spec-review verdict: conditional_pass (4 findings: 2 Important on severity-enum drift + placeholder bullet, 2 Minor on Action-Items severity column + mutation-testing tracking). All 4 addressed inline (Status: Draft, full edit allowed): placeholder bullet removed from What Went Wrong; mutation-testing action item allocated to BUG-012 (TBD-allocate by 2026-05-20); Action Items severity column kept as High/Medium/Low (orchestra postmortem-action-item convention); doc-header Severity stays "SEV3 production / HIGH process" (orchestra postmortem severity vocab predates spec-review prompt enum — false-positive on enum drift; tracked as v1.6.x prompt-template followup to distinguish finding-severity vs doc-header-severity). Status: Draft → Implemented. |
+| 2026-05-11 | Status narrow-change: Implemented → Action Items Tracked. Canon §4.1 postmortem enum does not include "Implemented". Surfaced by BUG-016 slice 5 L5 strict-enum-match sweep. Action items remain open across BUGs 008/009/010/011 so canon value is Action Items Tracked. |

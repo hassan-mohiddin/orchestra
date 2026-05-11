@@ -79,6 +79,56 @@ def parse_iteration_from_text(text: str) -> int:
     return int(m.group(1))
 
 
+def _get_iter_commit_sha(repo_root: Path) -> str:
+    """Get current git HEAD SHA (LLD-011 slice 1.19).
+
+    Recorded in v2.0 attestation `doc_subject.iter_commit_sha` for audit. Not
+    used for byte retrieval (the blob SHA handles that). Returns the literal
+    string '<uncommitted>' if the repo has no HEAD yet (fresh `git init`).
+    """
+    try:
+        out = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"],
+            cwd=repo_root,
+            stderr=subprocess.DEVNULL,
+        )
+        return out.decode("utf-8").strip()
+    except subprocess.CalledProcessError:
+        return "<uncommitted>"
+
+
+def _persist_doc_blob(doc_path: Path, repo_root: Path) -> str:
+    """Persist doc bytes as a git blob via `git hash-object -w` (LLD-011 slice 1.20).
+
+    The `-w` flag writes the loose blob object to `.git/objects/` so it can be
+    retrieved later via `git cat-file -p <sha>` even if the doc itself was never
+    committed. This is the foundation of v2 delta-review provenance — iter-2 can
+    deterministically reconstruct iter-1 bytes without git-log walking.
+
+    Returns the 40-hex blob SHA.
+    """
+    out = subprocess.check_output(
+        ["git", "hash-object", "-w", str(doc_path)],
+        cwd=repo_root,
+    )
+    return out.decode("utf-8").strip()
+
+
+def _retrieve_doc_bytes_by_blob_sha(blob_sha: str, repo_root: Path) -> bytes:
+    """Retrieve doc bytes by stored blob SHA (LLD-011 slice 1.21).
+
+    Used at iter-2 to reconstruct iter-1 doc bytes for delta-review diffing.
+    Raises subprocess.CalledProcessError if the blob is unretrievable (pruned by
+    git gc, or never written). Caller (delta_review module) maps that to a
+    fail-closed SpecReviewError per LLD-011 §Edge case E5.
+    """
+    return subprocess.check_output(
+        ["git", "cat-file", "-p", blob_sha],
+        cwd=repo_root,
+        stderr=subprocess.DEVNULL,
+    )
+
+
 def _detect_schema_version(path: Path) -> str | None:
     """Detect schema_version of an existing attestation YAML (LLD-011 slice 1.6).
 

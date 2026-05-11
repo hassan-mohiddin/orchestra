@@ -347,7 +347,9 @@ FILENAME_GRAMMAR: dict[str, dict[str, str]] = _parse_filename_grammar()
 
 
 _REVIEW_PLACEHOLDERS: tuple[tuple[str, str], ...] = (
-    ("<doc-id>", r"[A-Za-z0-9][A-Za-z0-9-]*"),
+    # <doc-id> is the doc's filename stem (no `.md`) per canon §4.11 grammar
+    # table — stems may include `.` (e.g. `v1.4` in legacy postmortem names).
+    ("<doc-id>", r"[A-Za-z0-9][A-Za-z0-9.\-]*"),
     ("<N>", r"\d+"),
     ("<judge>", r"[a-z][a-z0-9-]*"),
     ("<ext>", r"(?:yaml|md)"),

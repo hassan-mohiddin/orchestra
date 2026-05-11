@@ -2,7 +2,7 @@
 
 > **Doc ID:** BUG-016-scattered-vocabulary-no-canon
 > **Date:** 2026-05-11
-> **Status:** Investigating
+> **Status:** Fix Applied
 > **Severity:** Medium
 > **DRI:** Hassan
 > **Iteration:** 1
@@ -158,3 +158,4 @@ After fix:
 | Date | Entry |
 |---|---|
 | 2026-05-11 | BUG filed during LLD-011 (spec-review v2) grilling session. Surfaced as orthogonal concern: LLD-011's PDSA Phase 2 ships with heuristic enum checks; upgrades to strict match when BUG-016 canon lands. Status: Investigating. |
+| 2026-05-11 | Migration complete (11 of 12 slices shipped — slice 12 is this Status flip). Canon `docs/design/controlled-vocabulary.md` (iter-7, Status: Current) is now the single source for 13 controlled vocabularies; `cli/vocabulary.py` parser eager-loads at import; cli.lint L1-L5 all source from canon; 66 attestation files renamed to `.orchestra.review.yaml` / `.codex.review.md` / `.sonnet.review.md` per canon §4.11; template generator + 4 CI drift gates protect against future drift. Commits 36f7e43, 004f111, ba910d8, b518da1, 350f07b, 47e392e, b738fde, ef75694, 016b7cd, 937a5f0, 301a40e, be7cdc0. Status: Investigating → Fix Applied. User-verified 2026-05-11. |

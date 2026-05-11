@@ -1,0 +1,210 @@
+schema_version: '1.0'
+doc_subject:
+  path: docs/features/012-rule-durability-and-learning-layer.md
+  content_hash: sha256:ed456317e32364fe1501c6249b013bfd353aff353d351f8d1bb13227a9bc2097
+  iteration: 1
+reviewer:
+  identifier: subagent:general-purpose+spec-review-v1
+  invoked_at: '2026-05-11 15:30:52+00:00'
+  context_isolation: fresh_subagent
+gates:
+  completeness:
+    verdict: conditional_pass
+    findings:
+    - severity: Important
+      location: "Success Criteria \xA7 SC-2"
+      problem: "SC-2 names hooks SessionStart + PreCompact but Scope/Design also requires\
+        \ UserPromptSubmit hook (re-injection every 5 turns) \u2014 no dedicated SC\
+        \ covers UserPromptSubmit install/behavior, so acceptance bar for that hook\
+        \ is unspecified."
+    - severity: Important
+      location: "Success Criteria \xA7 SC-13"
+      problem: SC-13 mentions updating .claude/CLAUDE.md to reference TLDR convention
+        but Scope/Design never lists CLAUDE.md content edits beyond adding a TLDR;
+        the 'convention reference' deliverable (location, wording, link target) is
+        undefined and not testable.
+    - severity: Important
+      location: "Design \xA7 Lessons skill"
+      problem: New slash command /orchestra:lessons-lint is listed in API Changes
+        but the Lessons skill section does not declare it, and SKILL.md frontmatter
+        only mentions teach + violation. Surface defined inconsistently across sections;
+        no SC asserts it exists.
+    - severity: Minor
+      location: "Design \xA7 compaction_probe"
+      problem: Step 4 references 'Claude API's compact_20260112' as if it were a fixed/available
+        API surface, but no contract, fallback, or offline-mode is specified for CI
+        environments without network or API key. Test reproducibility and CI hermeticity
+        unspecified.
+    - severity: Minor
+      location: "Edge Cases & Error Handling \xA7 Concurrent plugin SessionStart hooks"
+      problem: Handling row references a '[ORCHESTRA]' prefix marker but the marker
+        is not defined anywhere else in the doc, nor is the disambiguation contract
+        for downstream readers (Claude Code, other plugins) specified.
+  evidence:
+    verdict: fail
+    findings:
+    - severity: Critical
+      location: "Problem Statement \xA7 paragraph 2"
+      problem: "Quantitative claim '60% \u2192 90%+ rule compliance in cited reports'\
+        \ has no file:line, URL, study name, or methodology citation. This is a load-bearing\
+        \ justification for shipping hooks; reader cannot verify."
+    - severity: Important
+      location: "Problem Statement \xA7 paragraph 1"
+      problem: Attributions 'Yajin Zhou (2026-03-22)', 'Anthropic's prompt-caching
+        docs', 'Karpathy ... 2026-04-04 llm-wiki gist' lack URLs or file paths. Reviewer
+        cannot verify the three-cause taxonomy, cache-rotation claim, or the schema-surface
+        prescription.
+    - severity: Important
+      location: "Problem Statement \xA7 paragraph 3"
+      problem: '''Industry-converged solution patterns (verified 2026-05-11 via deep
+        research)'' lists five patterns (hooks-as-law, recursive system-reminder,
+        radical compression, append-only log, periodic lint) without per-pattern citations.
+        ''dev.to "200 lines" post'' is unlinked.'
+    - severity: Important
+      location: "Problem Statement \xA7 paragraph 4"
+      problem: Claim 'Auto-loaded rules ... 1093 lines total' is presented as a count
+        but no command/file enumeration backs it; nor does any citation point to cli/install_hooks.py
+        contents to confirm 'installs only git pre-commit and commit-msg'.
+    - severity: Important
+      location: "Design \xA7 Hook architecture"
+      problem: Claim '<system-reminder> tag is honored by Claude Code's prompt-injection
+        defenses ... per Anthropic prompt-caching blog and Claude Code's own internal
+        use' has no URL or anchor. Security-relevant behavior assumed without verifiable
+        source.
+    - severity: Important
+      location: "Design \xA7 lessons_lint and auto-promotion \xA7 step 5"
+      problem: "Statement 'spec-review reads ONLY the proxy file (under existing canonical\
+        \ scope) \u2014 never reads or mutates the schema-layer target during review'\
+        \ is not cross-referenced to cli/spec_review.py or to LLD-008/006 to substantiate\
+        \ scope invariant."
+    - severity: Important
+      location: "Changelog \xA7 2026-05-11 codex review row"
+      problem: 'References ''codex finding #1/#2/#3/#4'' throughout the doc but no
+        link or file path to the codex review artifact (e.g., docs/reviews/012-*.review.yaml)
+        is provided. Findings cannot be cross-checked against original wording.'
+  clarity:
+    verdict: conditional_pass
+    findings:
+    - severity: Important
+      location: "Success Criteria \xA7 SC-8"
+      problem: 'SC-8 conflates two actors (''user (or cli.lessons_apply)'') for the
+        schema-layer mutation step, making the gate ambiguous: is cli.lessons_apply
+        automated or strictly user-invoked? The exact actor and trigger are required
+        for an acceptance check.'
+    - severity: Important
+      location: "Design \xA7 TLDR section format"
+      problem: "Extractor regex 'r\"^## TLDR \u2014 Nonnegotiables$\" ... r\"^<!--\
+        \ Full rule body below this section -->$\"' is described informally; behavior\
+        \ when the closing marker is missing, when multiple TLDR sections exist, or\
+        \ when bullets exceed \u22647/\u226480 is undefined (reject? truncate? warn?)."
+    - severity: Important
+      location: "Design \xA7 Hook architecture \xA7 token budget"
+      problem: Token budget '500 tokens per emission' references a tokenizer that
+        is unspecified (tiktoken? Anthropic's? char-count heuristic?). Without it,
+        the budget is not reproducible across hook implementations or tests.
+    - severity: Minor
+      location: "Design \xA7 lessons_lint \xA7 step 3"
+      problem: "'Draft proposed new bullet from highest-frequency observed/expected\
+        \ pair' is underspecified \u2014 tie-breaking, formatting back into \u2264\
+        80 char imperative form, and merge-vs-replace semantics on the target TLDR\
+        \ section are not defined."
+    - severity: Minor
+      location: "Edge Cases & Error Handling \xA7 User runs /orchestra:teach in non-orchestra\
+        \ repo"
+      problem: Reference file '.claude/orchestra.json' is introduced here for the
+        first time with no definition elsewhere (Scope, Design, or Related Documents).
+        Reader cannot tell if this file already exists, is created by /orchestra:init,
+        or is new in this LLD.
+  consistency:
+    verdict: fail
+    findings:
+    - severity: Critical
+      location: "Scope \xA7 In Scope vs Design \xA7 Hook architecture"
+      problem: "In-Scope lists 'UserPromptSubmit re-injection every 5 user turns (token-budgeted,\
+        \ capped at 500 tokens per turn)' but the Hook architecture's settings.json\
+        \ fragment registers UserPromptSubmit WITHOUT a matcher and with no scheduling\
+        \ logic surfaced at config level; meanwhile session_start_inject hook is described\
+        \ as the SessionStart handler and user_prompt_reinject is described independently.\
+        \ The '5 turns' counter logic is only in prose, not reflected in any SC or\
+        \ test name beyond \u2026(truncated)"
+    - severity: Important
+      location: "Success Criteria \xA7 SC-6 vs API Changes"
+      problem: SC-6 declares two slash commands (/orchestra:teach, /orchestra:violation)
+        but API Changes table lists three (/orchestra:teach, /orchestra:violation,
+        /orchestra:lessons-lint). SC coverage and API surface disagree on command
+        count.
+    - severity: Important
+      location: "Success Criteria \xA7 SC-8 vs Design \xA7 lessons_lint"
+      problem: "SC-8 says lessons_lint 'triggers Gate 3 spec-review on the proxy artifact'\
+        \ (implying automated invocation). Design \xA7 lessons_lint step 4 says 'invoke\
+        \ orchestra:spec-review situation' and step 5 says 'User invokes cli.lessons_apply'.\
+        \ Whether lessons_lint itself runs spec-review or only drafts and emits a\
+        \ list is contradictory across SC-8 and Design step 5."
+    - severity: Important
+      location: "Success Criteria \xA7 SC-13 vs Related Documents"
+      problem: SC-13 requires Changelog entry in 'docs/design/orchestra-philosophy-r2.md'
+        citing 'K1/K2/K3/K4/K8 lineage'. Related Documents row for that doc says 'requires
+        a Changelog entry adding Karpathy citation block' without specifying the K-numbers.
+        Mismatch on what content lands in the Changelog (numbered K-set vs generic
+        citation block).
+    - severity: Important
+      location: "Design \xA7 Three-layer file taxonomy table"
+      problem: "Schema row lists '.claude/workflow.md + .claude/skills-registry.md'\
+        \ as schema-layer files but In-Scope TLDR compression list (Scope \xA7) omits\
+        \ workflow.md and skills-registry.md. SC-1 says 'every .claude/rules/*.md\
+        \ and .claude/CLAUDE.md' \u2014 workflow.md and skills-registry.md are unaddressed\
+        \ despite being declared schema-layer."
+    - severity: Important
+      location: "Edge Cases \xA7 Auto-promotion infinite-loop vs Design \xA7 lessons_lint\
+        \ step 1"
+      problem: "Edge Case says 'source: auto-promote lessons skipped by lessons_lint'.\
+        \ Design \xA7 lessons_lint step 1 filters on 'kind in {violation}' with no\
+        \ mention of source field. The lessons YAML schema (under /violation) shows\
+        \ 'source: user' but does not declare 'source: auto-promote' as a producible\
+        \ value or where it originates."
+    - severity: Important
+      location: "Success Criteria \xA7 SC-12 vs Testing Strategy"
+      problem: "SC-12 requires test for 'hook install + uninstall + verify' but Testing\
+        \ Strategy lists 'test_install_claude_hooks.py' covering install/uninstall/verify/merge\
+        \ \u2014 no separate uninstall test is enumerated and no explicit uninstall\
+        \ command is defined in API Changes (install_claude_hooks lacks a documented\
+        \ --uninstall flag)."
+    - severity: Minor
+      location: "Changelog \xA7 2026-05-11 row"
+      problem: "Changelog states 'SC count increased 11 \u2192 13' but the current\
+        \ Success Criteria list contains SC-1 through SC-13 (13 items) with no explicit\
+        \ indication of which two were added; reader cannot trace the codex-driven\
+        \ additions without external context."
+overall_verdict: fail
+required_followup:
+- "Add citations (URLs / file paths) for: 60%\u219290% compliance figure, Yajin Zhou\
+  \ report, Karpathy llm-wiki gist, Anthropic prompt-caching blog, dev.to '200 lines'\
+  \ post, codex review artifact."
+- Reconcile slash-command count between SC-6 (2 commands) and API Changes table (3
+  commands); add SC for /orchestra:lessons-lint or remove it.
+- Add SC explicitly covering UserPromptSubmit hook install + 5-turn cadence behavior,
+  OR fold it into SC-2 with explicit acceptance text.
+- Resolve SC-8 vs Design step 5 contradiction on whether lessons_lint triggers spec-review
+  automatically or only drafts proxy artifacts.
+- Specify tokenizer used for the 500-token injection budget and reproducibility contract
+  (e.g., tiktoken model name, char-heuristic ratio, or Anthropic count_tokens API).
+- Define behavior for compaction_probe in network/API-key-absent CI environments,
+  or document that compact_20260112 access is a hard CI dependency.
+- Define '.claude/orchestra.json' (origin, schema, owner) or replace the existence
+  check with an already-canonical marker.
+- 'Reconcile schema-layer taxonomy with TLDR scope: either add TLDR sections to workflow.md
+  and skills-registry.md (and add SCs/tests) or explicitly exclude them with rationale.'
+- 'Define lesson ''source'' enum and producer of ''source: auto-promote'', and align
+  lessons_lint step 1 filter with the auto-promote skip rule.'
+- Specify TLDR extractor failure modes (missing close marker, bullet count/length
+  overflow, multiple sections) and add SC/tests for each.
+notes: "Doc is well-structured and explicit about codex-finding mitigations, but Evidence\
+  \ gate is weak: multiple load-bearing\nempirical and security claims (60%\u2192\
+  90% compliance, system-reminder defense behavior, Karpathy/Yajin attributions) are\n\
+  presented without citations a fresh reader can follow. Consistency findings cluster\
+  \ around three drift points:\nslash-command surface (SC-6 vs API), schema-layer\
+  \ taxonomy vs TLDR coverage (workflow.md / skills-registry.md\nomitted), and the\
+  \ lessons_lint \u2192 spec-review trigger contract. Overall verdict fail reflects\
+  \ the Critical evidence gap\non the headline compliance figure plus the Critical\
+  \ consistency gap on UserPromptSubmit acceptance \u2014 both block a\nreader from\
+  \ acting on the doc as written.\n"

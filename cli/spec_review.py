@@ -33,6 +33,12 @@ SCHEMA_PATH = (
     / "spec-review"
     / "attestation-schema-v1.0.json"
 )
+SCHEMA_V2_PATH = (
+    Path(__file__).parent.parent
+    / "skills"
+    / "spec-review"
+    / "attestation-schema-v2.0.json"
+)
 PROMPT_TEMPLATE_PATH = (
     Path(__file__).parent.parent / "skills" / "spec-review" / "prompt-template.md"
 )
@@ -461,6 +467,149 @@ def _atomic_write(out_path: Path, content: str) -> None:
         raise
 
 
+def _get_iter_commit_sha(repo_root: Path) -> str:
+    """Return current HEAD commit SHA, or `<uncommitted>` if no HEAD exists yet."""
+    try:
+        out = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"],
+            cwd=repo_root,
+            stderr=subprocess.DEVNULL,
+        )
+        return out.decode("utf-8").strip()
+    except subprocess.CalledProcessError:
+        return "<uncommitted>"
+
+
+def _run_aggregate_and_write(
+    canonical_path: Path,
+    repo_root: Path,
+    iteration: int,
+    doc_bytes: bytes,
+    pre_dispatch_hash: str,
+    out_path: Path,
+    override_cap: bool,
+) -> int:
+    """v2 write path (self-application). See `--aggregate-and-write` help.
+
+    Reads `{sub_judges: [...]}` mapping from stdin, runs the aggregator,
+    builds a schema-v2.0 attestation, computes provenance + integrity hash,
+    validates, and atomically writes the attestation file.
+    """
+    from cli import aggregator
+
+    raw = sys.stdin.read()
+    try:
+        payload = yaml.safe_load(raw)
+    except yaml.YAMLError as exc:
+        print(f"error: stdin_yaml_invalid: {exc}", file=sys.stderr)
+        return 1
+    if not isinstance(payload, dict) or "sub_judges" not in payload:
+        print(
+            "error: stdin_shape_invalid: expected YAML mapping with `sub_judges:` list",
+            file=sys.stderr,
+        )
+        return 1
+    sub_judges = payload["sub_judges"]
+    if not isinstance(sub_judges, list):
+        print("error: stdin_shape_invalid: `sub_judges` must be a list", file=sys.stderr)
+        return 1
+
+    canonical_relpath = str(canonical_path.relative_to(repo_root))
+
+    # Provenance (LLD-011 §Design Provenance) — persist iter blob to .git/objects
+    # so iter-2 delta-review can retrieve iter-1 bytes deterministically.
+    try:
+        iter_blob_sha = _persist_doc_blob(canonical_path, repo_root)
+    except subprocess.CalledProcessError as exc:
+        print(
+            f"error: git_object_write_failed: cannot persist iter-{iteration} blob: {exc}",
+            file=sys.stderr,
+        )
+        return 1
+    iter_commit_sha = _get_iter_commit_sha(repo_root)
+
+    # Aggregate findings + compute overall verdict
+    findings_aggregated = aggregator.aggregate_findings(sub_judges)
+    verdict_block = compute_overall_verdict_v2(sub_judges)
+
+    attestation = {
+        "schema_version": "2.0",
+        "doc_subject": {
+            "path": canonical_relpath,
+            "content_hash": pre_dispatch_hash,
+            "iter_commit_sha": iter_commit_sha,
+            "iter_blob_sha": iter_blob_sha,
+            "iteration": iteration,
+        },
+        "peer_judge": {
+            "id": "orchestra:spec-reviewer",
+            "invoked_at": _iso_now(),
+            "context_isolation": "fresh_subagent_per_subjudge",
+        },
+        "sub_judges": sub_judges,
+        "findings_aggregated": findings_aggregated,
+        "overall_verdict": verdict_block["overall_verdict"],
+        "overall_verdict_basis": verdict_block["overall_verdict_basis"],
+    }
+
+    # Slice 3.13 — degraded-mode note for override-cap usage
+    if override_cap and iteration >= 3:
+        attestation["notes"] = [
+            f"degraded mode: iter-{iteration} dispatch ran under --override-cap "
+            f"(2-iter post-commit cap bypassed via interview-gate consent)"
+        ]
+
+    # Integrity hash (self-referential — computed with field absent, then set)
+    attestation["attestation_integrity_hash"] = _compute_attestation_integrity_hash(attestation)
+
+    # Validate against v2 schema
+    schema = json.loads(SCHEMA_V2_PATH.read_text())
+    try:
+        jsonschema.validate(attestation, schema)
+    except jsonschema.ValidationError as exc:
+        print(
+            f"error: schema_validation_failed: {exc.message}. "
+            f"Path: {list(exc.absolute_path)}",
+            file=sys.stderr,
+        )
+        return 1
+
+    # F6+F8: stale-state byte-compare guard
+    try:
+        write_time_bytes = canonical_path.read_bytes()
+    except (FileNotFoundError, OSError) as exc:
+        print(
+            f"error: doc_disappeared: doc removed between dispatch and write: {exc}",
+            file=sys.stderr,
+        )
+        return 1
+    if write_time_bytes != doc_bytes:
+        print(
+            f"error: stale_state: doc bytes changed between dispatch and write. "
+            f"Pre-dispatch hash {pre_dispatch_hash}. Re-run spec-review.",
+            file=sys.stderr,
+        )
+        return 1
+
+    yaml_content = yaml.safe_dump(attestation, sort_keys=False, default_flow_style=False)
+    try:
+        _atomic_write(out_path, yaml_content)
+    except Exception as exc:
+        print(f"error: atomic_write_failed: {exc}", file=sys.stderr)
+        return 1
+
+    print(f"OK: attestation written to {out_path}")
+    print(f"verdict: {attestation['overall_verdict']}")
+    return 0 if attestation["overall_verdict"] in ("pass", "conditional_pass") else 1
+
+
+def _iso_now() -> str:
+    """ISO-8601 UTC timestamp for attestation `invoked_at` field."""
+    from datetime import datetime, timezone
+
+    return datetime.now(tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(prog="orchestra:spec-review")
     parser.add_argument("doc_path", help="Repo-relative path to doc to review")
@@ -476,6 +625,19 @@ def main(argv=None) -> int:
         help=(
             "Bypass the 2-iteration post-commit cap. Operator confirms a "
             "degraded-mode review at iter-3+; logged in attestation notes."
+        ),
+    )
+    parser.add_argument(
+        "--aggregate-and-write",
+        dest="aggregate_and_write",
+        action="store_true",
+        help=(
+            "v2 entrypoint: read `{sub_judges: [...]}` mapping from stdin, "
+            "aggregate findings, compute overall verdict per tiered policy, "
+            "build provenance + integrity hash, validate against v2.0 schema, "
+            "and atomically write `docs/reviews/<doc-id>-rN.review.yaml`. "
+            "Used by skills/spec-review/SKILL.md step 6 after parallel "
+            "sub-judge dispatch via Task tool."
         ),
     )
     args = parser.parse_args(argv)
@@ -552,6 +714,19 @@ def main(argv=None) -> int:
         print("error: pdsa_failed: dispatch halted by pre-dispatch self-audit.", file=sys.stderr)
         print(pdsa_report.to_yaml(), file=sys.stderr)
         return 1
+
+    # LLD-011 self-application — v2 write path. Skill body collects 6
+    # sub-judge YAMLs via parallel Task tool dispatch, pipes them here.
+    if args.aggregate_and_write:
+        return _run_aggregate_and_write(
+            canonical_path=canonical_path,
+            repo_root=repo_root,
+            iteration=iteration,
+            doc_bytes=doc_bytes,
+            pre_dispatch_hash=pre_dispatch_hash,
+            out_path=out_path,
+            override_cap=args.override_cap,
+        )
 
     schema = json.loads(SCHEMA_PATH.read_text())
     prompt = render_prompt_from_text(doc_text, schema)

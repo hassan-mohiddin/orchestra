@@ -129,7 +129,12 @@
         },
         "justification": {"type": "string", "minLength": 10}
       },
-      "if": {"properties": {"findings": {"maxItems": 0}}},
+      "if": {
+        "properties": {
+          "findings": {"maxItems": 0},
+          "status": {"const": "completed"}
+        }
+      },
       "then": {"required": ["justification"]}
     },
     "finding": {

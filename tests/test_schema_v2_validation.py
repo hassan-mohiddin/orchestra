@@ -87,3 +87,55 @@ def test_minimal_conforming():
     """
     schema = _load_schema_v2()
     jsonschema.validate(_minimal_conforming_attestation(), schema)
+
+
+def test_rejects_missing_sub_judges():
+    """Slice 1.2 — schema rejects attestation missing the required `sub_judges` field."""
+    schema = _load_schema_v2()
+    payload = _minimal_conforming_attestation()
+    del payload["sub_judges"]
+    with pytest.raises(jsonschema.ValidationError):
+        jsonschema.validate(payload, schema)
+
+
+def test_rejects_invalid_severity():
+    """Slice 1.3 — schema rejects findings with severity outside the Critical|Important|Minor enum."""
+    schema = _load_schema_v2()
+    payload = _minimal_conforming_attestation()
+    payload["findings_aggregated"] = [
+        {
+            "severity": "Catastrophic",
+            "location": "Body § Intro",
+            "problem": "fabricated severity",
+            "raised_by": ["semantic"],
+        }
+    ]
+    with pytest.raises(jsonschema.ValidationError):
+        jsonschema.validate(payload, schema)
+
+
+def test_rejects_invalid_verdict():
+    """Slice 1.4 — schema rejects overall_verdict outside pass|conditional_pass|fail."""
+    schema = _load_schema_v2()
+    payload = _minimal_conforming_attestation()
+    payload["overall_verdict"] = "maybe"
+    with pytest.raises(jsonschema.ValidationError):
+        jsonschema.validate(payload, schema)
+
+
+def test_version_pinning():
+    """Slice 1.5 — schema rejects any schema_version other than '2.0'."""
+    schema = _load_schema_v2()
+    payload = _minimal_conforming_attestation()
+    payload["schema_version"] = "1.0"
+    with pytest.raises(jsonschema.ValidationError):
+        jsonschema.validate(payload, schema)
+
+
+def test_version_pinning_rejects_future():
+    """Slice 1.5 — schema also rejects forward versions like '3.0' (const, not minimum)."""
+    schema = _load_schema_v2()
+    payload = _minimal_conforming_attestation()
+    payload["schema_version"] = "3.0"
+    with pytest.raises(jsonschema.ValidationError):
+        jsonschema.validate(payload, schema)

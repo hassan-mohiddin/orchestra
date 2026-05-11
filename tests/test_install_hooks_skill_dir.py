@@ -49,3 +49,45 @@ def test_cli_templates_dir_no_longer_holds_hook_scripts() -> None:
     assert not (cli_templates / "pre-commit.sh").exists()
     assert not (cli_templates / "commit-msg.sh").exists()
     assert (cli_templates / "precommit-yaml-patch.txt").is_file()
+
+
+# Canonical cli/templates/ enumeration per LLD-008 r8 A3 + BUG-016 slice 8 (vocabulary-default-1.md).
+# Drift in either direction (new untracked artifact OR removed expected artifact) breaks A3 contract.
+# Closes BUG-012 §LLD-008 r7 deferred Minor #3 — T2 full enumeration assertion.
+CLI_TEMPLATES_CANONICAL_SET = frozenset({
+    "AGENTS.md.template",
+    "docs-index.md",
+    "llms.txt.template",
+    "mkdocs_hooks.py",
+    "mkdocs.yml",
+    "orchestra-lint.yml",
+    "precommit-yaml-patch.txt",
+    "requirements-docs.txt",
+    "standards-default-7.md",
+    "tags.md",
+    "vocabulary-default-1.md",
+})
+
+
+def test_cli_templates_dir_full_enumeration() -> None:
+    """Asserts cli/templates/ contains EXACTLY the canonical set.
+
+    Detects drift in either direction:
+    - Adding an artifact without updating LLD-008 r8 A3 + this enumeration
+    - Removing an artifact without updating LLD-008 r8 A3 + this enumeration
+    """
+    cli_templates = Path(__file__).resolve().parent.parent / "cli" / "templates"
+    actual = {
+        p.name for p in cli_templates.iterdir()
+        if p.is_file() and not p.name.startswith(".")
+    }
+    extra = actual - CLI_TEMPLATES_CANONICAL_SET
+    missing = CLI_TEMPLATES_CANONICAL_SET - actual
+    assert not extra, (
+        f"cli/templates/ has untracked artifact(s) {sorted(extra)} — "
+        f"update LLD-008 r8 A3 enumeration + CLI_TEMPLATES_CANONICAL_SET"
+    )
+    assert not missing, (
+        f"cli/templates/ is missing canonical artifact(s) {sorted(missing)} — "
+        f"either restore the file or update LLD-008 r8 A3 + CLI_TEMPLATES_CANONICAL_SET"
+    )

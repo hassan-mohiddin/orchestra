@@ -5,7 +5,7 @@
 > **DRI:** Hassan Mohiddin
 > **Type:** Bug Report
 > **Severity:** Medium
-> **Status:** Investigating
+> **Status:** Fix Applied
 
 ## Observed Behavior
 
@@ -95,3 +95,4 @@ Pick A — explicit pattern matching documents the contract; B silently drops en
 | Date | Change |
 |---|---|
 | 2026-05-11 | BUG filed during BUG-012 §6 supersession execution. L4 doc-id-burn pattern matching assumes numbered prefix; design type uses bare-name. Workaround: `--no-verify`. Target fix: v1.7.1. Severity: Medium. Status: Investigating. |
+| 2026-05-11 | Fix shipped via BUG-016 slice 4 (commit b518da1). Added DESIGN_BARE_NAME_RE + DESIGN_BARE_NAME_SUPERSESSION_RE + POSTMORTEM/RUNBOOK regexes to cli/lint.py; lint_doc_id_burn dispatches by doc_type before falling through to NNN-/BUG-NNN- path. Status: Investigating → Fix Applied. User-verified 2026-05-11. |

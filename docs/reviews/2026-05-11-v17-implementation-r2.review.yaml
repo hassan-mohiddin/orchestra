@@ -1,0 +1,69 @@
+schema_version: '1.0'
+doc_subject:
+  path: docs/plans/2026-05-11-v17-implementation.md
+  content_hash: sha256:45723225fc32cf5e0b46cbce64e6e48da4881529237ced8ecc017cbe84dafefa
+  iteration: 2
+reviewer:
+  identifier: subagent:general-purpose+spec-review-v1
+  invoked_at: '2026-05-11T00:00:00Z'
+  context_isolation: fresh_subagent
+gates:
+  completeness:
+    verdict: pass
+    findings: []
+    justification: "All r1 findings landed in r2. CRITICAL (Phase 4 transactional\
+      \ Slice 4.1) verified \u2014 dry-run flag, --scale-root arg, pre-flight invariant\
+      \ checks, pre-flight snapshot, idempotent rerun path, atomic-where-possible\
+      \ execution, post-flight invariants, 5 enumerated tests. HIGH#2 (impl-SHA tracking)\
+      \ verified with 6-row table. HIGH#3 (Slice 1.4 ORCHESTRA_INIT_STRICT) verified\
+      \ with T5f. HIGH#4 (Slice 2.6 ORCHESTRA_BYPASS CI-deny + mandatory Bypass:)\
+      \ verified with T10e + T10f. All 7 orchestra r1 Minor findings addressed."
+  evidence:
+    verdict: pass
+    findings:
+    - severity: Minor
+      location: "Goal \xA7 Pytest target line 20 vs LLD-010 r3 A11"
+      problem: "Plan correctly claims 150 + 16 + 50 + 27 = 243 reflecting LLD-009\
+        \ r3->r4 baseline shift (+3 for T10e+T10f cascade). However LLD-010 r3 A11\
+        \ still states OLD math LLD-009 r3 baseline (213) + 27 = >=240. LLD-010 not\
+        \ bumped to r4 to absorb LLD-009 r4 cascade. Plan 243 authoritative; LLD-010\
+        \ A11 stale by 3 tests. Not CRITICAL \u2014 plan is executable source-of-truth."
+    - severity: Minor
+      location: "docs/features/008-commit-skill.md \xA7 A10 line 68"
+      problem: "LLD-008 r6 A10 prose reads '15 distinct test functions / Pytest target\
+        \ 150 + 15 = >=165' \u2014 not updated when A14 + T5f added in r6. T7 matrix\
+        \ row + A14 closer + Changelog r6 entry correctly cite 16 / >=166. Plan correctly\
+        \ cites 16 / 166. Internal LLD-008 A10 prose stale."
+    justification: "All r1 Evidence findings fixed in r2. Test-count arithmetic internally\
+      \ consistent; traces to LLD-008 r6 + LLD-009 r4 acceptance items. Two stale-arithmetic\
+      \ findings are downstream LLD paperwork \u2014 Minor not blocking."
+  clarity:
+    verdict: pass
+    findings: []
+    justification: All r1 Clarity findings addressed. Slice-count honesty (33 not
+      22) verified; Risks table parallel-eligible noted; Slice 5.3 Draft->Implemented
+      framing fixed; baseline lineage surfaced.
+  consistency:
+    verdict: pass
+    findings: []
+    justification: Design choices propagated to LLDs (HIGH#3 to LLD-008 r6 A14; HIGH#4
+      to LLD-009 r4 A10). Plan <-> LLD slice-to-acceptance-item mapping intact. Acceptance
+      gate distinguishes BUG-006/010/011 paths correctly. v1.7.1 deferred items preserve
+      audit trail.
+overall_verdict: pass
+required_followup:
+- 'Optional pre-impl paperwork (Minor; non-blocking): bump LLD-010 r3 -> r4 to absorb
+  LLD-009 r4 baseline shift (A11: 240 -> 243 with one-line Changelog citing T10e+T10f
+  cascade).'
+- "Optional pre-impl paperwork (Minor; non-blocking): edit LLD-008 A10 prose stale\
+  \ numbers (15 -> 16; >=165 -> >=166) \u2014 Draft permits; matrix row T7 + A14 +\
+  \ Changelog already correct."
+notes: "r2 verdict pass. Successfully addressed all 11 r1 findings (1 CRITICAL + 3\
+  \ HIGH + 7 Minor) with full propagation to LLDs (LLD-008 r5->r6 for HIGH#3; LLD-009\
+  \ r3->r4 for HIGH#4). No new substantive issues introduced. Two Minor stale-arithmetic\
+  \ findings in downstream LLDs (LLD-010 A11; LLD-008 A10 prose) \u2014 paperwork-class,\
+  \ do not affect plan executability, listed as required_followup. Plan Goal baseline\
+  \ lineage (150 -> 166 -> 216 -> 243) authoritative + internally correct.\nPlateau\
+  \ heuristic check: r2 acceptable to ship per user direction. r2 represents convergent\
+  \ close on r1 findings with high-fidelity propagation to LLDs. Recommend proceeding\
+  \ to implementation per Phase ordering.\n"

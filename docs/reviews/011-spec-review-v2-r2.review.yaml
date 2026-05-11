@@ -1,0 +1,594 @@
+schema_version: '2.0'
+doc_subject:
+  path: docs/features/011-spec-review-v2.md
+  content_hash: sha256:13c96c463de0e42f64aefd57705c26976363c280012284a6bc703661514d9d9d
+  iter_commit_sha: de4e4b840d9a17ac96fb64f05542725403d55db4
+  iter_blob_sha: de3dfa7238216de2eedabc706d2a979b21caf84b
+  iteration: 2
+peer_judge:
+  id: orchestra:spec-reviewer
+  invoked_at: '2026-05-11T16:53:58Z'
+  context_isolation: fresh_subagent_per_subjudge
+sub_judges:
+- id: structure
+  model: claude-sonnet-4-6
+  mandatory: false
+  rubric_version: structure-v1
+  status: completed
+  verdict: pass
+  findings:
+  - severity: Minor
+    location: "Changelog \xA7 entry ordering"
+    problem: 'Entries dated 2026-05-11 are not in consistent chronological order:
+      iter-4 entry precedes iter-3 entry which precedes iter-2 entry, while surrounding
+      entries appear in forward chronological order. Mixed ordering complicates audit-trail
+      reading.'
+    scope: instance
+    raised_by:
+    - structure
+  - severity: Minor
+    location: "Design \xA7 Schema v2.0 (sub_judges YAML block)"
+    problem: YAML illustration uses a bare comment `# ... 3 more entries` as a structural
+      placeholder; readable in prose context but not valid YAML if copy-pasted. Consider
+      a clearer 'truncated' note outside the code fence.
+    scope: instance
+    raised_by:
+    - structure
+- id: semantic
+  model: claude-opus-4-7
+  mandatory: true
+  rubric_version: semantic-v1
+  status: completed
+  verdict: conditional_pass
+  findings:
+  - severity: Important
+    location: "Testing Strategy \xA7 Unit tests vs Changelog 2026-05-12"
+    problem: "Final Changelog entry asserts 'LLD body now matches the shipped file\
+      \ layout' but \xA7Testing Strategy still lists tests/test_tool_trace_rejection.py\
+      \ as a NEW file, and neither \xA7Testing Strategy nor \xA7File layout includes\
+      \ tests/test_failure_attestation.py even though \xA7Audit Attestation references\
+      \ it. Body contradicts the changelog claim about its own state."
+    scope: instance
+    raised_by:
+    - semantic
+  - severity: Minor
+    location: "Success Criteria \xA7 Pytest baseline preserved"
+    problem: Criterion fixes the baseline at 'existing 259-test baseline stays green;
+      add >=20 new tests' but per current state (Phase 1 already shipped beyond 259)
+      this baseline number is stale; fresh reader treating it as the live target would
+      misread shipping readiness.
+    scope: instance
+    raised_by:
+    - semantic
+  - severity: Minor
+    location: "Schema v2.0 example vs Scope \xA7 item 14"
+    problem: "\xA7Scope item 14 prose classifies sub-judges as 'mandatory' or 'optional'\
+      \ (string-like vocabulary) while \xA7Schema v2.0 example encodes the field as\
+      \ a boolean (mandatory: true / mandatory: false). Same concept, two registers."
+    scope: instance
+    raised_by:
+    - semantic
+- id: gate-compliance
+  model: claude-sonnet-4-6
+  mandatory: false
+  rubric_version: gate-compliance-v1
+  status: completed
+  verdict: pass
+  findings: []
+  justification: "Gate 1 (Discovery): LLD is a Feature LLD filed before any code changes\
+    \ for spec-review v2 \u2014 not a defect report. Gate 2 (Design): Full LLD content\
+    \ present. Gate 3 (Spec Review): Iteration: 2 present; Changelog records iter-1\
+    \ codex reviews + iter-2 orchestra-v2 dogfood attestation. Canon-frozen: all 2026-05-12\
+    \ edits carry explicit Addresses: lines per finding (8 adversarial Critical +\
+    \ 1 repo-context Critical = 9, matching the iteration-bump entry), satisfying\
+    \ per-finding addressing protocol. The new ## Audit Attestation section is authorised\
+    \ by the doc's own \xA7Design class-vs-instance fix protocol. Lifecycle: Status\
+    \ Approved is valid for an LLD mid-implementation per docs/STANDARDS.md. No Gate\
+    \ 1/2/3, canon-frozen, or lifecycle violations detected.\n"
+- id: adversarial
+  model: claude-opus-4-7
+  mandatory: true
+  rubric_version: adversarial-v1
+  status: completed
+  verdict: fail
+  findings:
+  - severity: Critical
+    location: "Design \xA7 Schema v2.0 attestation_integrity_hash canonicalization"
+    problem: "PyYAML safe_dump determinism claim is unbacked. safe_dump emits strings\
+      \ quoted-or-unquoted via heuristic (auto-quotes pass/null/true/yes/on; date-shaped\
+      \ strings unquoted; Unicode-width and locale dependent), and patch versions\
+      \ within PyYAML 6.x have changed string-emission behavior. Same payload can\
+      \ serialize to different bytes across environments. Load-bearing tamper-detection\
+      \ primitive has no actually-canonical form despite \xA7Design naming this 'algorithm-of-record'."
+    scope: class
+    raised_by:
+    - adversarial
+  - severity: Critical
+    location: "Design \xA7 Aggregator fuzzy_hash collision text loss"
+    problem: "When findings collide on (normalize_location, fuzzy_hash), aggregator\
+      \ picks problem text from alphabetically-first sub_judge id only. Critical from\
+      \ adversarial colliding with Minor from structure \u2192 merged severity Critical,\
+      \ problem text = adversarial's string; structure's actionable detail silently\
+      \ dropped. raised_by length>1 surfaces the merge but operators act on problem\
+      \ text. Documented as accepted per \xA7E14."
+    scope: class
+    raised_by:
+    - adversarial
+  - severity: Critical
+    location: "Edge cases \xA7 E10 no-op iteration documented bypass"
+    problem: "E10: author bumps Iteration: 2 without editing doc \u2192 delta-review\
+      \ detects empty diff \u2192 uses iter-1 findings as iter-2 attestation; advances\
+      \ cleanly. An author whose iter-1 returned conditional_pass with Important findings\
+      \ can advance to iter-2 conditional_pass with zero review work and zero fixes.\
+      \ The 2-iter cap becomes a free advance after one cycle and the iteration field\
+      \ stops conveying review activity."
+    scope: class
+    raised_by:
+    - adversarial
+  - severity: Critical
+    location: "Design \xA7 Tiered partial-failure single-vendor SPOF"
+    problem: "Both mandatory sub-judges (semantic, adversarial) run on claude-opus-4-7.\
+      \ Any Opus outage takes BOTH mandatories down simultaneously, forcing overall_verdict:\
+      \ fail on every review until Opus returns. \xA7Audit-attestation finding 8 acknowledges\
+      \ and defers fix to post-v2.0.0. v2.0.0 ships with a systemic SPOF where the\
+      \ non-negotiable docs-driven-development gate is bound to one vendor's availability."
+    scope: instance
+    raised_by:
+    - adversarial
+  - severity: Critical
+    location: "Edge cases \xA7 E21 tool_scope_violation detection mechanism unspecified"
+    problem: "\xA7E21 + \xA7S1 claim cli.spec_review inspects sub-judge output for\
+      \ tool-trace metadata and rejects out-of-rubric tool invocations. Claude Code's\
+      \ Task tool returns the subagent's final textual response, not a per-call tool-invocation\
+      \ log; there is no documented surface where the orchestrator observes which\
+      \ tools the sub-judge actually called. The named defense layer is not implementable\
+      \ as described against an injected sub-judge."
+    scope: class
+    raised_by:
+    - adversarial
+  - severity: Important
+    location: "Design \xA7 Aggregator normalize_location underspecified"
+    problem: "normalize_location described as strip whitespace, lowercase, normalize\
+      \ \xA7 vs section vs line N. Sub-judges generate locations in free-form prose\
+      \ (Design \xA7 X, \xA7Design > X, X (Design), line 248, L248, lines 245-260).\
+      \ Normalization is the dedup substrate; divergent forms = no dedup = duplicate\
+      \ findings flood the aggregated list. Canonical form not defined."
+    scope: instance
+    raised_by:
+    - adversarial
+  - severity: Important
+    location: "Design \xA7 Delta-review iter1_findings priming bias"
+    problem: "Iter-2 sub-judges receive iter-1 findings as context, so they are no\
+      \ longer fresh-context. Priming/anchoring narrows attention to iter-1's framing\
+      \ and underweights novel findings outside changed sections. No \xA7Success Criterion\
+      \ measures whether iter-2 codex-overlap stays >=80% under this priming."
+    scope: instance
+    raised_by:
+    - adversarial
+  - severity: Important
+    location: "Design \xA7 Delta-review compute_changed_sections unspecified"
+    problem: "Algorithm undefined: line-diff, AST-diff, heading-section diff, semantic?\
+      \ If sub-section moved verbatim, is it changed? Heading renamed but body identical\
+      \ \u2014 re-review or skip? changed-section ranges scopes sub-judge attention\
+      \ in iter-2; semantics determine whether real changes get reviewed."
+    scope: instance
+    raised_by:
+    - adversarial
+  - severity: Important
+    location: "Design \xA7 Rubric-freeze rubric content not hash-bound"
+    problem: Attestation records rubric_version string but not a hash of rubric-vN.md
+      content. Maintainer editing rubric in place between iter-1 and iter-2 dispatches
+      changes the rubric the sub-judge runs against; recorded version unchanged. 'Rubric
+      drift structurally impossible' holds only under the unstated assumption file
+      content is immutable per version string.
+    scope: instance
+    raised_by:
+    - adversarial
+  - severity: Important
+    location: "Edge cases \xA7 E16 attestation tamper window pre-iter-2"
+    problem: "Hash mismatch detected only at iter-2 load. Between iter-1 write and\
+      \ iter-2 dispatch (many docs never reach iter-2), attestation is a YAML file\
+      \ an author can edit. If author edits iter-1 conditional_pass \u2192 pass and\
+      \ ships at iter-1 (Status flip Draft \u2192 Approved with iter-1 as gate), tamper\
+      \ never surfaces. Integrity hash protects iter-2 replay; iter-1 approval gate\
+      \ signal is unprotected."
+    scope: instance
+    raised_by:
+    - adversarial
+  - severity: Important
+    location: "Design \xA7 2-iter hard cap override-cap menu"
+    problem: Override-cap interview-gate explicitly offers 'No, accept iter-2 attestation
+      as final and ship' as a menu choice. If iter-2 returns Critical findings, selecting
+      this option ships the doc with Criticals unaddressed via single click. The cap
+      positioned as discipline mechanism but bypass normalized as a menu option.
+    scope: instance
+    raised_by:
+    - adversarial
+  - severity: Important
+    location: "Security \xA7 S1 credential regex theatrical"
+    problem: "Output-quarantine relies on regex matching credential shapes in finding\
+      \ text. Prompt-injected sub-judge that paraphrases (key starts with sk and contains\
+      \ alpha bravo), base64-encodes, splits across findings, describes prose-only\
+      \ evades every pattern. \xA7S1 acknowledges gap but regex still marketed as\
+      \ defense-in-depth layer."
+    scope: instance
+    raised_by:
+    - adversarial
+  - severity: Important
+    location: "Design \xA7 PDSA item 2 required-sections heuristic pre-BUG-016"
+    problem: PDSA section check uses heuristic parse; loose match can pass a doc whose
+      Security Considerations is absent but which has 'Notes on security'. Until BUG-016
+      lands, the gate that prevents sub-judge dispatch on incomplete docs is itself
+      loose.
+    scope: instance
+    raised_by:
+    - adversarial
+  - severity: Important
+    location: "Edge cases \xA7 E5 rare framing understates frequency"
+    problem: git auto-gc fires routinely in active repos; gc.pruneExpire=2.weeks.ago
+      means iter-1 blob prune-eligible after 14 days. Normal monthly dev cadence between
+      iter-1 and iter-2 crosses prune window. 'Rare' understates frequency; iter-2
+      fail-closed will surface during ordinary work.
+    scope: instance
+    raised_by:
+    - adversarial
+  - severity: Important
+    location: "Design \xA7 Cross-judge report ephemeral"
+    problem: Cross-judge comparison report (severity matrix + overlap + top-5) is
+      chat-only with explicit 'no persistent rollup file'. Cross-judge synthesis is
+      the most actionable artifact and only place where orchestra-vs-codex disagreement
+      renders. Session churn / replay loses the analysis.
+    scope: instance
+    raised_by:
+    - adversarial
+  - severity: Minor
+    location: "Design \xA7 Aggregator SEVERITY_RANK no default"
+    problem: "max(severity for entries, key=SEVERITY_RANK.get) returns None on unknown\
+      \ severity. Any bypass of schema-validation (test fixture, partial-failure path,\
+      \ future code change) \u2192 .get returns None \u2192 max crashes mid-aggregation.\
+      \ No defensive default; one bypass crashes review without engaging failure-attestation\
+      \ invariant."
+    scope: instance
+    raised_by:
+    - adversarial
+  - severity: Minor
+    location: "Design \xA7 File layout three new modules no interface contract"
+    problem: pdsa.py, aggregator.py, delta_review.py carved out without documented
+      stable interface. Any signature change propagates implicitly to dependent tests.
+      No __all__ declarations or interface contract specified.
+    scope: instance
+    raised_by:
+    - adversarial
+- id: repo-context
+  model: claude-opus-4-7
+  mandatory: false
+  rubric_version: repo-context-v1
+  status: completed
+  verdict: conditional_pass
+  findings:
+  - severity: Important
+    location: "Testing Strategy \xA7 Unit tests (row for tests/test_tool_trace_rejection.py)"
+    problem: "Cited test file tests/test_tool_trace_rejection.py does not exist. Iter-2\
+      \ Changelog asserts body corrected to fold E21 quarantine tests into tests/test_failure_attestation.py\
+      \ (verified \u2014 test_e21_* functions exist there), but \xA7Testing Strategy\
+      \ table row still lists test_tool_trace_rejection.py as NEW. Body-vs-changelog\
+      \ mismatch."
+    scope: instance
+    raised_by:
+    - repo-context
+  - severity: Minor
+    location: "Problem Statement \xA7 Defect 1 (cite docs/HANDOFF.md lines 60-80)"
+    problem: Cite docs/HANDOFF.md:60-80 supports the five-cause attribution but lines
+      60-80 of HANDOFF.md actually contain iteration-depth lessons + known-defect
+      note, not the five-cause loop-pathology breakdown. Five-cause table is original
+      to LLD-011; cite is imprecise.
+    scope: instance
+    raised_by:
+    - repo-context
+- id: architectural-fit
+  model: claude-opus-4-7
+  mandatory: false
+  rubric_version: architectural-fit-v1
+  status: completed
+  verdict: conditional_pass
+  findings:
+  - severity: Important
+    location: "Related Documents \xA7 canonical-vocabulary missing"
+    problem: "LLD-011 introduces a six-sub-judge gate taxonomy that supersedes the\
+      \ four-gate vocabulary, yet does not cite docs/design/controlled-vocabulary.md\
+      \ as a Related Document. That Design Doc is Status: Current and its \xA74.9\
+      \ review_gate_names explicitly names LLD-011 as the canon-extender. Cross-ref\
+      \ to recorded canon is missing where direct conflict exists."
+    scope: instance
+    raised_by:
+    - architectural-fit
+  - severity: Important
+    location: "Scope \xA7 Out of Scope row 1 + Design \xA7 PDSA item 4"
+    problem: "LLD-011 repeatedly defers vocabulary-canon work to BUG-016 closure /\
+      \ controlled-vocabulary canon ships, but docs/design/controlled-vocabulary.md\
+      \ is already Status: Current \u2014 the canon is shipped. BUG-016 (Status: Investigating)\
+      \ is the migration/lint-strict-match work, not the canon itself. Deferral framing\
+      \ contradicts the recorded state of the Design Doc canon."
+    scope: instance
+    raised_by:
+    - architectural-fit
+  - severity: Important
+    location: "Scope \xA7 item 2 + Design \xA7 Schema v2.0 + Design \xA7 Sub-judge\
+      \ cast"
+    problem: "Schema v2.0 declares no fixed gate names and defines six sub-judge ids\
+      \ inline. docs/design/controlled-vocabulary.md \xA74.9 review_gate_names is\
+      \ the canonical single-source-of-truth and requires that any gate-name extension\
+      \ grows under the same canon \u2014 no parallel definition. LLD-011's inline\
+      \ schema enum is a parallel definition; no deviation entry exists in the canon\
+      \ Design Doc."
+    scope: class
+    raised_by:
+    - architectural-fit
+findings_aggregated:
+- severity: Minor
+  location: "Changelog \xA7 entry ordering"
+  problem: 'Entries dated 2026-05-11 are not in consistent chronological order: iter-4
+    entry precedes iter-3 entry which precedes iter-2 entry, while surrounding entries
+    appear in forward chronological order. Mixed ordering complicates audit-trail
+    reading.'
+  raised_by:
+  - structure
+  scope: instance
+- severity: Important
+  location: "Design \xA7 2-iter hard cap override-cap menu"
+  problem: Override-cap interview-gate explicitly offers 'No, accept iter-2 attestation
+    as final and ship' as a menu choice. If iter-2 returns Critical findings, selecting
+    this option ships the doc with Criticals unaddressed via single click. The cap
+    positioned as discipline mechanism but bypass normalized as a menu option.
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Critical
+  location: "Design \xA7 Aggregator fuzzy_hash collision text loss"
+  problem: "When findings collide on (normalize_location, fuzzy_hash), aggregator\
+    \ picks problem text from alphabetically-first sub_judge id only. Critical from\
+    \ adversarial colliding with Minor from structure \u2192 merged severity Critical,\
+    \ problem text = adversarial's string; structure's actionable detail silently\
+    \ dropped. raised_by length>1 surfaces the merge but operators act on problem\
+    \ text. Documented as accepted per \xA7E14."
+  raised_by:
+  - adversarial
+  scope: class
+- severity: Important
+  location: "Design \xA7 Aggregator normalize_location underspecified"
+  problem: "normalize_location described as strip whitespace, lowercase, normalize\
+    \ \xA7 vs section vs line N. Sub-judges generate locations in free-form prose\
+    \ (Design \xA7 X, \xA7Design > X, X (Design), line 248, L248, lines 245-260).\
+    \ Normalization is the dedup substrate; divergent forms = no dedup = duplicate\
+    \ findings flood the aggregated list. Canonical form not defined."
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Minor
+  location: "Design \xA7 Aggregator SEVERITY_RANK no default"
+  problem: "max(severity for entries, key=SEVERITY_RANK.get) returns None on unknown\
+    \ severity. Any bypass of schema-validation (test fixture, partial-failure path,\
+    \ future code change) \u2192 .get returns None \u2192 max crashes mid-aggregation.\
+    \ No defensive default; one bypass crashes review without engaging failure-attestation\
+    \ invariant."
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Important
+  location: "Design \xA7 Cross-judge report ephemeral"
+  problem: Cross-judge comparison report (severity matrix + overlap + top-5) is chat-only
+    with explicit 'no persistent rollup file'. Cross-judge synthesis is the most actionable
+    artifact and only place where orchestra-vs-codex disagreement renders. Session
+    churn / replay loses the analysis.
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Important
+  location: "Design \xA7 Delta-review compute_changed_sections unspecified"
+  problem: "Algorithm undefined: line-diff, AST-diff, heading-section diff, semantic?\
+    \ If sub-section moved verbatim, is it changed? Heading renamed but body identical\
+    \ \u2014 re-review or skip? changed-section ranges scopes sub-judge attention\
+    \ in iter-2; semantics determine whether real changes get reviewed."
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Important
+  location: "Design \xA7 Delta-review iter1_findings priming bias"
+  problem: "Iter-2 sub-judges receive iter-1 findings as context, so they are no longer\
+    \ fresh-context. Priming/anchoring narrows attention to iter-1's framing and underweights\
+    \ novel findings outside changed sections. No \xA7Success Criterion measures whether\
+    \ iter-2 codex-overlap stays >=80% under this priming."
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Minor
+  location: "Design \xA7 File layout three new modules no interface contract"
+  problem: pdsa.py, aggregator.py, delta_review.py carved out without documented stable
+    interface. Any signature change propagates implicitly to dependent tests. No __all__
+    declarations or interface contract specified.
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Important
+  location: "Design \xA7 PDSA item 2 required-sections heuristic pre-BUG-016"
+  problem: PDSA section check uses heuristic parse; loose match can pass a doc whose
+    Security Considerations is absent but which has 'Notes on security'. Until BUG-016
+    lands, the gate that prevents sub-judge dispatch on incomplete docs is itself
+    loose.
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Important
+  location: "Design \xA7 Rubric-freeze rubric content not hash-bound"
+  problem: Attestation records rubric_version string but not a hash of rubric-vN.md
+    content. Maintainer editing rubric in place between iter-1 and iter-2 dispatches
+    changes the rubric the sub-judge runs against; recorded version unchanged. 'Rubric
+    drift structurally impossible' holds only under the unstated assumption file content
+    is immutable per version string.
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Minor
+  location: "Design \xA7 Schema v2.0 (sub_judges YAML block)"
+  problem: YAML illustration uses a bare comment `# ... 3 more entries` as a structural
+    placeholder; readable in prose context but not valid YAML if copy-pasted. Consider
+    a clearer 'truncated' note outside the code fence.
+  raised_by:
+  - structure
+  scope: instance
+- severity: Critical
+  location: "Design \xA7 Schema v2.0 attestation_integrity_hash canonicalization"
+  problem: "PyYAML safe_dump determinism claim is unbacked. safe_dump emits strings\
+    \ quoted-or-unquoted via heuristic (auto-quotes pass/null/true/yes/on; date-shaped\
+    \ strings unquoted; Unicode-width and locale dependent), and patch versions within\
+    \ PyYAML 6.x have changed string-emission behavior. Same payload can serialize\
+    \ to different bytes across environments. Load-bearing tamper-detection primitive\
+    \ has no actually-canonical form despite \xA7Design naming this 'algorithm-of-record'."
+  raised_by:
+  - adversarial
+  scope: class
+- severity: Critical
+  location: "Design \xA7 Tiered partial-failure single-vendor SPOF"
+  problem: "Both mandatory sub-judges (semantic, adversarial) run on claude-opus-4-7.\
+    \ Any Opus outage takes BOTH mandatories down simultaneously, forcing overall_verdict:\
+    \ fail on every review until Opus returns. \xA7Audit-attestation finding 8 acknowledges\
+    \ and defers fix to post-v2.0.0. v2.0.0 ships with a systemic SPOF where the non-negotiable\
+    \ docs-driven-development gate is bound to one vendor's availability."
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Critical
+  location: "Edge cases \xA7 E10 no-op iteration documented bypass"
+  problem: "E10: author bumps Iteration: 2 without editing doc \u2192 delta-review\
+    \ detects empty diff \u2192 uses iter-1 findings as iter-2 attestation; advances\
+    \ cleanly. An author whose iter-1 returned conditional_pass with Important findings\
+    \ can advance to iter-2 conditional_pass with zero review work and zero fixes.\
+    \ The 2-iter cap becomes a free advance after one cycle and the iteration field\
+    \ stops conveying review activity."
+  raised_by:
+  - adversarial
+  scope: class
+- severity: Important
+  location: "Edge cases \xA7 E16 attestation tamper window pre-iter-2"
+  problem: "Hash mismatch detected only at iter-2 load. Between iter-1 write and iter-2\
+    \ dispatch (many docs never reach iter-2), attestation is a YAML file an author\
+    \ can edit. If author edits iter-1 conditional_pass \u2192 pass and ships at iter-1\
+    \ (Status flip Draft \u2192 Approved with iter-1 as gate), tamper never surfaces.\
+    \ Integrity hash protects iter-2 replay; iter-1 approval gate signal is unprotected."
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Critical
+  location: "Edge cases \xA7 E21 tool_scope_violation detection mechanism unspecified"
+  problem: "\xA7E21 + \xA7S1 claim cli.spec_review inspects sub-judge output for tool-trace\
+    \ metadata and rejects out-of-rubric tool invocations. Claude Code's Task tool\
+    \ returns the subagent's final textual response, not a per-call tool-invocation\
+    \ log; there is no documented surface where the orchestrator observes which tools\
+    \ the sub-judge actually called. The named defense layer is not implementable\
+    \ as described against an injected sub-judge."
+  raised_by:
+  - adversarial
+  scope: class
+- severity: Important
+  location: "Edge cases \xA7 E5 rare framing understates frequency"
+  problem: git auto-gc fires routinely in active repos; gc.pruneExpire=2.weeks.ago
+    means iter-1 blob prune-eligible after 14 days. Normal monthly dev cadence between
+    iter-1 and iter-2 crosses prune window. 'Rare' understates frequency; iter-2 fail-closed
+    will surface during ordinary work.
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Minor
+  location: "Problem Statement \xA7 Defect 1 (cite docs/HANDOFF.md lines 60-80)"
+  problem: Cite docs/HANDOFF.md:60-80 supports the five-cause attribution but lines
+    60-80 of HANDOFF.md actually contain iteration-depth lessons + known-defect note,
+    not the five-cause loop-pathology breakdown. Five-cause table is original to LLD-011;
+    cite is imprecise.
+  raised_by:
+  - repo-context
+  scope: instance
+- severity: Important
+  location: "Related Documents \xA7 canonical-vocabulary missing"
+  problem: "LLD-011 introduces a six-sub-judge gate taxonomy that supersedes the four-gate\
+    \ vocabulary, yet does not cite docs/design/controlled-vocabulary.md as a Related\
+    \ Document. That Design Doc is Status: Current and its \xA74.9 review_gate_names\
+    \ explicitly names LLD-011 as the canon-extender. Cross-ref to recorded canon\
+    \ is missing where direct conflict exists."
+  raised_by:
+  - architectural-fit
+  scope: instance
+- severity: Minor
+  location: "Schema v2.0 example vs Scope \xA7 item 14"
+  problem: "\xA7Scope item 14 prose classifies sub-judges as 'mandatory' or 'optional'\
+    \ (string-like vocabulary) while \xA7Schema v2.0 example encodes the field as\
+    \ a boolean (mandatory: true / mandatory: false). Same concept, two registers."
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Important
+  location: "Scope \xA7 item 2 + Design \xA7 Schema v2.0 + Design \xA7 Sub-judge cast"
+  problem: "Schema v2.0 declares no fixed gate names and defines six sub-judge ids\
+    \ inline. docs/design/controlled-vocabulary.md \xA74.9 review_gate_names is the\
+    \ canonical single-source-of-truth and requires that any gate-name extension grows\
+    \ under the same canon \u2014 no parallel definition. LLD-011's inline schema\
+    \ enum is a parallel definition; no deviation entry exists in the canon Design\
+    \ Doc."
+  raised_by:
+  - architectural-fit
+  scope: class
+- severity: Important
+  location: "Scope \xA7 Out of Scope row 1 + Design \xA7 PDSA item 4"
+  problem: "LLD-011 repeatedly defers vocabulary-canon work to BUG-016 closure / controlled-vocabulary\
+    \ canon ships, but docs/design/controlled-vocabulary.md is already Status: Current\
+    \ \u2014 the canon is shipped. BUG-016 (Status: Investigating) is the migration/lint-strict-match\
+    \ work, not the canon itself. Deferral framing contradicts the recorded state\
+    \ of the Design Doc canon."
+  raised_by:
+  - architectural-fit
+  scope: instance
+- severity: Important
+  location: "Security \xA7 S1 credential regex theatrical"
+  problem: "Output-quarantine relies on regex matching credential shapes in finding\
+    \ text. Prompt-injected sub-judge that paraphrases (key starts with sk and contains\
+    \ alpha bravo), base64-encodes, splits across findings, describes prose-only evades\
+    \ every pattern. \xA7S1 acknowledges gap but regex still marketed as defense-in-depth\
+    \ layer."
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Minor
+  location: "Success Criteria \xA7 Pytest baseline preserved"
+  problem: Criterion fixes the baseline at 'existing 259-test baseline stays green;
+    add >=20 new tests' but per current state (Phase 1 already shipped beyond 259)
+    this baseline number is stale; fresh reader treating it as the live target would
+    misread shipping readiness.
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Important
+  location: "Testing Strategy \xA7 Unit tests (row for tests/test_tool_trace_rejection.py)"
+  problem: "Cited test file tests/test_tool_trace_rejection.py does not exist. Iter-2\
+    \ Changelog asserts body corrected to fold E21 quarantine tests into tests/test_failure_attestation.py\
+    \ (verified \u2014 test_e21_* functions exist there), but \xA7Testing Strategy\
+    \ table row still lists test_tool_trace_rejection.py as NEW. Body-vs-changelog\
+    \ mismatch."
+  raised_by:
+  - repo-context
+  scope: instance
+- severity: Important
+  location: "Testing Strategy \xA7 Unit tests vs Changelog 2026-05-12"
+  problem: "Final Changelog entry asserts 'LLD body now matches the shipped file layout'\
+    \ but \xA7Testing Strategy still lists tests/test_tool_trace_rejection.py as a\
+    \ NEW file, and neither \xA7Testing Strategy nor \xA7File layout includes tests/test_failure_attestation.py\
+    \ even though \xA7Audit Attestation references it. Body contradicts the changelog\
+    \ claim about its own state."
+  raised_by:
+  - semantic
+  scope: instance
+overall_verdict: fail
+overall_verdict_basis:
+  worst_sub_judge_verdict: fail
+  excluded_sub_judges: []
+  mandatory_failures: []
+  reason: null
+attestation_integrity_hash: sha256:296400f0d5ce38b5962eb1e3d6f42e6d0eb14b27ed2c78f78edc216d01d6f3fb

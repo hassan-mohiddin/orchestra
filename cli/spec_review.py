@@ -89,6 +89,24 @@ _CODEX_SEVERITY_MAP: dict[str, str] = {
 }
 
 
+def should_fire_interview_gate(findings_aggregated: list[dict]) -> bool:
+    """Decide whether to fire AskUserQuestion interview-gate (LLD-011 slices 1.32-1.33).
+
+    Per LLD-011 §Round 3: fire gate when aggregate findings contain Critical
+    or Important. Skip gate when only Minor findings (or no findings) — the
+    workflow may advance to the next Step without user interruption.
+
+    Returns:
+        True if at least one finding has severity Critical or Important.
+        False if findings_aggregated is empty OR contains only Minor severity.
+    """
+    for f in findings_aggregated:
+        sev = f.get("severity")
+        if sev in {"Critical", "Important"}:
+            return True
+    return False
+
+
 def parse_codex_findings(md_text: str) -> dict[str, int]:
     """Tolerantly parse codex .md output for severity counts (LLD-011 slice 1.31).
 

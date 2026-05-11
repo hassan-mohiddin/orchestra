@@ -1,4 +1,12 @@
-"""Bias mitigation tests (S28-S30 slices)."""
+"""Bias mitigation tests (v1 S28-S30 slices).
+
+v2 (LLD-011) drops the `max_tokens: 4000` cap entirely — length-bias mitigation
+moved from output cap to prompt-level terseness instruction per LLD-011 design
+decision. The S30 `test_skill_md_specifies_max_tokens_4000` test was removed
+when SKILL.md was rewritten for v2 dispatch (slice 1.26). The remaining tests
+(position-bias prompt instruction + same-iteration overwrite refusal) are
+preserved as regression locks because both behaviors carry over to v2.
+"""
 
 from pathlib import Path
 
@@ -36,9 +44,7 @@ def test_force_required_for_same_iteration_overwrite(tmp_path, capsys, monkeypat
     assert "already exists" in capsys.readouterr().err
 
 
-def test_skill_md_specifies_max_tokens_4000():
-    """T13c / S30 — A8: SKILL.md prose contains `max_tokens: 4000` (length-bias mitigation)."""
-    skill_md = (
-        Path(__file__).parent.parent / "skills" / "spec-review" / "SKILL.md"
-    ).read_text()
-    assert "max_tokens: 4000" in skill_md
+# test_skill_md_specifies_max_tokens_4000 removed — v2 (LLD-011) drops the
+# output-token cap in favor of prompt-level terseness instruction. Codex
+# adversarial review on LLD-011 noted that v1's 4000-token cap caused mid-
+# finding truncation; v2 keeps length-bias mitigation at the prompt level only.

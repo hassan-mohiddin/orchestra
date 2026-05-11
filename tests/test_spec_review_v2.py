@@ -152,6 +152,45 @@ def test_render_cross_judge_report_orchestra_only():
     assert "codex" not in out.lower() or "no codex" in out.lower()
 
 
+def test_gate_fires_on_critical():
+    """Slice 1.32 — should_fire_interview_gate returns True when aggregate has Critical."""
+    findings = [
+        {"severity": "Critical", "location": "A § x", "problem": "p", "raised_by": ["s"]},
+    ]
+    assert spec_review.should_fire_interview_gate(findings) is True
+
+
+def test_gate_fires_on_important():
+    """Slice 1.32 — should_fire_interview_gate returns True when aggregate has Important."""
+    findings = [
+        {"severity": "Important", "location": "A § x", "problem": "p", "raised_by": ["s"]},
+    ]
+    assert spec_review.should_fire_interview_gate(findings) is True
+
+
+def test_gate_fires_with_mixed():
+    """Slice 1.32 — gate fires when Critical AND Minor coexist."""
+    findings = [
+        {"severity": "Critical", "location": "A § x", "problem": "p1", "raised_by": ["s"]},
+        {"severity": "Minor", "location": "B § y", "problem": "p2", "raised_by": ["s"]},
+    ]
+    assert spec_review.should_fire_interview_gate(findings) is True
+
+
+def test_gate_skips_only_minor():
+    """Slice 1.33 — should_fire_interview_gate returns False when only Minor findings."""
+    findings = [
+        {"severity": "Minor", "location": "A § x", "problem": "p1", "raised_by": ["s"]},
+        {"severity": "Minor", "location": "B § y", "problem": "p2", "raised_by": ["s"]},
+    ]
+    assert spec_review.should_fire_interview_gate(findings) is False
+
+
+def test_gate_skips_empty_findings():
+    """Slice 1.33 — should_fire_interview_gate returns False when no findings (pass case)."""
+    assert spec_review.should_fire_interview_gate([]) is False
+
+
 def test_render_cross_judge_report_with_codex():
     """Slice 1.30 — report renders cross-judge counts when codex present."""
     orchestra = {

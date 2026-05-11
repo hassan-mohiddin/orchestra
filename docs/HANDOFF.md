@@ -1,7 +1,71 @@
 # Orchestra Handoff — Session Continuity Pointer
 
-> **Last updated:** 2026-05-11 night — LLD-011 spec-review v2 ALL phases shipped + 2-iter dogfood complete. v2.0.0 tag ready (pending status flips + git tag).
-> **Last session ended:** Path C complete (4 code fixes + iter-2 narrow-change + re-dogfood + E10/E21 fixes). HEAD `47e392e` (or later — parallel session shipped L4 canon fix at `b518da1`, L5 strict-enum at `47e392e`). pytest 509 green. pyrefly 0. eval 12/12.
+> **Last updated:** 2026-05-11 — BUG-016 vocab-canon migration SHIPPED (12/12 slices). LLD-011 spec-review v2 ALL phases shipped + 2-iter dogfood complete (parallel session).
+> **Last session ended:** BUG-016 migration executed. 11 code/test commits + 3 status-flip commits + 1 HANDOFF commit. pytest 515 green. pyrefly 0. cli.lint --pre-commit clean.
+
+---
+
+## 🎉 NEWLY SHIPPED — BUG-016 vocab-canon migration (12/12 slices)
+
+**State:** Migration complete. Single controlled-vocabulary canon at
+`docs/design/controlled-vocabulary.md` (iter-7, Status: Current) is the
+sole source for 13 vocabularies. cli/vocabulary.py parser eager-loads
+at import; cli.lint L1-L5 source from canon; 66 review files renamed to
+canon §4.11 form; template generator + 4 CI drift gates protect against
+future drift. BUG-014 + BUG-016 both Fix Applied. Migration plan
+Status: Implemented.
+
+**12 slice commits (this session):**
+1. `36f7e43` slice 1 — cli.vocabulary canon parser (13 symbols + 5 failure modes)
+2. `004f111` slice 2 — 6-enum migration (cli/lint.py imports from cli.vocabulary)
+3. `ba910d8` slice 3 — canon-strict §4.8 REQUIRED_SECTIONS + tolerant prefix-match L2
+4. `b518da1` slice 4 — DESIGN_BARE_NAME + POSTMORTEM/RUNBOOK regexes (closes BUG-014)
+5. `350f07b` slice 5 (docs) — postmortem Status narrow-change Implemented→Action Items Tracked
+6. `47e392e` slice 5 (code) — L5 strict-enum-match check (canon §4.5)
+7. `b738fde` slice 6 — chore(reviews): rename 66 attestations to canon §4.11 form
+8. `ef75694` slice 6 — vocab regex relax (v1.4-style stems) + review-filename CI drift gate
+9. `016b7cd` slice 7 — cli.spec_review writes .orchestra.review.yaml (canon §4.11)
+10. `937a5f0` slice 8 — scripts/generate_vocab_template.py + CI drift gate
+11. `301a40e` slices 9+10 — STANDARDS canon admonition (template + dogfood)
+12. `be7cdc0` slice 11 — schema/prompt drift gate against canon §4.3/§4.4/§4.9
+13. (12.3) BUG-014 Status: Investigating → Fix Applied
+14. (12.4) BUG-016 Status: Investigating → Fix Applied
+15. (12.5) Plan Status: Draft → Implemented + this HANDOFF update
+
+**Three foundational decisions (locked at LLD iter-1, re-confirmed by execution):**
+- Q1: Canon = `docs/design/controlled-vocabulary.md` sibling to STANDARDS.md
+- Q2: Severity = 4 distinct named axes (bug_severity, finding_gravity,
+  incident_severity, page_priority)
+- Q3: Review-doc filename = `<doc-id>-rN.<judge>.review.<ext>`
+  (per-judge suffix, all 66 existing files renamed)
+
+**Deviations from plan (executor judgment):**
+- Slice 2 deferred REQUIRED_SECTIONS to slice 3 (canon-strict §4.8 needed
+  conditional-section handling in same commit — avoiding regression window).
+- Slices 9+10 took conservative-rewrite path (admonition + tables retained)
+  rather than aggressive table-removal; preserves consumer-onboarding
+  readability since lint already sources canon since slice 2.
+- L2 tolerant prefix-match algorithm (bidirectional word-boundary prefix)
+  introduced to accept grandfathered short section names like `Security`
+  vs canon-strict `Security Considerations` without 13 supersessions.
+
+**Known gaps (out of scope for BUG-016):**
+- `docs/adr/DECISIONS.md` auto-generated INDEX file lacks doc-metadata
+  block; ALREADY failed L2 pre-slice-3. File followup BUG to either
+  skip auto-generated files in lint OR move DECISIONS.md out of docs/adr/.
+- `docs/design/orchestra-philosophy-r2.md` NEWLY fails L2 because
+  canon §4.8 design row adds Architecture/ER/Deployment Diagrams +
+  Domain/Module/Endpoint Details + Key Decisions; the philosophy doc
+  uses `Solution Architecture` heading (doesn't satisfy tolerant
+  prefix-match for `Architecture/ER/...`). Followup: narrow-edit
+  philosophy doc to add stub `## Architecture` + `## Domain/Module/Endpoint
+  Details` + `## Key Decisions` sections.
+
+**Closes:**
+- BUG-014 (L4 bare-name design supersession) via slice 4
+- BUG-016 (scattered vocabulary canon) via end-to-end migration
+
+**ShipState:** pytest 515 / pyrefly 0 / cli.lint --pre-commit clean.
 
 ---
 

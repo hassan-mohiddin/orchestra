@@ -228,6 +228,35 @@ ALLOWED_ATTESTATION_PATH_PREFIXES: tuple[str, ...] = _parse_path_list("4.7")
 _INVESTIGATION_NULL_MARKER = "(none"
 
 
+def _split_top_level_commas(raw: str) -> tuple[str, ...]:
+    """Split on commas that are NOT inside parens.
+
+    Canon §4.8 plan row contains `Header (goal, architecture, tech stack, LLD
+    reference)` — the inner commas must not split the section name.
+    """
+    parts: list[str] = []
+    depth = 0
+    cur: list[str] = []
+    for ch in raw:
+        if ch == "(":
+            depth += 1
+            cur.append(ch)
+        elif ch == ")":
+            depth = max(depth - 1, 0)
+            cur.append(ch)
+        elif ch == "," and depth == 0:
+            piece = "".join(cur).strip()
+            if piece:
+                parts.append(piece)
+            cur = []
+        else:
+            cur.append(ch)
+    tail = "".join(cur).strip()
+    if tail:
+        parts.append(tail)
+    return tuple(parts)
+
+
 def _parse_required_sections() -> dict[str, tuple[str, ...]]:
     body = _section_body("4.8")
     out: dict[str, tuple[str, ...]] = {}
@@ -237,7 +266,7 @@ def _parse_required_sections() -> dict[str, tuple[str, ...]]:
         if raw.lstrip().startswith(_INVESTIGATION_NULL_MARKER):
             out[doc_type] = ()
             continue
-        sections = tuple(p.strip() for p in raw.split(",") if p.strip())
+        sections = _split_top_level_commas(raw)
         for sec in sections:
             if "|" in sec or "\t" in sec:
                 raise RuntimeError(

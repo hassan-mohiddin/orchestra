@@ -66,6 +66,7 @@ from cli.vocabulary import (  # noqa: E402
     ALLOWED_ATTESTATION_PATH_PREFIXES,
     CANON_FROZEN_STATUSES,
     REFS_ELIGIBLE_PREFIXES,
+    REQUIRED_SECTIONS,
     REVIEW_GATE_NAMES as ALLOWED_GATES,
     STATUS_ENUMS,
     WHITELIST_FRONTMATTER_FIELDS,
@@ -78,32 +79,63 @@ SUPERSESSION_ITERATION_RE = re.compile(r"^(\d+)-([a-z][a-z0-9-]*)-r(\d+)\.md$")
 FIRST_ITERATION_BUG_RE = re.compile(r"^BUG-(\d+)-([a-z][a-z0-9-]*)\.md$")
 SUPERSESSION_ITERATION_BUG_RE = re.compile(r"^BUG-(\d+)-([a-z][a-z0-9-]*)-r(\d+)\.md$")
 
-REQUIRED_SECTIONS: dict[str, list[str]] = {
-    "feature": [
-        "Problem Statement", "Success Criteria", "Scope", "Design",
-        "Edge Cases", "Security", "Testing", "Related Documents", "Changelog",
-    ],
-    "bug": [
-        "Observed Behavior", "Expected Behavior", "Steps to Reproduce", "Environment",
-        "Root Cause", "Fix Description", "Iteration Log", "Regression Prevention",
-        "Related Documents", "Changelog",
-    ],
-    "adr": [
-        "Context", "Decision", "Consequences", "Related Documents", "Changelog",
-    ],
-    "postmortem": [
-        "Summary", "Impact", "Timeline", "Root Cause", "What Went Well",
-        "What Went Wrong", "Where We Got Lucky", "Action Items", "Lessons Learned",
-        "Related Documents", "Changelog",
-    ],
-    "runbook": [
-        "When This Fires", "Quick Reference", "Diagnosis", "Mitigation",
-        "Verification", "Escalation", "Related Documents", "Changelog",
-    ],
-    "design": [
-        "Overview", "Changelog",
-    ],
-}
+# ---------------------------------------------------------------------------
+# L2 required-section helpers (slice 3 — canon §4.8 + tolerant prefix-match)
+# ---------------------------------------------------------------------------
+
+_HEADING_LINE_RE = re.compile(r"^\s*#{2,6}\s+(.+?)\s*$", re.MULTILINE)
+_HEADING_NUM_PREFIX_RE = re.compile(r"^[\d.]+\s+")
+_CONDITIONAL_MARKERS: tuple[str, ...] = (
+    " (if any)", " (where applicable)", " (optional)",
+)
+
+
+def _extract_headings(text: str) -> list[str]:
+    out: list[str] = []
+    for m in _HEADING_LINE_RE.finditer(text):
+        raw = m.group(1).strip()
+        raw = _HEADING_NUM_PREFIX_RE.sub("", raw).strip()
+        if raw:
+            out.append(raw)
+    return out
+
+
+def _strip_conditional(section: str) -> tuple[str, bool]:
+    for marker in _CONDITIONAL_MARKERS:
+        if section.endswith(marker):
+            return section[: -len(marker)].strip(), True
+    return section, False
+
+
+def _heading_satisfies(heading: str, canon_section: str) -> bool:
+    h = heading.strip().lower()
+    c = canon_section.strip().lower()
+    if not h or not c:
+        return False
+    if h == c:
+        return True
+    if c.startswith(h):
+        rest = c[len(h):]
+        if not rest or not rest[0].isalnum():
+            return True
+    if h.startswith(c):
+        rest = h[len(c):]
+        if not rest or not rest[0].isalnum():
+            return True
+    return False
+
+
+def _find_missing_sections(text: str, required: tuple[str, ...]) -> list[str]:
+    headings = _extract_headings(text)
+    missing: list[str] = []
+    for raw_section in required:
+        canon_name, is_conditional = _strip_conditional(raw_section)
+        if any(_heading_satisfies(h, canon_name) for h in headings):
+            continue
+        if is_conditional:
+            continue
+        missing.append(canon_name)
+    return missing
 
 CONVENTIONAL_PREFIX_RE = re.compile(r"^(fix|feat)(\([^)]+\))?:")
 REFS_LINE_RE = re.compile(r"^Refs:\s+(\S+)", re.MULTILINE)
@@ -202,14 +234,14 @@ def lint_doc(path: Path) -> list[Finding]:
                 f"Status '{status}' not in {doc_type} enum {sorted(STATUS_ENUMS[doc_type])}",
             ))
 
-    # 3. Required sections
-    for section in REQUIRED_SECTIONS.get(doc_type, []):
-        # Match section as a heading (## or ###) — case-insensitive partial
-        if not re.search(rf"^\s*#{{2,3}}\s+\d*\.?\s*{re.escape(section)}", text, re.MULTILINE | re.IGNORECASE):
-            findings.append(Finding(
-                "error", str(path),
-                f"missing required section '{section}' (per STANDARDS.md for {doc_type})",
-            ))
+    # 3. Required sections — canon §4.8 + tolerant prefix-match.
+    required = REQUIRED_SECTIONS.get(doc_type, ())
+    for section in _find_missing_sections(text, required):
+        findings.append(Finding(
+            "error", str(path),
+            f"missing required section '{section}' "
+            f"(per docs/design/controlled-vocabulary.md §4.8 for {doc_type})",
+        ))
 
     # 4. Placeholder text in produced docs
     for placeholder in ("TBD", "[fill in]", "TODO:", "FIXME:"):

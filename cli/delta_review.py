@@ -160,10 +160,39 @@ def compute_unified_diff(iter1_text: str, iter2_text: str) -> str:
 def is_noop_iteration(diff_text: str) -> bool:
     """True when the unified diff is empty (no changes between iter-1 and iter-2).
 
-    No-op iterations skip sub-judge dispatch; the new attestation simply
-    references the prior iteration's verdict per LLD-011 §Design Delta-review.
+    Empty-diff iterations are NOT a free advance. Per iter-2 adversarial review
+    finding (E10 documented bypass): an author bumping `Iteration:` without
+    editing the doc would otherwise re-use iter-1 findings as iter-2's
+    attestation and Status-flip on the same content. Callers MUST refuse to
+    write an iter-2 attestation when this returns True — the doc has to be
+    edited (or the author retracts the iteration bump) before iter-2 makes
+    sense.
+
+    Returns True iff `diff_text` is the empty string. The caller decides
+    whether to fail-closed (recommended for post-commit iterations) or to
+    write a no-op marker attestation (only acceptable for pre-commit Draft
+    cycles, which are not subject to the 2-iter cap anyway).
     """
     return diff_text == ""
+
+
+def assert_diff_non_empty(diff_text: str) -> None:
+    """Fail-closed when iter-2 delta-review has nothing to review.
+
+    Raises SpecReviewError("noop_iteration_refused: ...") when `diff_text` is
+    empty. Closes the E10 bypass: author bumping `Iteration:` to advance the
+    post-commit cap without editing the doc must instead edit the doc or
+    retract the bump.
+    """
+    if is_noop_iteration(diff_text):
+        raise SpecReviewError(
+            "noop_iteration_refused: iter-N+1 dispatch refused because the "
+            "doc bytes have not changed since iter-N. Bumping `Iteration:` "
+            "without editing the doc would silently re-use iter-N findings "
+            "as iter-N+1's attestation — that bypasses the spec-review "
+            "discipline the iteration counter is supposed to enforce. "
+            "Recovery: edit the doc OR retract the `Iteration:` bump."
+        )
 
 
 def build_delta_prompt(

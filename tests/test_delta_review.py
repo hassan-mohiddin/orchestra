@@ -316,6 +316,22 @@ def test_is_noop_iteration_false_for_changes():
     assert delta_review.is_noop_iteration("@@ -1,1 +1,1 @@\n-x\n+y\n") is False
 
 
+def test_assert_diff_non_empty_raises_on_empty():
+    """E10 fix — empty diff raises noop_iteration_refused SpecReviewError."""
+    from cli import delta_review
+
+    with pytest.raises(delta_review.SpecReviewError) as exc_info:
+        delta_review.assert_diff_non_empty("")
+    assert "noop_iteration_refused" in str(exc_info.value)
+
+
+def test_assert_diff_non_empty_passes_on_real_diff():
+    """E10 fix — non-empty diff does not raise (iter-N+1 has real review work)."""
+    from cli import delta_review
+
+    delta_review.assert_diff_non_empty("@@ -1,1 +1,2 @@\n-old\n+new1\n+new2\n")  # no raise
+
+
 # ---------------------------------------------------------------------------
 # Slice 2.27 — delta prompt builder
 # ---------------------------------------------------------------------------

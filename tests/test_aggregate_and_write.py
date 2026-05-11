@@ -201,3 +201,50 @@ def test_aggregate_and_write_mandatory_failure(tmp_path, monkeypatch):
     assert written["overall_verdict"] == "fail"
     assert written["overall_verdict_basis"]["reason"] == "mandatory_subjudge_failed"
     assert "semantic" in written["overall_verdict_basis"]["mandatory_failures"]
+
+
+def test_aggregate_and_write_override_cap_notes_is_string(tmp_path, monkeypatch):
+    """BUG-017 regression — v2 override-cap path must write notes as string (schema v2.0 §notes:type=string).
+
+    Pre-fix bug: cli/spec_review.py emitted notes as list[str], causing
+    schema_validation_failed at attestation write time and blocking iter-3+
+    dogfood runs. Regression locks notes-as-string for the v2 path.
+    """
+    from cli import pdsa, spec_review
+
+    _init_repo(tmp_path)
+    _fresh_v2_doc(tmp_path, iteration=3)
+    reviews = tmp_path / "docs" / "reviews"
+    reviews.mkdir(parents=True)
+    (reviews / "008-foo-r1.orchestra.review.yaml").write_text('schema_version: "2.0"\n')
+    (reviews / "008-foo-r2.orchestra.review.yaml").write_text('schema_version: "2.0"\n')
+
+    monkeypatch.setattr(spec_review, "_resolve_repo_root", lambda: tmp_path)
+
+    def fake_pdsa(p):
+        rep = pdsa.PdsaReport(doc_path=p)
+        rep.checks["lint"] = pdsa.CheckResult(passed=True, detail="ok")
+        return rep
+    monkeypatch.setattr(spec_review, "run_pdsa", fake_pdsa)
+
+    stdin_payload = yaml.safe_dump({"sub_judges": _two_passing_subjudges()})
+    monkeypatch.setattr(spec_review.sys, "stdin", io.StringIO(stdin_payload))
+
+    rc = spec_review.main(
+        ["--aggregate-and-write", "docs/features/008-foo.md", "--override-cap"]
+    )
+    assert rc == 0, "iter-3 with --override-cap on v2 path must write attestation"
+
+    out_path = reviews / "008-foo-r3.orchestra.review.yaml"
+    assert out_path.exists()
+    written = yaml.safe_load(out_path.read_text())
+
+    assert "notes" in written, "override-cap must record degraded-mode note"
+    assert isinstance(written["notes"], str), (
+        f"schema v2.0 requires notes:string; got {type(written['notes']).__name__}"
+    )
+    assert "degraded mode" in written["notes"]
+    assert "--override-cap" in written["notes"]
+
+    schema = json.loads(spec_review.SCHEMA_V2_PATH.read_text())
+    jsonschema.validate(written, schema)

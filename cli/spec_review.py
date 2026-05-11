@@ -583,10 +583,10 @@ def _run_aggregate_and_write(
 
     # Slice 3.13 — degraded-mode note for override-cap usage
     if override_cap and iteration >= 3:
-        attestation["notes"] = [
+        attestation["notes"] = (
             f"degraded mode: iter-{iteration} dispatch ran under --override-cap "
             f"(2-iter post-commit cap bypassed via interview-gate consent)"
-        ]
+        )
 
     # Integrity hash (self-referential — computed with field absent, then set)
     attestation["attestation_integrity_hash"] = _compute_attestation_integrity_hash(attestation)
@@ -834,12 +834,10 @@ def main(argv=None) -> int:
             f"(2-iter post-commit cap bypassed via interview-gate consent)"
         )
         existing_notes = attestation.get("notes")
-        if isinstance(existing_notes, list):
-            existing_notes.append(notes_msg)
-        elif isinstance(existing_notes, str):
-            attestation["notes"] = [existing_notes, notes_msg]
+        if isinstance(existing_notes, str) and existing_notes:
+            attestation["notes"] = f"{existing_notes}\n{notes_msg}"
         else:
-            attestation["notes"] = [notes_msg]
+            attestation["notes"] = notes_msg
 
     # A24+PF10: atomic write
     yaml_content = yaml.safe_dump(

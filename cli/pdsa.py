@@ -128,6 +128,32 @@ _CITATION_RE = re.compile(
     r"`([^\s`]+\.[A-Za-z0-9]+):(\d+)(?:-(\d+))?`"
 )
 
+_PLACEHOLDER_RE = re.compile(r"\b(TBD|TODO|FIXME)\b(.*)$", re.MULTILINE)
+_OWNER_SUFFIX_RE = re.compile(r"^\s*(?::|by)\s+\S+", re.IGNORECASE)
+
+
+def _check_placeholders(doc_path: Path) -> CheckResult:
+    """Detect bare TBD/TODO/FIXME without owner-suffix.
+
+    Per LLD-011 §PDSA item 5 + STANDARDS: `TBD by [date|person]` and
+    `TODO by ...: ...` are owned placeholders (pass); bare tokens fail.
+    """
+    body = doc_path.read_text()
+    failures: list[str] = []
+
+    for m in _PLACEHOLDER_RE.finditer(body):
+        token = m.group(1)
+        tail = m.group(2)
+        if not _OWNER_SUFFIX_RE.match(tail):
+            failures.append(f"bare {token} (line context: {m.group(0).strip()[:60]})")
+
+    if failures:
+        return CheckResult(
+            passed=False,
+            detail=f"{len(failures)} bare placeholder(s): " + "; ".join(failures[:3]),
+        )
+    return CheckResult(passed=True, detail="no bare placeholders")
+
 
 def _check_citations(doc_path: Path) -> CheckResult:
     """Validate `<path>:<N>` and `<path>:<N>-<M>` citations in doc body.
@@ -241,5 +267,6 @@ def run_pdsa(doc_path: Path) -> PdsaReport:
 
     report.checks["required_sections"] = _check_required_sections(doc_path)
     report.checks["citations"] = _check_citations(doc_path)
+    report.checks["placeholders"] = _check_placeholders(doc_path)
 
     return report

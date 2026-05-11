@@ -266,6 +266,62 @@ def test_citation_no_citations(tmp_path, monkeypatch) -> None:
     assert report.checks["citations"].passed is True
 
 
+def test_bare_placeholder_fails(tmp_path, monkeypatch) -> None:
+    """Slice 2.6 — bare TBD/TODO/FIXME → placeholders.passed=False."""
+    from cli import pdsa
+
+    body = "## Body\n\nThis is TBD.\n\nFIXME later.\n"
+    doc = tmp_path / "random.md"
+    doc.write_text(body)
+
+    monkeypatch.setattr(pdsa, "_invoke_lint", lambda argv: 0)
+    report = pdsa.run_pdsa(doc)
+
+    assert report.checks["placeholders"].passed is False
+
+
+def test_owned_placeholder_passes(tmp_path, monkeypatch) -> None:
+    """Slice 2.7 — TBD by <date> or TBD by <person> → placeholders.passed=True."""
+    from cli import pdsa
+
+    body = "## Body\n\nTBD by 2026-05-15.\n\nTODO by Hassan: integrate.\n"
+    doc = tmp_path / "random.md"
+    doc.write_text(body)
+
+    monkeypatch.setattr(pdsa, "_invoke_lint", lambda argv: 0)
+    report = pdsa.run_pdsa(doc)
+
+    assert report.checks["placeholders"].passed is True
+
+
+def test_no_placeholders(tmp_path, monkeypatch) -> None:
+    """Slice 2.6 — doc without placeholders → placeholders.passed=True."""
+    from cli import pdsa
+
+    doc = tmp_path / "random.md"
+    doc.write_text("# Title\n\nAll content is final.\n")
+
+    monkeypatch.setattr(pdsa, "_invoke_lint", lambda argv: 0)
+    report = pdsa.run_pdsa(doc)
+
+    assert report.checks["placeholders"].passed is True
+
+
+def test_mixed_placeholders(tmp_path, monkeypatch) -> None:
+    """Slice 2.7 — one owned + one bare → fails (any bare hit fails)."""
+    from cli import pdsa
+
+    body = "TBD by 2026-05-15.\n\nbare FIXME here.\n"
+    doc = tmp_path / "random.md"
+    doc.write_text(body)
+
+    monkeypatch.setattr(pdsa, "_invoke_lint", lambda argv: 0)
+    report = pdsa.run_pdsa(doc)
+
+    assert report.checks["placeholders"].passed is False
+    assert "FIXME" in report.checks["placeholders"].detail
+
+
 def test_required_sections_unknown_doc_type(tmp_path, monkeypatch) -> None:
     """Slice 2.3 — unknown doc type → required_sections.passed=True (skip check, no spec to enforce)."""
     from cli import pdsa

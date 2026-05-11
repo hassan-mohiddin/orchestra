@@ -530,6 +530,62 @@ def test_pdsa_report_yaml_fail_surfaces_detail(tmp_path, monkeypatch) -> None:
     assert "nope" in parsed["checks"]["citations"]["detail"]
 
 
+def test_citation_validity_repo_root_resolution(tmp_path, monkeypatch) -> None:
+    """Citation `cli/lint.py:42` resolves against cwd (repo root), not just doc parent.
+
+    Real-doc dogfood on LLD-011 surfaced this — citations canonically use
+    repo-root-relative paths; resolving only against doc.parent gave false
+    positives. Fix: try cwd first, then doc.parent.
+    """
+    from cli import pdsa
+
+    target = tmp_path / "src" / "module.py"
+    target.parent.mkdir(parents=True)
+    target.write_text("\n".join(f"l{i}" for i in range(1, 51)) + "\n")
+
+    docs = tmp_path / "docs" / "features"
+    docs.mkdir(parents=True)
+    doc = docs / "999-foo.md"
+    doc.write_text("Reference: `src/module.py:5`\n")
+
+    monkeypatch.setattr(pdsa, "_invoke_lint", lambda argv: 0)
+    monkeypatch.chdir(tmp_path)
+
+    report = pdsa.run_pdsa(doc)
+    assert report.checks["citations"].passed is True, report.checks["citations"].detail
+
+
+def test_placeholders_skip_backtick_inline_code(tmp_path, monkeypatch) -> None:
+    """Backtick-quoted `TBD` is a meta-reference, not a bare placeholder.
+
+    Real-doc dogfood on LLD-011 surfaced this — the doc references the
+    literal placeholder canon as `TBD` / `TODO` / `FIXME` tokens. Stripping
+    code spans before scanning eliminates the false positive.
+    """
+    from cli import pdsa
+
+    doc = tmp_path / "random.md"
+    doc.write_text(
+        "## Section\n\nThe canon uses `TBD`, `TODO`, and `FIXME` markers.\n"
+    )
+
+    monkeypatch.setattr(pdsa, "_invoke_lint", lambda argv: 0)
+    report = pdsa.run_pdsa(doc)
+    assert report.checks["placeholders"].passed is True, report.checks["placeholders"].detail
+
+
+def test_placeholders_skip_fenced_code_block(tmp_path, monkeypatch) -> None:
+    """Fenced code blocks containing TBD/TODO/FIXME are meta-references."""
+    from cli import pdsa
+
+    doc = tmp_path / "random.md"
+    doc.write_text("## Body\n\n```\nTBD\nTODO: foo\n```\n\nReal body.\n")
+
+    monkeypatch.setattr(pdsa, "_invoke_lint", lambda argv: 0)
+    report = pdsa.run_pdsa(doc)
+    assert report.checks["placeholders"].passed is True
+
+
 def test_required_sections_unknown_doc_type(tmp_path, monkeypatch) -> None:
     """Slice 2.3 — unknown doc type → required_sections.passed=True (skip check, no spec to enforce)."""
     from cli import pdsa

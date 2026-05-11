@@ -131,6 +131,20 @@ _CITATION_RE = re.compile(
 _PLACEHOLDER_RE = re.compile(r"\b(TBD|TODO|FIXME)\b(.*)$", re.MULTILINE)
 _OWNER_SUFFIX_RE = re.compile(r"^\s*(?::|by)\s+\S+", re.IGNORECASE)
 
+
+def _strip_code_spans(text: str) -> str:
+    """Remove inline `code` spans and fenced ```code blocks``` for placeholder scanning.
+
+    Backtick-quoted tokens are meta-references (e.g., the literal text `TBD`),
+    not bare placeholders. Stripping them eliminates false positives in docs
+    that document the placeholder canon itself.
+    """
+    # Remove fenced code blocks first (greedy across lines)
+    out = re.sub(r"```.*?```", "", text, flags=re.DOTALL)
+    # Then inline `code` spans on a single line
+    out = re.sub(r"`[^`\n]+`", "", out)
+    return out
+
 _REFS_LINE_RE = re.compile(r"^Refs:\s+(\S+)", re.MULTILINE)
 
 _FILENAME_GRAMMAR: dict[str, re.Pattern[str]] = {
@@ -260,8 +274,10 @@ def _check_placeholders(doc_path: Path) -> CheckResult:
 
     Per LLD-011 §PDSA item 5 + STANDARDS: `TBD by [date|person]` and
     `TODO by ...: ...` are owned placeholders (pass); bare tokens fail.
+    Backtick-quoted tokens are stripped first — they are meta-references,
+    not bare placeholders.
     """
-    body = doc_path.read_text()
+    body = _strip_code_spans(doc_path.read_text())
     failures: list[str] = []
 
     for m in _PLACEHOLDER_RE.finditer(body):
@@ -293,7 +309,14 @@ def _check_citations(doc_path: Path) -> CheckResult:
         cited_path_str, n_str, m_str = m.group(1), m.group(2), m.group(3)
         cited_path = Path(cited_path_str)
         if not cited_path.is_absolute():
-            cited_path = (doc_path.parent / cited_path).resolve()
+            # Try resolution in order: cwd (repo root), doc parent. Doc-relative
+            # citations are uncommon; repo-root-relative is the canon (`cli/lint.py:42`).
+            for candidate in (Path.cwd() / cited_path, doc_path.parent / cited_path):
+                if candidate.exists():
+                    cited_path = candidate
+                    break
+            else:
+                cited_path = (doc_path.parent / cited_path).resolve()
 
         if not cited_path.exists():
             failures.append(f"nonexistent path: {cited_path_str}")

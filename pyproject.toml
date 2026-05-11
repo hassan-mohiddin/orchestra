@@ -45,6 +45,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest>=7.0",
+    "types-PyYAML>=6.0",  # type stubs for `import yaml` (pyrefly / mypy)
 ]
 
 [project.urls]
@@ -55,6 +56,14 @@ Issues = "https://github.com/hassan-mohiddin/orchestra/issues"
 [tool.setuptools.packages.find]
 include = ["cli*", "eval*"]
 exclude = ["tests*", "examples*", "docs*"]
+
+[tool.pyrefly]
+# Point checker at the local .venv so runtime deps (python-frontmatter, PyYAML,
+# jsonschema) resolve. System python3.12 site-packages doesn't have them →
+# false-positive "Cannot find module" without this.
+python-interpreter = ".venv/bin/python3.12"
+project-includes = ["cli", "tests", "tools", "eval"]
+project-excludes = [".venv", "build", "dist", "**/__pycache__"]
 
 [tool.pytest.ini_options]
 minversion = "7.0"

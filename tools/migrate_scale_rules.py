@@ -20,7 +20,7 @@ import subprocess
 import sys
 import tempfile
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 # Reuse the core migration logic from tests/scale_migration_helper.py
@@ -162,7 +162,7 @@ def _migration_targets(scale_root: Path) -> list[Path]:
 
 
 def _snapshot(scale_root: Path) -> Path:
-    ts = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+    ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     backup = scale_root / ".scale-migration-backup" / ts
     if backup.exists():
         raise MigrationError(f"backup dir already exists (collision): {backup}")

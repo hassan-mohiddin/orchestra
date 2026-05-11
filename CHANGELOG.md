@@ -5,7 +5,7 @@
 Commit-skill consolidation. Ships LLD-008 r7 + LLD-009 r6 + LLD-010 r4 as a
 single atomic release plus SCALE-side migration. Closes BUG-006 (framework
 detection) + BUG-010 Part 3 (auto-install bootstrap) + BUG-011 (supersession
-tier refinement). Pytest baseline 150 → 265 (+115 new tests).
+tier refinement). Pytest baseline 150 → 259 (+109 net new tests).
 
 ### New skill
 
@@ -71,8 +71,21 @@ tier refinement). Pytest baseline 150 → 265 (+115 new tests).
 
 ### Tests
 
-- 115 new tests across LLD-008 (17), LLD-009 (55), LLD-010 (30), Phase 4 (7),
-  Phase 1 baseline assertion (1). Pytest 150 → 265.
+- 109 net new tests across LLD-008 (17), LLD-009 (55), LLD-010 (30), Phase 4 (7),
+  Phase 1 baseline assertion (1), minus 6 obsolete strict-binary L2 tests deleted
+  in the same release (replaced by tiered L2-detect / L2-finalize suite). Pytest 150 → 259.
+
+### Post-ship cleanup (same commit window)
+
+- Deleted dead `lint_commit_no_canon_inplace_edit` + obsolete
+  `tests/test_lint_canon_inplace_edit.py` (strict-binary pre-commit L2; replaced
+  by L2-detect annotate-only + tiered L2-finalize).
+- Extracted shared `_scan_canon_inplace_candidates` helper (DRY: collapses
+  duplicate scan in `_l2_detect_write_pending` + ORCHESTRA_STRICT recompute path).
+- `datetime.utcnow()` → `datetime.now(timezone.utc)` in
+  `tools/migrate_scale_rules.py` (Python 3.12+ deprecation).
+- Added `[tool.pyrefly]` config pointing checker at `.venv/bin/python3.12` so
+  runtime deps (python-frontmatter, PyYAML, jsonschema) resolve in IDE.
 
 ## v1.6.2 — 2026-05-10
 

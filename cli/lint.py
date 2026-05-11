@@ -322,7 +322,7 @@ def parse_metadata(text: str) -> dict[str, str]:
         try:
             import frontmatter
             post = frontmatter.loads(text)
-            return {str(k): str(v) for k, v in post.metadata.items()}
+            return {k: str(v) for k, v in post.metadata.items()}
         except Exception:
             return {}
     return {m.group(1).strip(): m.group(2).strip()
@@ -395,7 +395,7 @@ def _split_metadata_and_body(text: str) -> tuple[dict[str, str], str]:
         try:
             import frontmatter
             post = frontmatter.loads(text)
-            md = {str(k): str(v) for k, v in post.metadata.items()}
+            md = {k: str(v) for k, v in post.metadata.items()}
             return (md, post.content)
         except Exception:
             return ({}, text)
@@ -646,42 +646,13 @@ def lint_commit_refs_eligible(commit_subject: str, commit_body: str,
 
 
 # ---------------------------------------------------------------------------
-# v1.5 LLD-006-r4 — Lint Check L2: canon-frozen narrow-change
+# v1.5 LLD-006-r4 — Lint Check L2 retroactive (BUG-009) runs on committed SHAs
+# via `_lint_commit_canon_inplace` below. Pre-commit-time L2 detection moved to
+# L2-detect annotate-only path in `_l2_detect_write_pending` (v1.7 LLD-009 r6).
+# v1.5 strict-binary pre-commit blocker removed: it false-rejected valid tiered
+# Minor / Important narrow-change commits; L2-finalize at commit-msg-time now
+# enforces tiered rule with full message context.
 # ---------------------------------------------------------------------------
-
-
-def lint_commit_no_canon_inplace_edit(repo_root: Path,
-                                      staged_files: list[str]) -> list[Finding]:
-    """L2 — reject in-place edit of canon-frozen doc beyond narrow change."""
-    findings: list[Finding] = []
-    for path in staged_files:
-        if not path.endswith(".md"):
-            continue
-        if not path.startswith(REFS_ELIGIBLE_PREFIXES):
-            continue
-        try:
-            prior_text = subprocess.check_output(
-                ["git", "show", f"HEAD:{path}"],
-                cwd=repo_root, text=True, stderr=subprocess.DEVNULL,
-            )
-        except subprocess.CalledProcessError:
-            continue  # New file (no prior at HEAD)
-        prior_status = parse_status(prior_text)
-        if prior_status not in CANON_FROZEN_STATUSES:
-            continue
-        full_path = repo_root / path
-        if not full_path.exists():
-            continue
-        new_text = full_path.read_text(encoding="utf-8")
-        ok, why = is_narrow_change(prior_text, new_text)
-        if not ok:
-            findings.append(Finding(
-                "error", path,
-                f"Doc Status was {prior_status!r} (canon-frozen). "
-                f"Non-narrow change: {why}. "
-                "Use supersession (new file with -rN suffix and Supersedes:) instead.",
-            ))
-    return findings
 
 
 # ---------------------------------------------------------------------------
@@ -1001,18 +972,27 @@ def _bypass_audit_log_entry(repo_root: Path, msg_subject: str, reason: str) -> N
         fh.write(line + "\n")
 
 
-def _recompute_canon_inplace_candidates(repo_root: Path) -> list[tuple[str, str]]:
-    """ORCHESTRA_STRICT path: scan staged .md docs; return [(blob_sha, path)] for canon-inplace candidates.
+def _scan_canon_inplace_candidates(
+    repo_root: Path,
+    staged: list[str] | None = None,
+) -> list[tuple[str, str]]:
+    """Shared L2 scan: return [(blob_sha, path), ...] for canon-inplace candidates.
 
-    Only invoked when pending file absent + ORCHESTRA_STRICT=1. Mirrors L2-detect path scan.
+    Walks staged .md files under REFS_ELIGIBLE_PREFIXES; for each whose HEAD
+    Status is canon-frozen and whose staged content fails strict-binary
+    is_narrow_change, collects (sha, path). Skips unresolved merges silently.
+
+    `staged=None` triggers `git diff --cached` lookup (ORCHESTRA_STRICT recompute
+    path); explicit list reuses caller's existing scan (L2-detect path).
     """
-    try:
-        staged = subprocess.check_output(
-            ["git", "diff", "--cached", "--name-only", "--diff-filter=ACM"],
-            cwd=repo_root, text=True,
-        ).strip().splitlines()
-    except subprocess.CalledProcessError:
-        return []
+    if staged is None:
+        try:
+            staged = subprocess.check_output(
+                ["git", "diff", "--cached", "--name-only", "--diff-filter=ACM"],
+                cwd=repo_root, text=True,
+            ).strip().splitlines()
+        except subprocess.CalledProcessError:
+            return []
     out: list[tuple[str, str]] = []
     for path in staged:
         if not path.endswith(".md") or not path.startswith(REFS_ELIGIBLE_PREFIXES):
@@ -1031,10 +1011,12 @@ def _recompute_canon_inplace_candidates(repo_root: Path) -> list[tuple[str, str]
         except UnresolvedMergeError:
             continue
         ok, _ = is_narrow_change(prior_text, new_text, commit_msg=None, repo_root=None)
-        if not ok:
-            sha = _get_staged_blob_sha(repo_root, path)
-            if sha:
-                out.append((sha, path))
+        if ok:
+            continue
+        sha = _get_staged_blob_sha(repo_root, path)
+        if not sha:
+            continue
+        out.append((sha, path))
     return out
 
 
@@ -1090,7 +1072,7 @@ def lint_commit_msg_finalize(msg_file_path: str, repo_root: Path) -> int:
                 continue
             pending_entries.append((sha, path))
     elif os.environ.get("ORCHESTRA_STRICT") == "1":
-        pending_entries = _recompute_canon_inplace_candidates(repo_root)
+        pending_entries = _scan_canon_inplace_candidates(repo_root)
     else:
         return 0  # fail-open per A2 default
 
@@ -1174,32 +1156,11 @@ def _l2_detect_write_pending(repo_root: Path, staged: list[str]) -> None:
     """
     pending_file = _pending_file_path(repo_root)
     pending_file.parent.mkdir(parents=True, exist_ok=True)
-    pending_file.write_text("")  # truncate
-
-    for path in staged:
-        if not path.endswith(".md") or not path.startswith(REFS_ELIGIBLE_PREFIXES):
-            continue
-        try:
-            prior_text = subprocess.check_output(
-                ["git", "show", f"HEAD:{path}"],
-                cwd=repo_root, text=True, stderr=subprocess.DEVNULL,
-            )
-        except subprocess.CalledProcessError:
-            continue
-        if parse_status(prior_text) not in CANON_FROZEN_STATUSES:
-            continue
-        try:
-            new_text = _read_staged_content(repo_root, path)
-        except UnresolvedMergeError:
-            continue
-        ok, _ = is_narrow_change(prior_text, new_text, commit_msg=None, repo_root=None)
-        if ok:
-            continue
-        sha = _get_staged_blob_sha(repo_root, path)
-        if not sha:
-            continue
-        with pending_file.open("a", encoding="utf-8") as fh:
-            fh.write(f"{sha}\t{path}\n")
+    candidates = _scan_canon_inplace_candidates(repo_root, staged=staged)
+    pending_file.write_text(
+        "".join(f"{sha}\t{path}\n" for sha, path in candidates),
+        encoding="utf-8",
+    )
 
 
 # ---------------------------------------------------------------------------

@@ -269,6 +269,93 @@ def lint_doc(path: Path) -> list[Finding]:
     return findings
 
 
+# ---------------------------------------------------------------------------
+# L5 — strict enum match (canon §4.5 lint behavior + §4.1 + §4.3)
+# ---------------------------------------------------------------------------
+
+# doc_type → severity axis name (canon §4.3 mapping)
+_SEVERITY_AXIS_BY_DOC_TYPE: dict[str, str] = {
+    "bug": "bug_severity",
+    "postmortem": "incident_severity",
+    "runbook": "page_priority",
+}
+
+
+def _strip_metadata_trailers(value: str) -> str:
+    """Strip trailing `#` comment and `(parenthetical)` from a metadata value.
+
+    Preserves multi-word enum values like `Fix Applied` / `Action Items
+    Tracked` / `Root Cause Found`.
+    """
+    s = value.strip()
+    if "#" in s:
+        s = s[: s.index("#")].rstrip()
+    # Trailing parenthetical: e.g. `SEV3 (process incident — …)` → `SEV3`
+    if "(" in s:
+        s = s[: s.index("(")].rstrip()
+    return s
+
+
+def _match_enum_token(value: str, valid_values) -> str:
+    """Strip trailers; return matched enum value if direct match else first
+    word — used for L5 strict match.
+    """
+    stripped = _strip_metadata_trailers(value)
+    if stripped in valid_values:
+        return stripped
+    # Fall back: first whitespace-token (single-word enum values)
+    for i, ch in enumerate(stripped):
+        if ch in " \t":
+            return stripped[:i].rstrip()
+    return stripped
+
+
+def lint_strict_enum_match(path: Path) -> list[Finding]:
+    """L5 — strict enum match for Status (canon §4.1) + Severity (canon §4.3).
+
+    Only fires on types that appear as keys in STATUS_ENUMS:
+    feature, bug, adr, postmortem, runbook, design (canon §4.5 lint behavior).
+    """
+    from cli.vocabulary import SEVERITY_ENUMS
+
+    findings: list[Finding] = []
+    if not path.exists():
+        return []
+    doc_type = detect_doc_type(path)
+    if doc_type is None or doc_type not in STATUS_ENUMS:
+        return []
+
+    text = path.read_text(encoding="utf-8")
+    head = "\n".join(text.splitlines()[:25])
+    metadata = dict(METADATA_BLOCK_RE.findall(head))
+
+    # Status — strict match, accepting multi-word enum values + trailers
+    raw_status = metadata.get("Status", "")
+    if raw_status:
+        token = _match_enum_token(raw_status, STATUS_ENUMS[doc_type])
+        if token and token not in STATUS_ENUMS[doc_type]:
+            findings.append(Finding(
+                "error", str(path),
+                f"invalid Status: {token!r} not in {doc_type} enum "
+                f"{sorted(STATUS_ENUMS[doc_type])} (canon §4.1)",
+            ))
+
+    # Severity — type-dependent axis (canon §4.3)
+    axis = _SEVERITY_AXIS_BY_DOC_TYPE.get(doc_type)
+    if axis:
+        raw_sev = metadata.get("Severity", "")
+        if raw_sev:
+            token = _match_enum_token(raw_sev, SEVERITY_ENUMS[axis])
+            if token and token not in SEVERITY_ENUMS[axis]:
+                findings.append(Finding(
+                    "error", str(path),
+                    f"invalid Severity: {token!r} not in {axis} enum "
+                    f"{list(SEVERITY_ENUMS[axis])} (canon §4.3)",
+                ))
+
+    return findings
+
+
 def lint_mermaid(path: Path) -> list[Finding]:
     """Validate mermaid blocks in a markdown file.
 
@@ -1319,6 +1406,7 @@ def lint_staged(repo_root: Path) -> list[Finding]:
         if detect_doc_type(path) is None:
             continue
         findings.extend(lint_doc(path))
+        findings.extend(lint_strict_enum_match(path))  # L5 — canon §4.5
 
     # L2-detect (v1.7 LLD-009 r6): annotate pending file; does NOT block
     # (replaces prior strict-binary L2 at pre-commit; L2-finalize at commit-msg-time

@@ -15,6 +15,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 import json
+import os
 import subprocess
 import sys
 from typing import Optional
@@ -367,7 +368,34 @@ def main(argv: list[str] | None = None) -> int:
         for e in result.errors:
             print(f"  ! {e}", file=sys.stderr)
         return 1
+
+    bootstrap_rc = _bootstrap_hooks(root)
+    if bootstrap_rc != 0:
+        print(
+            f"WARNING: hook bootstrap returned rc={bootstrap_rc}; hooks may not be "
+            f"installed. Retry: python -m cli.install_hooks --all "
+            f"--on-conflict=replace (or --force).",
+            file=sys.stderr,
+        )
+        # TTY-aware fail-closed + ORCHESTRA_INIT_STRICT opt-in (LLD-008 r7 A14)
+        if os.environ.get("ORCHESTRA_INIT_STRICT") == "1":
+            return bootstrap_rc
+        if not sys.stdin.isatty():
+            return bootstrap_rc
+        # TTY default: fail-open (user saw WARNING)
     return 0
+
+
+def _bootstrap_hooks(root: Path) -> int:
+    """Invoke install_hooks for both pre-commit + commit-msg with --on-conflict=skip.
+
+    Non-blocking: caller decides whether to propagate rc per TTY/STRICT policy.
+    Wraps install_hooks.main so tests can monkeypatch a single seam.
+    """
+    from cli import install_hooks
+    return install_hooks.main(
+        ["--all", "--on-conflict=skip", "--repo", str(root)]
+    )
 
 
 GITIGNORE_ENTRIES = [

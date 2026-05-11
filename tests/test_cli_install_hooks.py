@@ -31,31 +31,34 @@ def test_idempotent_when_content_matches(tmp_repo: Path) -> None:
     assert rc == 0
 
 
-def test_existing_hook_prompt_skip(tmp_repo: Path) -> None:
+def test_existing_hook_prompt_skip(tmp_repo: Path, monkeypatch) -> None:
     hooks_dir = tmp_repo / ".git" / "hooks"
     hooks_dir.mkdir(parents=True, exist_ok=True)
     existing = hooks_dir / "pre-commit"
     existing.write_text("#!/bin/bash\necho 'custom hook'\n")
+    monkeypatch.setattr("sys.stdin.isatty", lambda: True)
     rc = install_hook(tmp_repo, input_fn=lambda _: "s")
     assert rc == 0
     assert "custom hook" in existing.read_text()
 
 
-def test_existing_hook_prompt_replace(tmp_repo: Path) -> None:
+def test_existing_hook_prompt_replace(tmp_repo: Path, monkeypatch) -> None:
     hooks_dir = tmp_repo / ".git" / "hooks"
     hooks_dir.mkdir(parents=True, exist_ok=True)
     existing = hooks_dir / "pre-commit"
     existing.write_text("#!/bin/bash\necho 'old'\n")
+    monkeypatch.setattr("sys.stdin.isatty", lambda: True)
     rc = install_hook(tmp_repo, input_fn=lambda _: "r")
     assert rc == 0
     assert "cli.lint --pre-commit" in existing.read_text()
 
 
-def test_existing_hook_prompt_append(tmp_repo: Path) -> None:
+def test_existing_hook_prompt_append(tmp_repo: Path, monkeypatch) -> None:
     hooks_dir = tmp_repo / ".git" / "hooks"
     hooks_dir.mkdir(parents=True, exist_ok=True)
     existing = hooks_dir / "pre-commit"
     existing.write_text("#!/bin/bash\necho 'preserve me'\n")
+    monkeypatch.setattr("sys.stdin.isatty", lambda: True)
     rc = install_hook(tmp_repo, input_fn=lambda _: "a")
     assert rc == 0
     content = existing.read_text()

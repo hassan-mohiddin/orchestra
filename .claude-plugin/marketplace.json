@@ -11,7 +11,7 @@
     {
       "name": "orchestra",
       "description": "Disciplined AI engineering toolkit. v2 spec-review (6-parallel-sub-judge ensemble), typed design docs, commit discipline, situation-routed skills.",
-      "version": "2.0.1",
+      "version": "2.1.0",
       "category": "development",
       "source": "./",
       "author": {

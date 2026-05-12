@@ -12,21 +12,20 @@ Subsequent slices add budget enforcement (3.2) and structured violations (3.3).
 from __future__ import annotations
 
 import html
-import json
 import logging
 import os
-import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from cli.hooks._common import (
+    ORCHESTRA_MARKER,
+    emit_json,
+    read_schema_layer_tldrs,
+)
 from cli.lessons_store import read_entries
-from cli.tldr_extractor import TldrSection, extract_tldr
 
-ORCHESTRA_MARKER = "[ORCHESTRA TLDR]"
 HOOK_EVENT = "SessionStart"
-CLAUDE_FILE = Path(".claude/CLAUDE.md")
-RULES_DIR = Path(".claude/rules")
 STATE_DIR = Path(".claude/state")
 OVERFLOW_LOG = STATE_DIR / "budget-overflow.log"
 TOKEN_BUDGET = 500
@@ -40,28 +39,6 @@ MAX_FIELD_CHARS = 200
 _logger = logging.getLogger(__name__)
 
 
-def _schema_layer_paths(root: Path) -> list[Path]:
-    paths: list[Path] = []
-    claude_md = root / CLAUDE_FILE
-    if claude_md.exists():
-        paths.append(claude_md)
-    rules_dir = root / RULES_DIR
-    if rules_dir.is_dir():
-        paths.extend(sorted(rules_dir.glob("*.md")))
-    return paths
-
-
-def _read_tldrs(root: Path) -> list[tuple[Path, list[str]]]:
-    out: list[tuple[Path, list[str]]] = []
-    for path in _schema_layer_paths(root):
-        try:
-            text = path.read_text(encoding="utf-8")
-        except OSError:
-            continue
-        result = extract_tldr(text)
-        if isinstance(result, TldrSection) and result.bullets:
-            out.append((path.relative_to(root), result.bullets))
-    return out
 
 
 def _load_recent_violations() -> list[dict[str, Any]]:
@@ -156,14 +133,9 @@ def _log_overflow(root: Path, tokens: int) -> None:
     (root / OVERFLOW_LOG).open("a", encoding="utf-8").write(line)
 
 
-def _emit(payload: dict[str, object]) -> None:
-    json.dump(payload, sys.stdout)
-    sys.stdout.write("\n")
-
-
 def main(argv: list[str] | None = None) -> int:
     root = Path.cwd()
-    tldrs = _read_tldrs(root)
+    tldrs = read_schema_layer_tldrs(root)
     violations = _load_recent_violations()
     full = _format_additional_context(tldrs, violations)
     tokens = _count_tokens(full)
@@ -180,7 +152,7 @@ def main(argv: list[str] | None = None) -> int:
             "additionalContext": additional,
         },
     }
-    _emit(payload)
+    emit_json(payload)
     return 0
 
 

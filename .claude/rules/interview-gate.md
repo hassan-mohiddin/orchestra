@@ -3,6 +3,18 @@
 This rule is auto-loaded every session. It defines when Claude must STOP and ask
 the user before proceeding silently with a decision.
 
+## TLDR — Nonnegotiables
+
+- STOP and ASK on low context, ambiguous scope, or silent design decision.
+- USE AskUserQuestion (structured) when blast radius > 10 min of work.
+- INTERVIEW at iter-3 if same review/test fails with similar findings.
+- DO NOT ask permission for mechanical task execution or obvious answers.
+- DO NOT silently bake architectural decisions absent from user instruction.
+- DO NOT proceed past low-context point — surface gaps before constructing plans.
+- BATCH related questions into a single AskUserQuestion call, no ping-pong.
+
+<!-- Full rule body below this section -->
+
 The Interview Gate is the cheap, immediately-actionable half of "backward-flow
 workflow." The heavy half (state-machine workflow + phase return + feedback-loop
 primitives) is deferred to v2.0 (orchestra LLD-011+ per handoff). Interview Gate

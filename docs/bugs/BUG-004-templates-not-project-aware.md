@@ -4,7 +4,7 @@
 > **Date:** 2026-05-06
 > **DRI:** Hassan Mohiddin
 > **Severity:** Medium
-> **Status:** Investigating
+> **Status:** Fix Applied
 
 ## Observed Behavior
 
@@ -118,3 +118,4 @@ Tests verify that templates with placeholders correctly substitute when `detect_
 |---|---|
 | 2026-05-06 | Filed during SCALE audit. Status: Investigating. Target fix: v1.4. |
 | 2026-05-12 | Fix applied per § Fix Description: detect_project_context + _render_template helpers; AGENTS.md + llms.txt templates updated; 8 regression tests. Em-dash sentinel for missing values. Bundle target: v2.0.1. Status remains Investigating pending user fresh-repo verify. |
+| 2026-05-12 | Status: Investigating → Fix Applied. User accepted live-tempdir dry-run (2 scenarios: pyproject + package.json + git remote → `scale` / GitHub URL / `Python, Node.js`; empty repo → dir name + em-dash fallback) plus 8 pytest gates as verification. Code shipped in commit `383916b`. |

@@ -3,6 +3,18 @@
 This rule is auto-loaded on every session. It defines the non-negotiable documentation
 obligations that apply at every stage of work.
 
+## TLDR — Nonnegotiables
+
+- INVESTIGATION reveals defect → STOP and file BUG-NNN before solutions.
+- NO code without committed design doc + passed spec review + user approval.
+- RUN spec review on every doc edit — including changelog-only updates.
+- COMMIT doc only after spec review passes (max 3 iterations, then surface).
+- PROMOTE investigation scratch to BUG-NNN once defect confirmed; archive scratch.
+- ADR records decisions made — not options being weighed (use brainstorm first).
+- BYPASS gates ONLY for trivial typo/comment/rename single-file no-logic edits.
+
+<!-- Full rule body below this section -->
+
 ---
 
 ## The Law

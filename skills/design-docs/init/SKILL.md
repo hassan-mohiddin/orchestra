@@ -1,6 +1,6 @@
 ---
-name: design-docs-init
-description: Use when setting up design docs scaffolding in a new repo, or when migrating from orchestra v1.0 to v1.1 config schema. Triggers on phrases like "set up design docs", "initialize design docs", "scaffold docs directory", "create STANDARDS.md". Runs 3-prompt flow (mode / doc-types / add-ons) via the AskUserQuestion tool, then writes .claude/orchestra.json + docs/ subdirs + STANDARDS.md + optional CI/AGENTS.md/llms.txt.
+name: init
+description: Use when setting up design docs scaffolding in a new repo, or when migrating from orchestra v1.0 to v1.1 config schema. Triggers on phrases like "set up design docs", "initialize design docs", "scaffold docs directory", "create STANDARDS.md". Runs 3-prompt flow (mode / doc-types / add-ons) via the AskUserQuestion tool, then writes .claude/orchestra.json + docs/ subdirs + STANDARDS.md + optional CI/AGENTS.md/llms.txt. INTERNAL composition — auto-invoked by parent `design-docs` skill on first-time detection; not a user-facing slash command.
 ---
 
 # Design Docs Init

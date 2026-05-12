@@ -1,5 +1,5 @@
 ---
-name: orchestra-init
+name: init
 description: Use when starting orchestra in a new repo. Triggers on phrases like "set up orchestra", "initialize orchestra", "configure orchestra in this project", "orchestra init". Master init skill — v1.1 delegates to design-docs:init (which drives 3 AskUserQuestion prompts deterministically). Future versions extend with plugin scan and workflow init.
 ---
 

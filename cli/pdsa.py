@@ -15,9 +15,42 @@ live in the lint/PDSA log layer, not in attestation YAML).
 
 from __future__ import annotations
 
+import functools
+import os
 import re
+import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
+
+
+@functools.lru_cache(maxsize=64)
+def _discover_repo_root(anchor: Path) -> Path | None:
+    """Discover repo root for `anchor` via `git rev-parse --show-toplevel`.
+
+    Sanitizes env (clears GIT_DIR/GIT_WORK_TREE/GIT_CEILING_DIRECTORIES) so
+    caller's shell env can't redirect git's answer (BUG-019 r2 adversarial
+    Critical A1 — env-var redirect attack). Memoized per anchor.
+    """
+    if not anchor.is_dir():
+        return None
+    env = {
+        k: v
+        for k, v in os.environ.items()
+        if k not in ("GIT_DIR", "GIT_WORK_TREE", "GIT_CEILING_DIRECTORIES")
+    }
+    try:
+        out = subprocess.check_output(
+            ["git", "rev-parse", "--show-toplevel"],
+            cwd=str(anchor),
+            text=True,
+            stderr=subprocess.DEVNULL,
+            env=env,
+        ).strip()
+    except (subprocess.CalledProcessError, OSError, FileNotFoundError):
+        return None
+    if not out or not out.startswith("/"):
+        return None
+    return Path(out)
 
 
 _REQUIRED_SECTIONS: dict[str, list[str]] = {
@@ -130,26 +163,26 @@ _CITATION_RE = re.compile(
 
 
 def _resolve_inside_repo(cited_path_str: str, doc_path: Path) -> Path | None:
-    """Resolve a cited path and confirm it lies inside the repo (cwd) tree.
+    """Resolve a cited path and confirm it lies inside the repo tree.
 
-    Returns the resolved Path if it exists AND its resolved absolute form is
-    under Path.cwd(). Returns None when the cite is absolute (`/etc/passwd`),
-    when `..` escapes the repo (`../../../etc/shadow`), or when the file does
-    not exist under either repo-relative or doc-relative resolution.
+    Repo root is discovered via `git rev-parse --show-toplevel` anchored at
+    `doc_path.parent` (BUG-019 fix — no longer assumes Path.cwd() is repo
+    root). Returns None when:
+      - cite is absolute (`/etc/passwd`)
+      - `..` escape leaves the repo (`../../../etc/shadow`)
+      - file doesn't exist under either repo-relative or doc-relative form
+      - doc is not in a git repo (discovery fail — fail-closed)
 
-    Defends against the adversarial finding "PDSA reads /etc/passwd": the
-    cited path is canonicalized BEFORE any read, and reads outside the repo
-    tree are rejected.
+    Defends against "PDSA reads /etc/passwd" — cited path is canonicalized
+    BEFORE any read, and reads outside the repo tree are rejected.
     """
     raw = Path(cited_path_str)
-    repo_root = Path.cwd().resolve()
-
     if raw.is_absolute():
-        # Absolute paths are explicitly out-of-bounds for the PDSA trust model.
-        # No exception for paths-that-happen-to-be-inside-the-repo (operators
-        # writing cites should use repo-relative form for portability).
         return None
-
+    anchor = doc_path.parent if doc_path.is_file() else doc_path
+    repo_root = _discover_repo_root(anchor)
+    if repo_root is None:
+        return None  # not in a git repo — fail-closed (BUG-019)
     candidates = (repo_root / raw, doc_path.parent / raw)
     for c in candidates:
         try:
@@ -222,7 +255,15 @@ def _check_class_audit_attestation(doc_path: Path) -> CheckResult:
     stem = doc_path.stem
     # Strip any existing -rN suffix to get base id
     base = re.sub(r"-r\d+$", "", stem)
-    reviews_dir = Path.cwd() / "docs" / "reviews"
+    anchor = doc_path.parent if doc_path.is_file() else doc_path
+    repo_root = _discover_repo_root(anchor)
+    if repo_root is None:
+        return CheckResult(
+            passed=False,
+            gating=False,
+            detail="cannot discover repo root (doc not in a git repo) — class-audit not enforced",
+        )
+    reviews_dir = repo_root / "docs" / "reviews"
     prior_path = reviews_dir / f"{base}-r{prior_iter}.review.yaml"
     if not prior_path.exists():
         return CheckResult(

@@ -100,6 +100,8 @@ def test_class_audit_required_when_iter1_has_class_findings(tmp_path, monkeypatc
     (reviews / "999-foo-r1.review.yaml").write_text(yaml_mod.safe_dump(iter1_attestation))
 
     monkeypatch.setattr(pdsa, "_invoke_lint", lambda argv: 0)
+    pdsa._discover_repo_root.cache_clear()
+    monkeypatch.setattr(pdsa, "_discover_repo_root", lambda anchor: tmp_path)
     monkeypatch.chdir(tmp_path)
 
     report = pdsa.run_pdsa(doc)
@@ -143,6 +145,8 @@ def test_class_audit_satisfied_when_doc_has_audit_section(tmp_path, monkeypatch)
     (reviews / "999-foo-r1.review.yaml").write_text(yaml_mod.safe_dump(iter1_attestation))
 
     monkeypatch.setattr(pdsa, "_invoke_lint", lambda argv: 0)
+    pdsa._discover_repo_root.cache_clear()
+    monkeypatch.setattr(pdsa, "_discover_repo_root", lambda anchor: tmp_path)
     monkeypatch.chdir(tmp_path)
 
     report = pdsa.run_pdsa(doc)
@@ -178,6 +182,8 @@ def test_instance_no_audit_required(tmp_path, monkeypatch):
     (reviews / "999-foo-r1.review.yaml").write_text(yaml_mod.safe_dump(iter1_attestation))
 
     monkeypatch.setattr(pdsa, "_invoke_lint", lambda argv: 0)
+    pdsa._discover_repo_root.cache_clear()
+    monkeypatch.setattr(pdsa, "_discover_repo_root", lambda anchor: tmp_path)
     monkeypatch.chdir(tmp_path)
 
     report = pdsa.run_pdsa(doc)

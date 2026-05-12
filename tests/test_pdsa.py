@@ -182,6 +182,8 @@ def test_citation_validity_pass(tmp_path, monkeypatch) -> None:
     doc.write_text(body)
 
     monkeypatch.setattr(pdsa, "_invoke_lint", lambda argv: 0)
+    pdsa._discover_repo_root.cache_clear()
+    monkeypatch.setattr(pdsa, "_discover_repo_root", lambda anchor: tmp_path)
     monkeypatch.chdir(tmp_path)
     report = pdsa.run_pdsa(doc)
 
@@ -201,6 +203,8 @@ def test_citation_validity_range_pass(tmp_path, monkeypatch) -> None:
     doc.write_text(body)
 
     monkeypatch.setattr(pdsa, "_invoke_lint", lambda argv: 0)
+    pdsa._discover_repo_root.cache_clear()
+    monkeypatch.setattr(pdsa, "_discover_repo_root", lambda anchor: tmp_path)
     monkeypatch.chdir(tmp_path)
     report = pdsa.run_pdsa(doc)
 
@@ -235,6 +239,8 @@ def test_citation_validity_out_of_range(tmp_path, monkeypatch) -> None:
     doc.write_text(body)
 
     monkeypatch.setattr(pdsa, "_invoke_lint", lambda argv: 0)
+    pdsa._discover_repo_root.cache_clear()
+    monkeypatch.setattr(pdsa, "_discover_repo_root", lambda anchor: tmp_path)
     monkeypatch.chdir(tmp_path)
     report = pdsa.run_pdsa(doc)
 
@@ -418,6 +424,8 @@ def test_refs_resolve_pass(tmp_path, monkeypatch) -> None:
     doc.write_text(body)
 
     monkeypatch.setattr(pdsa, "_invoke_lint", lambda argv: 0)
+    pdsa._discover_repo_root.cache_clear()
+    monkeypatch.setattr(pdsa, "_discover_repo_root", lambda anchor: tmp_path)
     monkeypatch.chdir(tmp_path)
     report = pdsa.run_pdsa(doc)
 
@@ -633,6 +641,8 @@ def test_citation_validity_repo_root_resolution(tmp_path, monkeypatch) -> None:
     doc.write_text("Reference: `src/module.py:5`\n")
 
     monkeypatch.setattr(pdsa, "_invoke_lint", lambda argv: 0)
+    pdsa._discover_repo_root.cache_clear()
+    monkeypatch.setattr(pdsa, "_discover_repo_root", lambda anchor: tmp_path)
     monkeypatch.chdir(tmp_path)
 
     report = pdsa.run_pdsa(doc)

@@ -5,7 +5,7 @@
 > **DRI:** Hassan Mohiddin
 > **Type:** Bug Report
 > **Severity:** Low
-> **Status:** Investigating
+> **Status:** Fix Applied
 > **Iteration:** 6
 
 **Severity note:** `Low` matches canon §4.2 `bug_severity = {Critical, High, Medium, Low}`. This is a paperwork-grade tracker (no behavioral defect); Low is correct.
@@ -150,3 +150,4 @@ Per LLD-010 r4 Changelog entry, r4 was paperwork-only cascading edit; no interna
 | 2026-05-11 | r5 closure batch: applied 12 r1 attestation findings inline (Iteration field added; Related Documents paths corrected to current iterations + per-judge suffix; Post-ship cleanup renumbered #1-#5; BUG-013 cross-ref corrected; Regression Prevention expanded). Closed LLD-008 #3 (T2 enumeration test, commit `8af4b45`) + Post-ship #2 (scale_migration_helper already moved at `7f581e9`). Surfaced Post-ship #5 (LLD-008 r8 A3 enumeration drift). r5 v2 attestation written: overall_verdict: fail (32 findings: 3 Crit + 15 Imp + 14 Min). Remaining open: Post-ship #1 (lint.py split, deferred v1.8+) + Post-ship #5 (A3 sync slice). Commits: `c1259d0` + `3b80fb9`. |
 | 2026-05-11 | r6 — r5 attestation closure batch. Reworded Regression Prevention to discipline-not-gate framing (closes 3 r5 Criticals by making mechanical-vs-discipline boundary explicit); added per-finding closure table for r1 findings; added BUG-014 to Related Documents; narrowed Convention note to BUG-012-local; made Post-ship #5 fix-path implementable (cites r5 attestation); added aggregate-tracker recursion termination criterion; added frontmatter Severity + Doc ID notes; explained Environment pytest delta; flagged test/A3-prose disagreement in LLD-008 #3 closure. Status: Investigating. Reviewed: pending r6 v2 spec-review. |
 | 2026-05-12 | r6 refinement — A3 sync blocked on BUG-018 (cli.lint Addresses: validator gap, v2.0 schema rejection). Post-ship #5 reclassified from blocking to tracking-only. BUG-018 cross-referenced in Related Documents. Iteration Log r6 entry updated. BUG-012 unblocked for closure at r6 review pass. |
+| 2026-05-12 | Status: Investigating → **Fix Applied** (user-confirmed; user-authorized skip-r6-review per closure path interview-gate). r5 attestation (v2.0 schema; 32 findings) is canonical closure attestation; r6 body addressed all 3 Critical + 15 Important inline. Open trackers remain: Post-ship #1 (lint.py split, deferred v1.8+) + Post-ship #5 (tracking-only; A3 prose sync awaits BUG-018 closure, target v2.0.1 patch). BUG-012 is now canon-frozen — any further edits require narrow-change (whitelist: Status/Iteration/Superseded by + Changelog append) or tiered narrow-change (post-BUG-018) or supersession. |

@@ -242,7 +242,16 @@ def install(root: Path) -> Path:
     if not isinstance(hooks, dict):
         hooks = {}
     orchestra = build_orchestra_hooks(interpreter)
-    hooks.update(orchestra)
+    for event, new_entries in orchestra.items():
+        existing_entries = hooks.get(event, [])
+        if not isinstance(existing_entries, list):
+            existing_entries = []
+        preserved = [
+            e
+            for e in existing_entries
+            if isinstance(e, dict) and not _is_orchestra_hook_entry(e)
+        ]
+        hooks[event] = preserved + new_entries
     existing["hooks"] = hooks
     _atomic_write_json(settings_path, existing)
     return settings_path

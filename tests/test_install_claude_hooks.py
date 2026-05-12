@@ -142,3 +142,67 @@ def test_verify_clean_install_returns_no_errors(
     install(tmp_path)
     errors = verify(tmp_path)
     assert errors == [], f"clean install should verify clean, got: {errors}"
+
+
+def test_install_merges_with_existing_settings(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    settings_path = tmp_path / ".claude/settings.json"
+    settings_path.parent.mkdir(parents=True)
+    pre = {
+        "hooks": {
+            "SessionStart": [
+                {
+                    "matcher": "startup",
+                    "hooks": [
+                        {"type": "command", "command": "/usr/bin/other-plugin-hook"}
+                    ],
+                }
+            ],
+            "PostToolUse": [
+                {
+                    "hooks": [
+                        {"type": "command", "command": "/usr/bin/post-tool-use-hook"}
+                    ]
+                }
+            ],
+        },
+        "topLevelOther": {"x": 1},
+    }
+    settings_path.write_text(json.dumps(pre, indent=2), encoding="utf-8")
+
+    install(tmp_path)
+    after = json.loads(settings_path.read_text(encoding="utf-8"))
+    hooks = after["hooks"]
+
+    assert any(
+        "other-plugin-hook" in h["hooks"][0]["command"]
+        for h in hooks["SessionStart"]
+    ), "other-plugin SessionStart entry must be preserved"
+    assert any(
+        "cli.hooks.session_start_inject" in h["hooks"][0]["command"]
+        for h in hooks["SessionStart"]
+    ), "orchestra SessionStart entry must be added"
+
+    assert "PostToolUse" in hooks
+    assert "post-tool-use-hook" in hooks["PostToolUse"][0]["hooks"][0]["command"]
+    assert after["topLevelOther"] == {"x": 1}
+
+
+def test_reinstall_does_not_duplicate_orchestra_entries(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    install(tmp_path)
+    install(tmp_path)
+    data = json.loads((tmp_path / ".claude/settings.json").read_text(encoding="utf-8"))
+    ss = data["hooks"]["SessionStart"]
+    orchestra_count = sum(
+        1
+        for e in ss
+        if "cli.hooks.session_start_inject" in e["hooks"][0]["command"]
+    )
+    assert orchestra_count == 1, (
+        f"re-install must not duplicate orchestra entries, got {orchestra_count}"
+    )

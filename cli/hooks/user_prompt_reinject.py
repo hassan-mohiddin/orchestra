@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 import tempfile
 from pathlib import Path
 
@@ -86,5 +87,15 @@ def main(argv: list[str] | None = None) -> int:
     return 0
 
 
+def _run() -> int:
+    try:
+        return main()
+    except Exception as exc:
+        sys.stderr.write(
+            f"FAIL: cli.hooks.user_prompt_reinject crashed: {exc}\n"
+        )
+        return 2
+
+
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(_run())

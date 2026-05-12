@@ -10,6 +10,7 @@ LLD-012 SC-3, SC-11. Shared injection logic lives in cli/hooks/_common.py.
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 from cli.hooks._common import (
@@ -36,5 +37,15 @@ def main(argv: list[str] | None = None) -> int:
     return 0
 
 
+def _run() -> int:
+    try:
+        return main()
+    except Exception as exc:
+        sys.stderr.write(
+            f"FAIL: cli.hooks.session_start_inject crashed: {exc}\n"
+        )
+        return 2
+
+
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(_run())

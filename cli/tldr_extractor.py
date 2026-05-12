@@ -8,8 +8,11 @@ Format spec: docs/features/012-rule-durability-and-learning-layer.md § TLDR sec
 
 from __future__ import annotations
 
+import logging
 import re
 from dataclasses import dataclass, field
+
+_logger = logging.getLogger(__name__)
 
 TLDR_HEADER_RE = re.compile(r"^## TLDR — Nonnegotiables\s*$", re.MULTILINE)
 TLDR_CLOSE_MARKER = "<!-- Full rule body below this section -->"
@@ -33,6 +36,13 @@ def extract_tldr(text: str) -> TldrSection | TldrError:
         return TldrError(reason="no_tldr_section")
     header_end = matches[0].end()
     close_idx = text.find(TLDR_CLOSE_MARKER, header_end)
-    body = text[header_end:close_idx] if close_idx != -1 else text[header_end:]
+    if close_idx == -1:
+        _logger.warning(
+            "TLDR close marker %r missing; extracting bullets to EOF",
+            TLDR_CLOSE_MARKER,
+        )
+        body = text[header_end:]
+    else:
+        body = text[header_end:close_idx]
     bullets = [m.group(1) for line in body.splitlines() if (m := BULLET_RE.match(line))]
     return TldrSection(bullets=bullets)

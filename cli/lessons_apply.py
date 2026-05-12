@@ -129,12 +129,16 @@ def _append_promotion_marker(
     source_lesson_ids: list[str],
     root: Path,
 ) -> Path:
+    try:
+        proxy_rel = proxy_path.resolve().relative_to(root.resolve()).as_posix()
+    except ValueError:
+        proxy_rel = proxy_path.as_posix()
     entry = {
         "id": str(uuid.uuid4()),
         "ts": _now_iso(),
         "kind": "promotion-marker",
         "rule_violated": rule_id,
-        "proxy_artifact": proxy_path.relative_to(root).as_posix(),
+        "proxy_artifact": proxy_rel,
         "source_lesson_ids": source_lesson_ids,
         "source": "auto-promote",
         "inject": False,

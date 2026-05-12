@@ -148,6 +148,84 @@ def uninstall(root: Path) -> Path:
     return settings_path
 
 
+def verify(root: Path) -> list[str]:
+    """Audit installed orchestra hooks. Returns list of error strings (empty = clean).
+
+    Detects:
+    - settings.json missing or malformed
+    - resolved interpreter path stale (not on disk or not executable)
+    - hook command tampered (form differs from `<exe> -m <module>` exactly)
+    - orchestra hook modules missing from settings
+    """
+    errors: list[str] = []
+    settings_path = root / SETTINGS_PATH
+    if not settings_path.exists():
+        errors.append(f"settings.json missing at {settings_path}")
+        return errors
+    try:
+        data = json.loads(settings_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        errors.append(f"settings.json malformed JSON: {exc}")
+        return errors
+    if not isinstance(data, dict):
+        errors.append("settings.json root is not an object")
+        return errors
+    hooks = data.get("hooks")
+    if not isinstance(hooks, dict):
+        errors.append("settings.json has no `hooks` object")
+        return errors
+
+    found_modules: set[str] = set()
+    for event, entries in hooks.items():
+        if not isinstance(entries, list):
+            continue
+        for entry in entries:
+            if not isinstance(entry, dict):
+                continue
+            inner = entry.get("hooks")
+            if not isinstance(inner, list):
+                continue
+            for hook in inner:
+                if not isinstance(hook, dict):
+                    continue
+                cmd = hook.get("command", "")
+                if not isinstance(cmd, str) or not cmd:
+                    continue
+                matched_module = next(
+                    (m for m in ORCHESTRA_HOOK_MODULES if m in cmd), None
+                )
+                if matched_module is None:
+                    continue
+                found_modules.add(matched_module)
+                parts = cmd.split()
+                if (
+                    len(parts) != 3
+                    or parts[1] != "-m"
+                    or parts[2] != matched_module
+                ):
+                    errors.append(
+                        f"hook command for {matched_module} tampered "
+                        f"(expected `<exe> -m {matched_module}` exactly): {cmd!r}"
+                    )
+                    continue
+                interpreter = parts[0]
+                if not Path(interpreter).exists():
+                    errors.append(
+                        f"stale interpreter for {matched_module}: {interpreter} not found"
+                    )
+                elif not os.access(interpreter, os.X_OK):
+                    errors.append(
+                        f"non-executable interpreter for {matched_module}: {interpreter}"
+                    )
+
+    missing = set(ORCHESTRA_HOOK_MODULES) - found_modules
+    if missing:
+        errors.append(
+            f"orchestra hook modules missing from settings: {sorted(missing)}"
+        )
+    return errors
+
+
 def install(root: Path) -> Path:
     """Install orchestra hooks into `<root>/.claude/settings.json`. Returns path."""
     interpreter = _resolve_interpreter()
@@ -181,7 +259,12 @@ def main(argv: list[str] | None = None) -> int:
             uninstall(Path.cwd())
             return 0
         if args.verify:
-            raise InstallError("--verify not yet implemented (Phase 4.3)")
+            errors = verify(Path.cwd())
+            if errors:
+                for e in errors:
+                    sys.stderr.write(f"FAIL: {e}\n")
+                return 1
+            return 0
         install(Path.cwd())
         return 0
     except InstallError as exc:

@@ -1,7 +1,7 @@
 # Orchestra Handoff — Session Continuity Pointer
 
-> **Last updated:** 2026-05-12 — LLD-012 v2.1 PLAN READY for execution. HEAD `6745a17`.
-> **Last session ended:** Plan iter-2 v2 spec-review attestation persisted (verdict: fail; 10 Critical aggregated — 4 line-cite Criticals fixed inline, 6 adversarial Criticals deferred to v2.2/v2.3 hardening LLDs). LLD-012 iter-2 supplementary edits committed: SC-6 slash-shape aligned with `commands/<name>.md` repo convention; ship target v1.8.0 → v2.1.0. workflow.md G3/G4/G7/G8 refresh applied.
+> **Last updated:** 2026-05-12 — BUG-012 + BUG-013 both SHIPPED (Fix Applied). LLD-012 v2.1 PLAN READY for execution (parallel session). HEAD: `de0eee4`.
+> **Last session ended:** BUG-013 r3 closure batch committed (`de0eee4`) — slash-command naming inconsistency closed. SKILL.md `name:` field renames (`orchestra-init` → `init`, `design-docs-init` → `init`) shipped in commit `1bbc0d0`; r2 body + CLAUDE.md HARD RULE update in `5e82443`; r3 reframing + Status flip in `de0eee4`. r2 v2 attestation (32 findings: 3 Crit + 12 Imp + 17 Min) closed via discipline-not-gate framing + §Risks subsection. Phase 3 (CHANGELOG sync) tracks to v2.0.1 ship. BUG-012 closed earlier this session (`a0c8fa9`).
 
 ---
 
@@ -431,7 +431,7 @@ v1.7.1 = paperwork-cleanup + 2 small bug fixes. Decided NOT to do full doc super
 - **BUG-001** — `/orchestra:init` improvises instead of AskUserQuestion (parallel-session WIP; see git log `wip: BUG-001 *` commits)
 - **BUG-002 / BUG-004 / BUG-005** — pre-v1.7 backlog, never triaged. Could be already fixed by LLD-008/009/010. Triage post-BUG-001.
 - ~~**BUG-012**~~ — **Fix Applied 2026-05-12** (commit `a0c8fa9`). Aggregate tracker closed. Open trackers (not blocking BUG-012): Post-ship #1 (lint.py split deferred v1.8+) + Post-ship #5 (A3 prose sync awaits BUG-018; target v2.0.1).
-- **BUG-013** — slash command naming inconsistency (Investigating; fix planned v2.0.1)
+- ~~**BUG-013**~~ — **Fix Applied 2026-05-12** (commits `1bbc0d0` code + `5e82443` doc + `de0eee4` r3 closure). SKILL.md `name:` field renames + CLAUDE.md HARD RULE table updated. r2 v2 attestation (32 findings: 3 Crit + 12 Imp + 17 Min) closed via discipline-not-gate framing + §Risks subsection. Phase 3 (CHANGELOG sync) tracks to v2.0.1 ship. Future-work: ADR-002 (slash-naming canon-spine anchor) + cli.lint --skill-names + eval scenario.
 - **BUG-014** — L4 doc-id-burn rejects bare-name design supersession (Fix Applied per parallel-session work)
 - **BUG-016** — scattered vocabulary canon (Fix Applied — 12 slices shipped)
 - **BUG-017** — spec-review v2 notes list vs schema string (Fix Applied — schema canon fix at commit `1e9ebe5`)

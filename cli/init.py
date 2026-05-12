@@ -35,6 +35,7 @@ class ScaffoldResult:
     created: list[Path] = field(default_factory=list)
     skipped: list[Path] = field(default_factory=list)
     errors: list[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
 
     @property
     def ok(self) -> bool:
@@ -378,6 +379,7 @@ def run_init(root: Path, mode: str = "solo", preset: str = "default-7",
     combined.created = r1.created + r2.created
     combined.skipped = r1.skipped + r2.skipped
     combined.errors = r1.errors + r2.errors
+    combined.warnings = r1.warnings + r2.warnings
     return combined
 
 
@@ -404,6 +406,8 @@ def main(argv: list[str] | None = None) -> int:
     print(f"created: {len(result.created)}, skipped: {len(result.skipped)}")
     for p in result.created:
         print(f"  + {p.relative_to(root) if p.is_relative_to(root) else p}")
+    for w in result.warnings:
+        print(f"  ⚠ {w}", file=sys.stderr)
     if result.errors:
         for e in result.errors:
             print(f"  ! {e}", file=sys.stderr)
@@ -446,13 +450,48 @@ GITIGNORE_ENTRIES = [
 ]
 
 
+def _check_tracked_in_path(root: Path, pattern: str) -> list[str]:
+    """Return list of tracked files matching the gitignore pattern.
+
+    Strips trailing `/` so directory patterns become path prefixes for
+    `git ls-files`. Returns [] when not a git repo, when git is missing,
+    or when no tracked files match — making the caller safe to skip the
+    tracked-file check on non-git directories.
+    """
+    path = pattern.rstrip("/")
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(root), "ls-files", "--", path],
+            capture_output=True, text=True, check=False,
+        )
+    except (FileNotFoundError, OSError):
+        return []
+    if result.returncode != 0:
+        return []
+    return [line for line in result.stdout.splitlines() if line]
+
+
 def _append_gitignore(root: Path, result: ScaffoldResult, force: bool) -> None:
     gitignore = root / ".gitignore"
     existing = gitignore.read_text() if gitignore.exists() else ""
     new_lines = []
     for entry in GITIGNORE_ENTRIES:
-        if entry not in existing:
+        if entry in existing:
+            continue
+        if entry.startswith("#"):
             new_lines.append(entry)
+            continue
+        if not force:
+            tracked = _check_tracked_in_path(root, entry)
+            if tracked:
+                result.warnings.append(
+                    f".gitignore append SKIPPED for {entry!r}: "
+                    f"{len(tracked)} tracked file(s) found at this path "
+                    f"(adding to .gitignore would silently hide new files there). "
+                    f"Use --force to override."
+                )
+                continue
+        new_lines.append(entry)
     if not new_lines:
         result.skipped.append(gitignore)
         return

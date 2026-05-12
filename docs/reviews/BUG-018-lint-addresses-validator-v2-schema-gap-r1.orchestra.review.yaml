@@ -1,0 +1,516 @@
+schema_version: '2.0'
+doc_subject:
+  path: docs/bugs/BUG-018-lint-addresses-validator-v2-schema-gap.md
+  content_hash: sha256:b1d0412b74f95501898285e82e74c465207cbb6c1563e7c9231adddcd066b22b
+  iter_commit_sha: 18041efe48115d1a65e8eafb6bb0e6197ceee752
+  iter_blob_sha: e2224f4ad31bd1aed373e5eb6674192c0879389b
+  iteration: 1
+peer_judge:
+  id: orchestra:spec-reviewer
+  invoked_at: '2026-05-11T18:29:31Z'
+  context_isolation: fresh_subagent_per_subjudge
+sub_judges:
+- id: semantic
+  model: claude-opus-4-7
+  mandatory: true
+  rubric_version: semantic-v1
+  status: completed
+  verdict: conditional_pass
+  findings:
+  - severity: Important
+    location: "Observed Behavior \xA7 paragraph 2"
+    problem: "Claim that r5 attestation 'recorded the A3 drift' lacks specifics \u2014\
+      \ no finding index, severity, or sub-judge id cited; reader cannot verify the\
+      \ example commit message's 'finding 1 (Important)' matches an actual entry in\
+      \ the cited YAML."
+    raised_by:
+    - semantic
+    scope: instance
+  - severity: Important
+    location: "Expected Behavior \xA7 item 3"
+    problem: "'Indexing semantics defined in canon \xA74.9 extension' forward-references\
+      \ a canon change that does not yet exist; expected behavior not fully specified\
+      \ \u2014 reader cannot determine pass criteria without the deferred canon decision."
+    raised_by:
+    - semantic
+    scope: instance
+  - severity: Important
+    location: "Fix Description \xA7 Approach A vs B"
+    problem: "Two approaches with pros/cons but doc both says 'Decision is deferred'\
+      \ and 'likely Approach A' \u2014 ambiguous whether bug records a chosen direction\
+      \ or RFC; per project rules bug docs should not deliberate. Choose or punt explicitly\
+      \ to follow-up ADR."
+    raised_by:
+    - semantic
+    scope: instance
+  - severity: Important
+    location: "Steps to Reproduce \xA7 unit-level block"
+    problem: "'Test does not yet exist; planned' leaves repro incomplete \u2014 no\
+      \ executable reproduction is currently runnable for the unit case. Label explicitly\
+      \ as 'planned repro, not currently runnable' or remove."
+    raised_by:
+    - semantic
+    scope: instance
+  - severity: Minor
+    location: "Root Cause Analysis \xA7 Canon gap"
+    problem: "Quoted canon text presented as \xA74.9 wording without line/anchor \u2014\
+      \ citation is to the section but not pinpointed; reader must search canon file\
+      \ to verify."
+    raised_by:
+    - semantic
+    scope: instance
+  - severity: Minor
+    location: "Fix Description \xA7 item 5"
+    problem: '''Estimated total: 3-4 hours'' is a planning estimate that belongs in
+      a Plan doc or impl-session scoping, not in a Bug Report''s Fix Description per
+      LLD-vs-Plan no-overlap discipline.'
+    raised_by:
+    - semantic
+    scope: instance
+  - severity: Minor
+    location: "Regression Prevention \xA7 item 3"
+    problem: "Lint-level guard ('could refuse...') is speculative rather than a regression-prevention\
+      \ commitment \u2014 either commit to it or move to Future Work."
+    raised_by:
+    - semantic
+    scope: instance
+  justification: "Bug Report structurally complete; core claim (v1.0-only gates.<gate>.findings\
+    \ lookup vs v2.0 schema with no gates key) is consistent and well-evidenced. But:\
+    \ Expected Behavior depends on a deferred canon decision; Approach A vs B reads\
+    \ as deliberation inside a bug doc; example commit msg cites 'finding 1 (Important)'\
+    \ without verifying that finding exists at that index with that severity. None\
+    \ invalidates core thesis \u2192 conditional_pass."
+- id: adversarial
+  model: claude-opus-4-7
+  mandatory: true
+  rubric_version: adversarial-v1
+  status: completed
+  verdict: fail
+  findings:
+  - severity: Critical
+    location: "Fix Description \xA7 Scope item 1 (Canon extension first)"
+    problem: "Doc defers canon \xA74.9 indexing-semantics decision to a later impl\
+      \ session while leaving fix scope 'sized + deferred.' Until canon resolves Approach\
+      \ A vs B, ALL tiered narrow-change against v2.0 attestations remains broken\
+      \ from v2.0.0 forward. No interim mitigation specified \u2014 gap is unbounded\
+      \ in time and BUG-012 \xA7Post-ship #5 plus every future canon-frozen edit citing\
+      \ v2 is silently blocked."
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Critical
+    location: "Fix Description \xA7 Approach A vs Approach B"
+    problem: "Approach A filters findings_aggregated[] by gate-derived-from-raised_by[]\
+      \ but doc admits structure/gate-compliance/architectural-fit sub-judges don't\
+      \ cleanly map to a single v1 gate. Edge-case handling hand-waved. A finding\
+      \ raised_by multiple sub-judges (aggregator dedup merges raised_by per LLD-011)\
+      \ collapses to AMBIGUOUS gate membership \u2014 no tie-break rule specified.\
+      \ Correctness hole."
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Critical
+    location: "Steps to Reproduce \xA7 lines 32-39"
+    problem: 'Repro recipe is unfalsifiable. Asserts ''fails with finding_n_out_of_range:
+      gate evidence finding 1 (have 0)'' but does NOT show actual command output captured
+      from the failing run. If ADDRESSES_LINE_RE rejects citation earlier (e.g., on
+      .orchestra.review.yaml suffix), actual failure path differs (unrecognized_addresses_line,
+      not finding_n_out_of_range). Unverified repro = unverified bug shape = wrong
+      fix.'
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Important
+    location: "Expected Behavior \xA7 item 3"
+    problem: "Indexing semantics forward-references canon \xA74.9 extension that does\
+      \ NOT YET EXIST. Expected behavior cannot depend on undefined canon \u2014 inverts\
+      \ doc lifecycle; reviewer cannot verify spec because spec is 'whatever canon\
+      \ says later.'"
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Important
+    location: "Root Cause Analysis \xA7 Two coupled gaps item 2"
+    problem: "Asserts LLD-011 shipped 'without the canon extension' but does not check\
+      \ whether LLD-011 itself or its r1/r2 attestations recorded any indexing rule\
+      \ for v2 attestations elsewhere. If LLD-011 specifies indexing by accident/intent,\
+      \ this conflates 'canon \xA74.9 unaware' with 'no canon answer exists anywhere.'\
+      \ Schema or LLD-011 may already imply Approach B by structure."
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Important
+    location: "Environment \xA7 L162 cite + Iteration Log \xA7 r1"
+    problem: Tag claim mismatch. Environment says 'orchestra v2.0.0 (tag at be7cdc0).'
+      No git log evidence cited; if be7cdc0 is wrong, downstream readers chasing it
+      hit dead reference.
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Important
+    location: "Fix Description \xA7 item 3 Regex update"
+    problem: "Says regex 'already does match both filename forms' for .orchestra.review.yaml\
+      \ but leaves 'Verify' as TODO inside fix description \u2014 reviewer takes on\
+      \ faith. If regex actually fails on .orchestra.review.yaml, failure mode changes\
+      \ (parse error, not lookup error) and item 4 test matrix misses it."
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Important
+    location: "Regression Prevention \xA7 lint-level guard bullet"
+    problem: "Proposed fail-closed guard does not address forward-compat: when v3.0\
+      \ ships, the same guard rejects v3 attestations until lint is updated, recreating\
+      \ this exact bug class. No 'unknown schema \u2192 soft-warn + degrade' path\
+      \ proposed."
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Important
+    location: "Fix Description \xA7 Estimated total"
+    problem: "'3-4 hours' excludes canon \xA74.9 extension spec-review cycle. Per\
+      \ Gate 3 canon edit requires spec review + iterations + commit. Realistic floor\
+      \ with one iteration is ~5-7h. Undercount risks impl session running out of\
+      \ context mid-fix."
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Minor
+    location: "Fix Description \xA7 item 2 code snippet"
+    problem: "att.get('schema_version') == '2.0' compares against string literal.\
+      \ v2.0 schema may emit numeric or '2.0.0' semver \u2014 no normalization. Fragile\
+      \ to patch-level bump."
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Minor
+    location: "Steps to Reproduce \xA7 unit-level"
+    problem: "'Test does not yet exist; planned' \u2014 for a High-severity bug blocking\
+      \ canonical workflow, a RED unit test should accompany the BUG to make regression\
+      \ mechanically reproducible. Without it, fix-completion has no objective signal."
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Minor
+    location: "Root Cause Analysis \xA7 Mermaid diagram"
+    problem: "Diagram omits unknown_gate branch and regex-parse-failure branch. Reader\
+      \ sees only 'gates absent \u2192 empty findings \u2192 out-of-range' path; doc's\
+      \ own Fix Description item 3 acknowledges regex concern not in diagram."
+    raised_by:
+    - adversarial
+    scope: instance
+  justification: "Three Critical (deferred canon blocks all v2 narrow-change indefinitely;\
+    \ Approach A multi-raised_by aggregation ambiguity; repro asserted not executed),\
+    \ seven Important, three Minor. Verdict: fail \u2014 bug real and well-scoped\
+    \ at symptom level, but proposed fix has correctness gaps (Approach A ambiguity),\
+    \ forward-reference dependencies (canon not yet written), and unverified core\
+    \ claims (repro not executed, tag not grounded, regex not checked)."
+- id: structure
+  model: claude-sonnet-4-6
+  mandatory: false
+  rubric_version: structure-v1
+  status: completed
+  verdict: pass
+  findings: []
+  justification: All required Bug Report sections present in correct order with Mermaid
+    in Root Cause Analysis. Metadata complete. Filename matches LLD-006-r4 BUG-NNN-name
+    grammar. Tables, code blocks, heading hierarchy consistent.
+- id: gate-compliance
+  model: claude-sonnet-4-6
+  mandatory: false
+  rubric_version: gate-compliance-v1
+  status: completed
+  verdict: pass
+  findings: []
+  justification: 'Gate 1 Discovery fired correctly; Gate 2 Design content sufficient
+    (root cause + fix description sized); Gate 3 Spec Review setup correct (Iteration:
+    1, Status: Investigating not canon-frozen). Lifecycle valid (Investigating entry
+    state). No gate skipped; Changelog and Iteration Log coherent.'
+- id: repo-context
+  model: claude-opus-4-7
+  mandatory: false
+  rubric_version: repo-context-v1
+  status: completed
+  verdict: conditional_pass
+  findings:
+  - severity: Important
+    location: "Environment \xA7 L162 cite"
+    problem: "Cites 'cli/lint.py \xA7 ADDRESSES_LINE_RE (L162: regex parses gate <gate>...)'\
+      \ but symbol ADDRESSES_LINE_RE does not exist. Actual constant is FINDING_REF_RE\
+      \ (defined L161-166). Same misnomer in Related Documents and Iteration Log."
+    raised_by:
+    - repo-context
+    scope: instance
+  - severity: Minor
+    location: "Observed Behavior \xA7 L587 cite"
+    problem: "_verify_finding_in_attestation defined at L540; gates.<gate>.findings\
+      \ lookup at L587. Cite 'cli/lint.py \xA7 _verify_finding_in_attestation (L587)'\
+      \ resolves but imprecise about function-def line vs lookup-line within function."
+    raised_by:
+    - repo-context
+    scope: instance
+  justification: "9 of 10 cited claims validated against repo. ADDRESSES_LINE_RE misnamed\
+    \ (actual: FINDING_REF_RE) \u2014 flagged Important. attestation-schema-v1.0.json\
+    \ properties.gates exists. v2.0.json has findings_aggregated + sub_judges, no\
+    \ gates. \xA74.9 quote matches source verbatim. BUG-012-r5 attestation: schema_version\
+    \ 2.0, no top-level gates. LLD-009 + LLD-011 + BUG-012 #Post-ship #5 all exist\
+    \ as cited."
+- id: architectural-fit
+  model: claude-opus-4-7
+  mandatory: false
+  rubric_version: architectural-fit-v1
+  status: completed
+  verdict: conditional_pass
+  findings:
+  - severity: Important
+    location: "Related Documents \xA7 (controlled-vocabulary \xA74.9 citation)"
+    problem: "BUG anchors v2 indexing canon at \xA74.9 only, but \xA74.11 review_doc_filename_convention\
+      \ already enumerates LLD-011 sub-judge slugs (completeness, evidence, ...) as\
+      \ valid <judge> filename values \u2014 those strings collide with v1 gate enum\
+      \ AND mis-name actual v2 sub-judge ids. Fix must reconcile \xA74.9 extension\
+      \ with \xA74.11's pre-existing list."
+    raised_by:
+    - architectural-fit
+    scope: instance
+  - severity: Minor
+    location: "Fix Description \xA7 Approach A \u2014 flat findings_aggregated"
+    problem: "Approach A's derivation function maps sub-judge id \u2192 v1 gate but\
+      \ \xA74.9 canon binds gate names tightly to schema-v1.0.json; should explicitly\
+      \ say whether derivation lives in cli/vocabulary.py (canon-sourced) or cli/lint.py\
+      \ (consumer-only) to avoid scattered-vocabulary recurrence."
+    raised_by:
+    - architectural-fit
+    scope: instance
+  - severity: Minor
+    location: "Environment \xA7 (LLD-011 sub-judge id citation)"
+    problem: "Doc references 'sub_judges[<id where id \u2208 {semantic, repo-context}>]'\
+      \ as evidence-domain home, but LLD-011 maps v1 evidence gate continuity onto\
+      \ the semantic sub-judge (mandatory, inherits v1.0 rubric). repo-context owns\
+      \ code-citation validity, not evidence-domain. Example mapping is loose."
+    raised_by:
+    - architectural-fit
+    scope: instance
+  justification: "No active ADR contradicts BUG-018 (ADR-001 unrelated). LLD-009 r6\
+    \ Addresses: format citations accurate. LLD-011 silence on Addresses:-against-v2.0\
+    \ indexing accurate. \xA74.9 extension site canonically correct per \xA74.9's\
+    \ own anticipated-extension wording. Three findings raised: \xA74.11 sub-judge\
+    \ enumeration drift, derivation locality (vocabulary vs consumer), and loose v1\u2192\
+    v2 evidence-gate mapping example. None rises to recorded-decision contradiction\
+    \ \u2192 conditional_pass."
+findings_aggregated:
+- severity: Minor
+  location: "Environment \xA7 (LLD-011 sub-judge id citation)"
+  problem: "Doc references 'sub_judges[<id where id \u2208 {semantic, repo-context}>]'\
+    \ as evidence-domain home, but LLD-011 maps v1 evidence gate continuity onto the\
+    \ semantic sub-judge (mandatory, inherits v1.0 rubric). repo-context owns code-citation\
+    \ validity, not evidence-domain. Example mapping is loose."
+  raised_by:
+  - architectural-fit
+  scope: instance
+- severity: Important
+  location: "Environment \xA7 L162 cite"
+  problem: "Cites 'cli/lint.py \xA7 ADDRESSES_LINE_RE (L162: regex parses gate <gate>...)'\
+    \ but symbol ADDRESSES_LINE_RE does not exist. Actual constant is FINDING_REF_RE\
+    \ (defined L161-166). Same misnomer in Related Documents and Iteration Log."
+  raised_by:
+  - repo-context
+  scope: instance
+- severity: Important
+  location: "Environment \xA7 L162 cite + Iteration Log \xA7 r1"
+  problem: Tag claim mismatch. Environment says 'orchestra v2.0.0 (tag at be7cdc0).'
+    No git log evidence cited; if be7cdc0 is wrong, downstream readers chasing it
+    hit dead reference.
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Important
+  location: "Expected Behavior \xA7 item 3"
+  problem: "'Indexing semantics defined in canon \xA74.9 extension' forward-references\
+    \ a canon change that does not yet exist; expected behavior not fully specified\
+    \ \u2014 reader cannot determine pass criteria without the deferred canon decision."
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Important
+  location: "Expected Behavior \xA7 item 3"
+  problem: "Indexing semantics forward-references canon \xA74.9 extension that does\
+    \ NOT YET EXIST. Expected behavior cannot depend on undefined canon \u2014 inverts\
+    \ doc lifecycle; reviewer cannot verify spec because spec is 'whatever canon says\
+    \ later.'"
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Critical
+  location: "Fix Description \xA7 Approach A vs Approach B"
+  problem: "Approach A filters findings_aggregated[] by gate-derived-from-raised_by[]\
+    \ but doc admits structure/gate-compliance/architectural-fit sub-judges don't\
+    \ cleanly map to a single v1 gate. Edge-case handling hand-waved. A finding raised_by\
+    \ multiple sub-judges (aggregator dedup merges raised_by per LLD-011) collapses\
+    \ to AMBIGUOUS gate membership \u2014 no tie-break rule specified. Correctness\
+    \ hole."
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Important
+  location: "Fix Description \xA7 Approach A vs B"
+  problem: "Two approaches with pros/cons but doc both says 'Decision is deferred'\
+    \ and 'likely Approach A' \u2014 ambiguous whether bug records a chosen direction\
+    \ or RFC; per project rules bug docs should not deliberate. Choose or punt explicitly\
+    \ to follow-up ADR."
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Minor
+  location: "Fix Description \xA7 Approach A \u2014 flat findings_aggregated"
+  problem: "Approach A's derivation function maps sub-judge id \u2192 v1 gate but\
+    \ \xA74.9 canon binds gate names tightly to schema-v1.0.json; should explicitly\
+    \ say whether derivation lives in cli/vocabulary.py (canon-sourced) or cli/lint.py\
+    \ (consumer-only) to avoid scattered-vocabulary recurrence."
+  raised_by:
+  - architectural-fit
+  scope: instance
+- severity: Important
+  location: "Fix Description \xA7 Estimated total"
+  problem: "'3-4 hours' excludes canon \xA74.9 extension spec-review cycle. Per Gate\
+    \ 3 canon edit requires spec review + iterations + commit. Realistic floor with\
+    \ one iteration is ~5-7h. Undercount risks impl session running out of context\
+    \ mid-fix."
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Minor
+  location: "Fix Description \xA7 item 2 code snippet"
+  problem: "att.get('schema_version') == '2.0' compares against string literal. v2.0\
+    \ schema may emit numeric or '2.0.0' semver \u2014 no normalization. Fragile to\
+    \ patch-level bump."
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Important
+  location: "Fix Description \xA7 item 3 Regex update"
+  problem: "Says regex 'already does match both filename forms' for .orchestra.review.yaml\
+    \ but leaves 'Verify' as TODO inside fix description \u2014 reviewer takes on\
+    \ faith. If regex actually fails on .orchestra.review.yaml, failure mode changes\
+    \ (parse error, not lookup error) and item 4 test matrix misses it."
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Minor
+  location: "Fix Description \xA7 item 5"
+  problem: '''Estimated total: 3-4 hours'' is a planning estimate that belongs in
+    a Plan doc or impl-session scoping, not in a Bug Report''s Fix Description per
+    LLD-vs-Plan no-overlap discipline.'
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Critical
+  location: "Fix Description \xA7 Scope item 1 (Canon extension first)"
+  problem: "Doc defers canon \xA74.9 indexing-semantics decision to a later impl session\
+    \ while leaving fix scope 'sized + deferred.' Until canon resolves Approach A\
+    \ vs B, ALL tiered narrow-change against v2.0 attestations remains broken from\
+    \ v2.0.0 forward. No interim mitigation specified \u2014 gap is unbounded in time\
+    \ and BUG-012 \xA7Post-ship #5 plus every future canon-frozen edit citing v2 is\
+    \ silently blocked."
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Minor
+  location: "Observed Behavior \xA7 L587 cite"
+  problem: "_verify_finding_in_attestation defined at L540; gates.<gate>.findings\
+    \ lookup at L587. Cite 'cli/lint.py \xA7 _verify_finding_in_attestation (L587)'\
+    \ resolves but imprecise about function-def line vs lookup-line within function."
+  raised_by:
+  - repo-context
+  scope: instance
+- severity: Important
+  location: "Observed Behavior \xA7 paragraph 2"
+  problem: "Claim that r5 attestation 'recorded the A3 drift' lacks specifics \u2014\
+    \ no finding index, severity, or sub-judge id cited; reader cannot verify the\
+    \ example commit message's 'finding 1 (Important)' matches an actual entry in\
+    \ the cited YAML."
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Minor
+  location: "Regression Prevention \xA7 item 3"
+  problem: "Lint-level guard ('could refuse...') is speculative rather than a regression-prevention\
+    \ commitment \u2014 either commit to it or move to Future Work."
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Important
+  location: "Regression Prevention \xA7 lint-level guard bullet"
+  problem: "Proposed fail-closed guard does not address forward-compat: when v3.0\
+    \ ships, the same guard rejects v3 attestations until lint is updated, recreating\
+    \ this exact bug class. No 'unknown schema \u2192 soft-warn + degrade' path proposed."
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Important
+  location: "Related Documents \xA7 (controlled-vocabulary \xA74.9 citation)"
+  problem: "BUG anchors v2 indexing canon at \xA74.9 only, but \xA74.11 review_doc_filename_convention\
+    \ already enumerates LLD-011 sub-judge slugs (completeness, evidence, ...) as\
+    \ valid <judge> filename values \u2014 those strings collide with v1 gate enum\
+    \ AND mis-name actual v2 sub-judge ids. Fix must reconcile \xA74.9 extension with\
+    \ \xA74.11's pre-existing list."
+  raised_by:
+  - architectural-fit
+  scope: instance
+- severity: Minor
+  location: "Root Cause Analysis \xA7 Canon gap"
+  problem: "Quoted canon text presented as \xA74.9 wording without line/anchor \u2014\
+    \ citation is to the section but not pinpointed; reader must search canon file\
+    \ to verify."
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Minor
+  location: "Root Cause Analysis \xA7 Mermaid diagram"
+  problem: "Diagram omits unknown_gate branch and regex-parse-failure branch. Reader\
+    \ sees only 'gates absent \u2192 empty findings \u2192 out-of-range' path; doc's\
+    \ own Fix Description item 3 acknowledges regex concern not in diagram."
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Important
+  location: "Root Cause Analysis \xA7 Two coupled gaps item 2"
+  problem: "Asserts LLD-011 shipped 'without the canon extension' but does not check\
+    \ whether LLD-011 itself or its r1/r2 attestations recorded any indexing rule\
+    \ for v2 attestations elsewhere. If LLD-011 specifies indexing by accident/intent,\
+    \ this conflates 'canon \xA74.9 unaware' with 'no canon answer exists anywhere.'\
+    \ Schema or LLD-011 may already imply Approach B by structure."
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Critical
+  location: "Steps to Reproduce \xA7 lines 32-39"
+  problem: 'Repro recipe is unfalsifiable. Asserts ''fails with finding_n_out_of_range:
+    gate evidence finding 1 (have 0)'' but does NOT show actual command output captured
+    from the failing run. If ADDRESSES_LINE_RE rejects citation earlier (e.g., on
+    .orchestra.review.yaml suffix), actual failure path differs (unrecognized_addresses_line,
+    not finding_n_out_of_range). Unverified repro = unverified bug shape = wrong fix.'
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Minor
+  location: "Steps to Reproduce \xA7 unit-level"
+  problem: "'Test does not yet exist; planned' \u2014 for a High-severity bug blocking\
+    \ canonical workflow, a RED unit test should accompany the BUG to make regression\
+    \ mechanically reproducible. Without it, fix-completion has no objective signal."
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Important
+  location: "Steps to Reproduce \xA7 unit-level block"
+  problem: "'Test does not yet exist; planned' leaves repro incomplete \u2014 no executable\
+    \ reproduction is currently runnable for the unit case. Label explicitly as 'planned\
+    \ repro, not currently runnable' or remove."
+  raised_by:
+  - semantic
+  scope: instance
+overall_verdict: fail
+overall_verdict_basis:
+  worst_sub_judge_verdict: fail
+  excluded_sub_judges: []
+  mandatory_failures: []
+  reason: null
+attestation_integrity_hash: sha256:5ba5aa66ee60fc07856a6b086cf2b8906effbf84044ec3071dbf4d0223017cd3

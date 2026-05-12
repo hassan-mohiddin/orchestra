@@ -727,6 +727,23 @@ def main(argv=None) -> int:
         )
         return 1
 
+    # LLD-012 Phase 7 (codex #4 fix): when --force passed AND existing target
+    # is non-v1.0 (v2.0 or unknown), verify it parses as valid YAML before
+    # overwriting. Refuse if malformed — preserves auditability + prevents
+    # silent corruption-on-overwrite of a partially-written attestation.
+    if args.force and out_path.exists():
+        try:
+            with open(out_path, encoding="utf-8") as fp:
+                yaml.safe_load(fp)
+        except (yaml.YAMLError, OSError) as exc:
+            print(
+                f"error: force-mode overwrite refused: existing attestation at "
+                f"{out_path} is malformed YAML ({exc}). Hand-fix or delete the "
+                f"file before re-running with --force.",
+                file=sys.stderr,
+            )
+            return 1
+
     if out_path.exists() and not args.force:
         print(
             f"error: {out_path} already exists. Use --force to overwrite.",

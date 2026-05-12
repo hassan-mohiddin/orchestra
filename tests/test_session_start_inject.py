@@ -1,10 +1,12 @@
 import json
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
 
 from cli.hooks import session_start_inject
 from cli.hooks.session_start_inject import TOKEN_BUDGET
+from cli.lessons_store import append_entry
 
 _VALID_TLDR = (
     "# Rule\n"
@@ -25,6 +27,10 @@ def _seed_schema_layer(root: Path) -> None:
     (root / ".claude/rules").mkdir(parents=True, exist_ok=True)
     (root / ".claude/CLAUDE.md").write_text(_VALID_TLDR, encoding="utf-8")
     (root / ".claude/rules/documentation-gate.md").write_text(_VALID_TLDR, encoding="utf-8")
+
+
+def _now_iso() -> str:
+    return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
 
 
 def test_emits_tldr_in_system_reminder(
@@ -89,3 +95,52 @@ def test_overbudget_falls_back_to_identity_index(
     overflow_log = tmp_path / ".claude/state/budget-overflow.log"
     assert overflow_log.exists()
     assert "501" in overflow_log.read_text(encoding="utf-8")
+
+
+def test_includes_only_violation_kind_inject_true(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    _seed_schema_layer(tmp_path)
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(session_start_inject, "_count_tokens", lambda _text: 100)
+    append_entry({
+        "id": "t1",
+        "ts": _now_iso(),
+        "kind": "teach",
+        "rule_violated": None,
+        "body": "TEACH_BODY_SECRET_DO_NOT_INJECT",
+        "source": "user",
+        "inject": False,
+    })
+    append_entry({
+        "id": "v1",
+        "ts": _now_iso(),
+        "kind": "violation",
+        "rule_violated": "documentation-gate",
+        "observed": "agent skipped spec-review",
+        "expected": "spec-review runs on every doc",
+        "source": "user",
+        "inject": True,
+    })
+    append_entry({
+        "id": "v2-noinject",
+        "ts": _now_iso(),
+        "kind": "violation",
+        "rule_violated": "should-not-appear",
+        "observed": "x",
+        "expected": "y",
+        "source": "user",
+        "inject": False,
+    })
+    rc = session_start_inject.main([])
+    assert rc == 0
+    additional = json.loads(capsys.readouterr().out)["hookSpecificOutput"][
+        "additionalContext"
+    ]
+    assert "Recent violations" in additional
+    assert "documentation-gate" in additional
+    assert "agent skipped spec-review" in additional
+    assert "should-not-appear" not in additional
+    assert "TEACH_BODY_SECRET_DO_NOT_INJECT" not in additional

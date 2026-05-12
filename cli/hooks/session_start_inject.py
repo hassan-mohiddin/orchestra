@@ -11,13 +11,16 @@ Subsequent slices add budget enforcement (3.2) and structured violations (3.3).
 
 from __future__ import annotations
 
+import html
 import json
 import logging
 import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 
+from cli.lessons_store import read_entries
 from cli.tldr_extractor import TldrSection, extract_tldr
 
 ORCHESTRA_MARKER = "[ORCHESTRA TLDR]"
@@ -29,6 +32,10 @@ OVERFLOW_LOG = STATE_DIR / "budget-overflow.log"
 TOKEN_BUDGET = 500
 FALLBACK_MODEL = "claude-opus-4-7"
 HTTP_TIMEOUT_SECONDS = 2.0
+LESSONS_SINCE_DAYS = 90
+MAX_VIOLATIONS = 10
+ALLOWLISTED_VIOLATION_FIELDS = ("rule_violated", "observed", "expected")
+MAX_FIELD_CHARS = 200
 
 _logger = logging.getLogger(__name__)
 
@@ -57,12 +64,46 @@ def _read_tldrs(root: Path) -> list[tuple[Path, list[str]]]:
     return out
 
 
-def _format_additional_context(tldrs: list[tuple[Path, list[str]]]) -> str:
+def _load_recent_violations() -> list[dict[str, Any]]:
+    """Return ≤MAX_VIOLATIONS most-recent kind=violation, inject=True lessons.
+
+    LLD-012 SC-11 + Security §Lessons injection allowlist: free-text `teach`
+    entries are NEVER surfaced; only structured violations may flow into
+    system-priority context.
+    """
+    entries = read_entries(since_days=LESSONS_SINCE_DAYS)
+    violations = [
+        e for e in entries
+        if e.get("kind") == "violation" and e.get("inject") is True
+    ]
+    return violations[-MAX_VIOLATIONS:]
+
+
+def _format_violation_entry(entry: dict[str, Any]) -> str:
+    lines: list[str] = []
+    for field in ALLOWLISTED_VIOLATION_FIELDS:
+        raw = entry.get(field) or ""
+        encoded = html.escape(str(raw), quote=False)
+        if len(encoded) > MAX_FIELD_CHARS:
+            encoded = encoded[:MAX_FIELD_CHARS]
+        lines.append(f"  {field}: {encoded}")
+    return "\n".join(lines)
+
+
+def _format_additional_context(
+    tldrs: list[tuple[Path, list[str]]],
+    violations: list[dict[str, Any]],
+) -> str:
     lines: list[str] = [ORCHESTRA_MARKER, "<system-reminder>"]
     for rel_path, bullets in tldrs:
         lines.append(f"## {rel_path.as_posix()}")
         lines.extend(f"- {b}" for b in bullets)
         lines.append("")
+    if violations:
+        lines.append("## Recent violations")
+        for entry in violations:
+            lines.append("- entry:")
+            lines.append(_format_violation_entry(entry))
     lines.append("</system-reminder>")
     return "\n".join(lines)
 
@@ -123,7 +164,8 @@ def _emit(payload: dict[str, object]) -> None:
 def main(argv: list[str] | None = None) -> int:
     root = Path.cwd()
     tldrs = _read_tldrs(root)
-    full = _format_additional_context(tldrs)
+    violations = _load_recent_violations()
+    full = _format_additional_context(tldrs, violations)
     tokens = _count_tokens(full)
     if tokens is None:
         additional = _format_fallback(tldrs)

@@ -40,6 +40,7 @@ dependencies = [
     "python-frontmatter>=1.1",
     "PyYAML>=6.0",
     "jsonschema>=4",
+    "anthropic>=0.40,<1.0",
 ]
 
 [project.optional-dependencies]

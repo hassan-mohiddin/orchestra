@@ -68,6 +68,17 @@ def test_overflow_rejects_with_diagnostic() -> None:
     assert "80" in result2.detail or "length" in result2.detail.lower()
 
 
+def test_empty_tldr_rejects() -> None:
+    text = (
+        "## TLDR — Nonnegotiables\n"
+        "\n"
+        "<!-- Full rule body below this section -->\n"
+    )
+    result = extract_tldr(text)
+    assert isinstance(result, TldrError)
+    assert result.reason == "empty_tldr"
+
+
 def test_multiple_tldr_sections_rejects() -> None:
     text = (
         "## TLDR — Nonnegotiables\n"

@@ -52,6 +52,11 @@ def extract_tldr(text: str) -> TldrSection | TldrError:
     else:
         body = text[header_end:close_idx]
     bullets = [m.group(1) for line in body.splitlines() if (m := BULLET_RE.match(line))]
+    if not bullets:
+        return TldrError(
+            reason="empty_tldr",
+            detail="header found but no bullets",
+        )
     if len(bullets) > MAX_BULLETS:
         return TldrError(
             reason="overflow",

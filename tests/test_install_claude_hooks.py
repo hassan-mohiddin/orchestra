@@ -206,3 +206,30 @@ def test_reinstall_does_not_duplicate_orchestra_entries(
     assert orchestra_count == 1, (
         f"re-install must not duplicate orchestra entries, got {orchestra_count}"
     )
+
+
+def test_default_install_is_noop_when_already_correct(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    install(tmp_path)
+    settings_path = tmp_path / ".claude/settings.json"
+    first_mtime = settings_path.stat().st_mtime_ns
+    first_text = settings_path.read_text(encoding="utf-8")
+    install(tmp_path)
+    assert settings_path.stat().st_mtime_ns == first_mtime, (
+        "idempotent re-install must not rewrite file"
+    )
+    assert settings_path.read_text(encoding="utf-8") == first_text
+
+
+def test_force_reinstalls_when_interpreter_changed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    install(tmp_path)
+    settings_path = tmp_path / ".claude/settings.json"
+    first_mtime = settings_path.stat().st_mtime_ns
+    install(tmp_path, force=True)
+    second_mtime = settings_path.stat().st_mtime_ns
+    assert second_mtime != first_mtime, "--force must rewrite the file"

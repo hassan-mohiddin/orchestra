@@ -226,18 +226,28 @@ def verify(root: Path) -> list[str]:
     return errors
 
 
-def install(root: Path) -> Path:
-    """Install orchestra hooks into `<root>/.claude/settings.json`. Returns path."""
+def install(root: Path, force: bool = False) -> Path:
+    """Install orchestra hooks into `<root>/.claude/settings.json`. Returns path.
+
+    Idempotent: if the resulting settings would be byte-identical to what's
+    already on disk, the file is not rewritten (mtime preserved). Pass
+    `force=True` to bypass the idempotency check and rewrite unconditionally
+    (useful after venv rebuild — the new sys.executable path is the same
+    string so idempotency would no-op even when the user expects a refresh).
+    """
     interpreter = _resolve_interpreter()
     settings_path = root / SETTINGS_PATH
     existing: dict[str, Any] = {}
+    on_disk_text: str | None = None
     if settings_path.exists():
         try:
-            existing = json.loads(settings_path.read_text(encoding="utf-8"))
+            on_disk_text = settings_path.read_text(encoding="utf-8")
+            existing = json.loads(on_disk_text)
             if not isinstance(existing, dict):
                 existing = {}
         except json.JSONDecodeError:
             existing = {}
+            on_disk_text = None
     hooks = existing.get("hooks") if isinstance(existing.get("hooks"), dict) else {}
     if not isinstance(hooks, dict):
         hooks = {}
@@ -253,6 +263,10 @@ def install(root: Path) -> Path:
         ]
         hooks[event] = preserved + new_entries
     existing["hooks"] = hooks
+    if not force and on_disk_text is not None:
+        candidate = json.dumps(existing, indent=2, sort_keys=False) + "\n"
+        if candidate == on_disk_text:
+            return settings_path
     _atomic_write_json(settings_path, existing)
     return settings_path
 
@@ -274,7 +288,7 @@ def main(argv: list[str] | None = None) -> int:
                     sys.stderr.write(f"FAIL: {e}\n")
                 return 1
             return 0
-        install(Path.cwd())
+        install(Path.cwd(), force=args.force)
         return 0
     except InstallError as exc:
         sys.stderr.write(f"FAIL: cli.install_claude_hooks: {exc}\n")

@@ -1,158 +1,38 @@
-"""SessionStart hook handler — emits TLDR sections from schema-layer files.
+"""SessionStart hook handler — emits TLDR + structured violations.
 
-Reads `## TLDR — Nonnegotiables` sections from `.claude/CLAUDE.md` and
-`.claude/rules/*.md`, formats them under an `[ORCHESTRA TLDR]` marker +
-`<system-reminder>` wrap, and emits the JSON envelope Claude Code expects
-on stdout.
+Reads TLDR sections from `.claude/CLAUDE.md` + `.claude/rules/*.md` plus the
+last ≤10 inject=True violation lessons, enforces a 500-token budget via the
+Anthropic count_tokens API (fallback to identity index on missing API key /
+timeout / over-budget), and emits the SessionStart hookSpecificOutput JSON.
 
-Slice 3.1: minimal happy path — no token budget, no lessons inclusion.
-Subsequent slices add budget enforcement (3.2) and structured violations (3.3).
+LLD-012 SC-3, SC-11. Shared injection logic lives in cli/hooks/_common.py.
 """
 
 from __future__ import annotations
 
-import html
-import logging
-import os
-from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
 
 from cli.hooks._common import (
-    ORCHESTRA_MARKER,
+    TOKEN_BUDGET,
+    build_tldr_context,
     emit_json,
-    read_schema_layer_tldrs,
 )
-from cli.lessons_store import read_entries
+
+__all__ = ["TOKEN_BUDGET", "main"]
 
 HOOK_EVENT = "SessionStart"
-STATE_DIR = Path(".claude/state")
-OVERFLOW_LOG = STATE_DIR / "budget-overflow.log"
-TOKEN_BUDGET = 500
-FALLBACK_MODEL = "claude-opus-4-7"
-HTTP_TIMEOUT_SECONDS = 2.0
-LESSONS_SINCE_DAYS = 90
-MAX_VIOLATIONS = 10
-ALLOWLISTED_VIOLATION_FIELDS = ("rule_violated", "observed", "expected")
-MAX_FIELD_CHARS = 200
-
-_logger = logging.getLogger(__name__)
-
-
-
-
-def _load_recent_violations() -> list[dict[str, Any]]:
-    """Return ≤MAX_VIOLATIONS most-recent kind=violation, inject=True lessons.
-
-    LLD-012 SC-11 + Security §Lessons injection allowlist: free-text `teach`
-    entries are NEVER surfaced; only structured violations may flow into
-    system-priority context.
-    """
-    entries = read_entries(since_days=LESSONS_SINCE_DAYS)
-    violations = [
-        e for e in entries
-        if e.get("kind") == "violation" and e.get("inject") is True
-    ]
-    return violations[-MAX_VIOLATIONS:]
-
-
-def _format_violation_entry(entry: dict[str, Any]) -> str:
-    lines: list[str] = []
-    for field in ALLOWLISTED_VIOLATION_FIELDS:
-        raw = entry.get(field) or ""
-        encoded = html.escape(str(raw), quote=False)
-        if len(encoded) > MAX_FIELD_CHARS:
-            encoded = encoded[:MAX_FIELD_CHARS]
-        lines.append(f"  {field}: {encoded}")
-    return "\n".join(lines)
-
-
-def _format_additional_context(
-    tldrs: list[tuple[Path, list[str]]],
-    violations: list[dict[str, Any]],
-) -> str:
-    lines: list[str] = [ORCHESTRA_MARKER, "<system-reminder>"]
-    for rel_path, bullets in tldrs:
-        lines.append(f"## {rel_path.as_posix()}")
-        lines.extend(f"- {b}" for b in bullets)
-        lines.append("")
-    if violations:
-        lines.append("## Recent violations")
-        for entry in violations:
-            lines.append("- entry:")
-            lines.append(_format_violation_entry(entry))
-    lines.append("</system-reminder>")
-    return "\n".join(lines)
-
-
-def _format_fallback(tldrs: list[tuple[Path, list[str]]]) -> str:
-    names = ", ".join(p.name for p, _ in tldrs) if tldrs else "(none)"
-    return "\n".join(
-        [
-            ORCHESTRA_MARKER,
-            "<system-reminder>",
-            f"Rule files in effect: {names}",
-            "(TLDR injection over budget — see .claude/state/budget-overflow.log)",
-            "</system-reminder>",
-        ]
-    )
-
-
-def _count_tokens(text: str) -> int | None:
-    """Return Anthropic token count for `text`, or None when API unavailable.
-
-    Returns None on: missing ANTHROPIC_API_KEY, SDK import failure, HTTP error,
-    timeout. Caller treats None as "fall back to identity index" to keep
-    Claude Code startup non-blocking.
-    """
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
-    if not api_key:
-        return None
-    try:
-        import anthropic
-    except ImportError:
-        return None
-    try:
-        client = anthropic.Anthropic(api_key=api_key, timeout=HTTP_TIMEOUT_SECONDS)
-        result = client.messages.count_tokens(
-            model=FALLBACK_MODEL,
-            messages=[{"role": "user", "content": text}],
-        )
-        return int(result.input_tokens)
-    except Exception:
-        return None
-
-
-def _log_overflow(root: Path, tokens: int) -> None:
-    state_dir = root / STATE_DIR
-    state_dir.mkdir(parents=True, exist_ok=True)
-    line = (
-        f"{datetime.now(timezone.utc).isoformat()} "
-        f"tokens={tokens} budget={TOKEN_BUDGET}\n"
-    )
-    (root / OVERFLOW_LOG).open("a", encoding="utf-8").write(line)
 
 
 def main(argv: list[str] | None = None) -> int:
-    root = Path.cwd()
-    tldrs = read_schema_layer_tldrs(root)
-    violations = _load_recent_violations()
-    full = _format_additional_context(tldrs, violations)
-    tokens = _count_tokens(full)
-    if tokens is None:
-        additional = _format_fallback(tldrs)
-    elif tokens > TOKEN_BUDGET:
-        _log_overflow(root, tokens)
-        additional = _format_fallback(tldrs)
-    else:
-        additional = full
-    payload: dict[str, object] = {
-        "hookSpecificOutput": {
-            "hookEventName": HOOK_EVENT,
-            "additionalContext": additional,
-        },
-    }
-    emit_json(payload)
+    additional = build_tldr_context(Path.cwd())
+    emit_json(
+        {
+            "hookSpecificOutput": {
+                "hookEventName": HOOK_EVENT,
+                "additionalContext": additional,
+            }
+        }
+    )
     return 0
 
 

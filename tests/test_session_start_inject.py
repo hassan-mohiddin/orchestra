@@ -40,7 +40,7 @@ def test_emits_tldr_in_system_reminder(
 ) -> None:
     _seed_schema_layer(tmp_path)
     monkeypatch.chdir(tmp_path)
-    monkeypatch.setattr(session_start_inject, "_count_tokens", lambda _text: 100)
+    monkeypatch.setattr("cli.hooks._common._count_tokens", lambda _text: 100)
     rc = session_start_inject.main([])
     assert rc == 0
     out = capsys.readouterr().out
@@ -83,7 +83,7 @@ def test_overbudget_falls_back_to_identity_index(
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test-fake")
     monkeypatch.setattr(
-        session_start_inject, "_count_tokens", lambda _text: TOKEN_BUDGET + 1
+        "cli.hooks._common._count_tokens", lambda _text: TOKEN_BUDGET + 1
     )
     rc = session_start_inject.main([])
     assert rc == 0
@@ -104,7 +104,7 @@ def test_includes_only_violation_kind_inject_true(
 ) -> None:
     _seed_schema_layer(tmp_path)
     monkeypatch.chdir(tmp_path)
-    monkeypatch.setattr(session_start_inject, "_count_tokens", lambda _text: 100)
+    monkeypatch.setattr("cli.hooks._common._count_tokens", lambda _text: 100)
     append_entry({
         "id": "t1",
         "ts": _now_iso(),

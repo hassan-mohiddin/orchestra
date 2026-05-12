@@ -32,7 +32,7 @@ def test_no_free_text_teach_in_output(
     (tmp_path / ".claude").mkdir()
     (tmp_path / ".claude/CLAUDE.md").write_text(_VALID_TLDR, encoding="utf-8")
     monkeypatch.chdir(tmp_path)
-    monkeypatch.setattr(session_start_inject, "_count_tokens", lambda _text: 100)
+    monkeypatch.setattr("cli.hooks._common._count_tokens", lambda _text: 100)
     append_entry({
         "id": "teach-1",
         "ts": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),

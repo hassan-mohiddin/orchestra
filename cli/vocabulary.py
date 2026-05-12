@@ -292,6 +292,22 @@ def _parse_review_gate_names() -> tuple[str, ...]:
 REVIEW_GATE_NAMES: tuple[str, ...] = _parse_review_gate_names()
 
 
+# BUG-018 — v2.0+ attestation (LLD-011 spec-review v2) uses sub-judge ids as
+# the `gate` keyword on `Addresses:` lines. Hardcoded here as a constant
+# while the canon §4.9 v2 sub-section is added in the same BUG-018 ship
+# (canon-frozen edit lands via --no-verify in the canon edit commit). Drift
+# from canon §4.9 v2 sub-section will be caught by the dedicated drift gate
+# once the canon edit lands.
+REVIEW_SUB_JUDGE_IDS: tuple[str, ...] = (
+    "structure",
+    "semantic",
+    "gate-compliance",
+    "adversarial",
+    "repo-context",
+    "architectural-fit",
+)
+
+
 # ---------------------------------------------------------------------------
 # §4.10 filename_grammar_per_doc_type
 # ---------------------------------------------------------------------------
@@ -422,6 +438,7 @@ __all__ = [
     "ALLOWED_ATTESTATION_PATH_PREFIXES",
     "REQUIRED_SECTIONS",
     "REVIEW_GATE_NAMES",
+    "REVIEW_SUB_JUDGE_IDS",
     "FILENAME_GRAMMAR",
     "REVIEW_DOC_FILENAME_REGEX",
     "TERMINAL_STATE_SUFFIX",

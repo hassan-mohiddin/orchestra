@@ -68,6 +68,7 @@ from cli.vocabulary import (  # noqa: E402
     REFS_ELIGIBLE_PREFIXES,
     REQUIRED_SECTIONS,
     REVIEW_GATE_NAMES as ALLOWED_GATES,
+    REVIEW_SUB_JUDGE_IDS as ALLOWED_SUB_JUDGE_IDS,
     STATUS_ENUMS,
     WHITELIST_FRONTMATTER_FIELDS,
 )
@@ -158,9 +159,18 @@ METADATA_BLOCK_RE = re.compile(r"^>\s+\*\*([^:*]+):\*\*\s+(.+)$", re.MULTILINE)
 
 # v1.7 LLD-009 r6 — tiered narrow-change attestation citation regex.
 # ALLOWED_GATES sourced from canon §4.9 via cli.vocabulary import above.
+# BUG-018: regex alternation accepts both v1 gate names (completeness,
+# evidence, clarity, consistency) and v2 sub-judge ids (structure,
+# semantic, gate-compliance, adversarial, repo-context, architectural-fit).
+# _verify_finding_in_attestation enforces vocab-vs-schema_version matching
+# at validation time. Built from canon-sourced constants so a future enum
+# extension picks up automatically.
+_FINDING_REF_GATE_ALTERNATION = "|".join(
+    re.escape(g) for g in (*ALLOWED_GATES, *ALLOWED_SUB_JUDGE_IDS)
+)
 FINDING_REF_RE = re.compile(
     r"^Addresses:\s+(docs/reviews/[^\s]+\.review\.yaml)\s+gate\s+"
-    r"(completeness|evidence|clarity|consistency)\s+finding\s+(\d+)\s+"
+    rf"({_FINDING_REF_GATE_ALTERNATION})\s+finding\s+(\d+)\s+"
     r"\((Minor|Important|Critical)\)\s*$",
     re.MULTILINE,
 )
@@ -544,7 +554,13 @@ def _verify_finding_in_attestation(
     finding_n: int,
     claimed_severity: str,
 ) -> tuple[bool, str]:
-    """Navigate gates[<gate>].findings[finding_n-1].severity; verify == claimed.
+    """Verify the cited Addresses: line against the staged attestation YAML.
+
+    Schema branch (BUG-018):
+    - v1.0: `gates[<gate>].findings[finding_n - 1].severity`.
+    - v2.0+: `sub_judges[<gate>].findings[finding_n - 1].severity`
+      where <gate> is interpreted as a sub-judge id (canon §4.9 v2).
+    - Unknown schema_version: fail-closed with informative error.
 
     Reads STAGED content (git show :0:) — NOT working-tree — closes codex r2
     CRITICAL trust-boundary break. Path-traversal defense via
@@ -554,8 +570,6 @@ def _verify_finding_in_attestation(
 
     if not attestation_path.startswith("docs/reviews/"):
         return (False, f"attestation_path_outside_docs_reviews: {attestation_path}")
-    if gate not in ALLOWED_GATES:
-        return (False, f"unknown_gate: {gate!r} (allowed: {ALLOWED_GATES})")
 
     try:
         full = (repo_root / attestation_path).resolve()
@@ -584,15 +598,44 @@ def _verify_finding_in_attestation(
     except _yaml.YAMLError as e:
         return (False, f"attestation_parse_error: {e}")
 
-    findings = (((att or {}).get("gates") or {}).get(gate) or {}).get("findings") or []
-    if finding_n < 1 or finding_n > len(findings):
-        return (False, f"finding_n_out_of_range: gate {gate} finding {finding_n} "
-                       f"(have {len(findings)})")
-    actual = (findings[finding_n - 1] or {}).get("severity", "")
-    if actual != claimed_severity:
-        return (False, f"severity_mismatch: cited {claimed_severity}; attestation "
-                       f"{actual} (gate {gate} finding {finding_n})")
-    return (True, "")
+    schema_version = str((att or {}).get("schema_version", "1.0"))
+
+    if schema_version.startswith("1."):
+        if gate not in ALLOWED_GATES:
+            return (False, f"unknown_gate (v1.0): {gate!r} (allowed: {ALLOWED_GATES})")
+        findings = (((att or {}).get("gates") or {}).get(gate) or {}).get("findings") or []
+        if finding_n < 1 or finding_n > len(findings):
+            return (False, f"finding_n_out_of_range (v1.0): gate {gate} "
+                           f"finding {finding_n} (have {len(findings)})")
+        actual = (findings[finding_n - 1] or {}).get("severity", "")
+        if actual != claimed_severity:
+            return (False, f"severity_mismatch (v1.0): cited {claimed_severity}; "
+                           f"attestation {actual} (gate {gate} finding {finding_n})")
+        return (True, "")
+
+    if schema_version.startswith("2."):
+        if gate not in ALLOWED_SUB_JUDGE_IDS:
+            return (False, f"unknown_gate (v2.0): {gate!r} "
+                           f"(allowed sub-judge ids: {ALLOWED_SUB_JUDGE_IDS})")
+        sub_judges = (att or {}).get("sub_judges") or []
+        if not isinstance(sub_judges, list):
+            return (False, f"v2.0 sub_judges must be a list; got "
+                           f"{type(sub_judges).__name__}")
+        by_id = {sj["id"]: sj for sj in sub_judges
+                 if isinstance(sj, dict) and "id" in sj}
+        sj = by_id.get(gate, {})
+        findings = sj.get("findings") or []
+        if finding_n < 1 or finding_n > len(findings):
+            return (False, f"finding_n_out_of_range (v2.0): sub-judge {gate} "
+                           f"finding {finding_n} (have {len(findings)})")
+        actual = (findings[finding_n - 1] or {}).get("severity", "")
+        if actual != claimed_severity:
+            return (False, f"severity_mismatch (v2.0): cited {claimed_severity}; "
+                           f"attestation {actual} (sub-judge {gate} finding {finding_n})")
+        return (True, "")
+
+    return (False, f"unknown_schema_version: cannot interpret gate {gate!r} "
+                   f"for schema v{schema_version}; update cli.lint or upgrade attestation")
 
 
 def _verify_changelog_row_per_finding(

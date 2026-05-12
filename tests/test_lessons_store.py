@@ -99,3 +99,34 @@ def test_rejects_missing_ts(
     del entry["ts"]
     with pytest.raises(LessonsStoreError, match="ts"):
         append_entry(entry)
+
+
+def test_teach_cli_appends_kind_teach_inject_false(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Slice 5.2 — /orchestra:teach shim → cli.lessons_teach → append_entry."""
+    monkeypatch.chdir(tmp_path)
+    from cli.lessons_teach import main
+
+    rc = main(["remember", "to", "check", "things"])
+    assert rc == 0
+    entries = read_entries(since_days=1)
+    assert len(entries) == 1
+    entry = entries[0]
+    assert entry["kind"] == "teach"
+    assert entry["body"] == "remember to check things"
+    assert entry["inject"] is False
+    assert entry["source"] == "user"
+    assert entry["rule_violated"] is None
+    assert entry["id"]
+    assert entry["ts"]
+
+
+def test_teach_cli_rejects_empty_body(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    from cli.lessons_teach import main
+
+    rc = main(["   "])
+    assert rc == 2

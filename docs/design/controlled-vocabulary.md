@@ -273,15 +273,23 @@ Each doc type MUST contain (markdown header-match, case-insensitive substring) t
 
 ### 4.9 `review_gate_names`
 
-Spec-review attests against exactly four named gates. Closed set.
+Spec-review `gate` keyword vocabulary varies by attestation `schema_version`. Closed set per schema.
+
+**v1.0** (4-gate rubric — `cli/lint.py § _verify_finding_in_attestation` v1 branch):
 
 ```
 completeness, evidence, clarity, consistency
 ```
 
-**Replaces:** `cli/lint.py:137 (ALLOWED_GATES)`, `skills/spec-review/attestation-schema-v1.0.json` (gate keys, implicit), `skills/spec-review/references/4-gate-rubric.md`.
+**v2.0+** (6 sub-judge ensemble — LLD-011 spec-review v2; `cli/lint.py § _verify_finding_in_attestation` v2 branch):
 
-LLD-011 (spec-review v2) may extend this to six sub-judge gates; when LLD-011 ships, this table grows under the same canon — no parallel definition.
+```
+structure, semantic, gate-compliance, adversarial, repo-context, architectural-fit
+```
+
+**Vocab-vs-schema_version match.** `Addresses:` line `gate <name>` MUST match the cited attestation's `schema_version`: v1 attestations use v1 gate names; v2 attestations use v2 sub-judge ids. Cross-vocabulary citations (e.g., `gate evidence` on a v2 attestation) are rejected as `unknown_gate`. Unknown `schema_version` values fail-closed with `unknown_schema_version` (forward-compat).
+
+**Replaces:** `cli/lint.py § FINDING_REF_RE` (alternation built from both vocabularies), `cli/vocabulary.py § REVIEW_GATE_NAMES + REVIEW_SUB_JUDGE_IDS`, `skills/spec-review/attestation-schema-v1.0.json § properties.gates`, `skills/spec-review/attestation-schema-v2.0.json § properties.sub_judges`, `skills/spec-review/references/4-gate-rubric.md` (v1 only).
 
 ### 4.10 `filename_grammar_per_doc_type`
 
@@ -320,7 +328,7 @@ docs/reviews/<doc-id>-r<N>.<judge>.review.<ext>
 |---|---|---|
 | `<doc-id>` | the reviewed doc's filename stem (no `.md`) | e.g. `BUG-016-scattered-vocabulary-no-canon` |
 | `<N>` | review iteration number (≥1) | starts at 1; increments per re-review |
-| `<judge>` | judge slug, lowercase kebab | `orchestra`, `codex`, `cavecrew`, `superpowers`, or LLD-011 sub-judge slug (`completeness`, `evidence`, …) |
+| `<judge>` | judge slug, lowercase kebab | `orchestra`, `codex`, `cavecrew`, `superpowers`, or LLD-011 v2 sub-judge id (`structure`, `semantic`, `gate-compliance`, `adversarial`, `repo-context`, `architectural-fit` — see §4.9 v2.0+) |
 | `<ext>` | output format extension | `yaml` (schema-validated attestation) OR `md` (prose review) |
 
 **Examples.**
@@ -328,7 +336,7 @@ docs/reviews/<doc-id>-r<N>.<judge>.review.<ext>
 ```
 docs/reviews/BUG-016-scattered-vocabulary-no-canon-r1.orchestra.review.yaml
 docs/reviews/BUG-016-scattered-vocabulary-no-canon-r1.codex.review.md
-docs/reviews/011-spec-review-v2-r3.completeness.review.yaml   # LLD-011 sub-judge example
+docs/reviews/011-spec-review-v2-r3.semantic.review.yaml       # LLD-011 v2 sub-judge example
 ```
 
 **Current state.** orchestra writes `<doc-id>-rN.review.yaml` (filename built at `cli/spec_review.py § compute_attestation_path` which joins `docs/reviews/` + stem + `-r{N}.review.yaml`). A v2 path with `.orchestra.review.yaml` infix is already wired in `cli/spec_review.py § render_cross_judge_report` (orchestra_path inline) but not the active writer. Codex writes `<doc-id>-rN.codex.md`. Both deviate from the new canon.

@@ -102,6 +102,52 @@ def _atomic_write_json(target: Path, data: dict[str, Any]) -> None:
         raise
 
 
+def _is_orchestra_hook_entry(entry: dict[str, Any]) -> bool:
+    hooks = entry.get("hooks")
+    if not isinstance(hooks, list):
+        return False
+    for hook in hooks:
+        cmd = hook.get("command", "") if isinstance(hook, dict) else ""
+        if any(module in cmd for module in ORCHESTRA_HOOK_MODULES):
+            return True
+    return False
+
+
+def uninstall(root: Path) -> Path:
+    """Remove orchestra-installed hook entries from settings.json.
+
+    Preserves any non-orchestra hook entries authored by other plugins.
+    No-op if settings.json is absent.
+    """
+    settings_path = root / SETTINGS_PATH
+    if not settings_path.exists():
+        return settings_path
+    try:
+        data = json.loads(settings_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return settings_path
+    if not isinstance(data, dict):
+        return settings_path
+    hooks = data.get("hooks")
+    if not isinstance(hooks, dict):
+        return settings_path
+    for event in list(hooks.keys()):
+        entries = hooks[event]
+        if not isinstance(entries, list):
+            continue
+        kept = [e for e in entries if isinstance(e, dict) and not _is_orchestra_hook_entry(e)]
+        if kept:
+            hooks[event] = kept
+        else:
+            del hooks[event]
+    if hooks:
+        data["hooks"] = hooks
+    else:
+        data.pop("hooks", None)
+    _atomic_write_json(settings_path, data)
+    return settings_path
+
+
 def install(root: Path) -> Path:
     """Install orchestra hooks into `<root>/.claude/settings.json`. Returns path."""
     interpreter = _resolve_interpreter()
@@ -132,7 +178,8 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     try:
         if args.uninstall:
-            raise InstallError("--uninstall not yet implemented (Phase 4.2)")
+            uninstall(Path.cwd())
+            return 0
         if args.verify:
             raise InstallError("--verify not yet implemented (Phase 4.3)")
         install(Path.cwd())

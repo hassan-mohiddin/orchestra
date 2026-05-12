@@ -1,7 +1,7 @@
 {
   "name": "orchestra",
   "description": "Disciplined AI engineering toolkit for Claude Code. Typed design docs (Feature LLD, Bug Report, ADR, Postmortem, Runbook, Design Doc), v2 multi-sub-judge spec review (6 parallel judges: structure, semantic, gate-compliance, adversarial, repo-context, architectural-fit), mandatory mermaid diagrams, AGENTS.md / llms.txt sync.",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "author": {
     "name": "Hassan Mohiddin",
     "email": "hassangameryt15@gmail.com"

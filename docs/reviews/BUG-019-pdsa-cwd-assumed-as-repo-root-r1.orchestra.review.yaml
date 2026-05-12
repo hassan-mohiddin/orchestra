@@ -1,0 +1,588 @@
+schema_version: '2.0'
+doc_subject:
+  path: docs/bugs/BUG-019-pdsa-cwd-assumed-as-repo-root.md
+  content_hash: sha256:fe90ba6a7a2da5ff5186cda8ee41d10432ce8895fbf82a5c4cc2c028f1539a5b
+  iter_commit_sha: b3a6afa85b60ac91ed40dd7e0e66409871cb9716
+  iter_blob_sha: a18bab3a90fe518db0e897db31ceaaf7e4c18a0a
+  iteration: 1
+peer_judge:
+  id: orchestra:spec-reviewer
+  invoked_at: '2026-05-12T08:23:26Z'
+  context_isolation: fresh_subagent_per_subjudge
+sub_judges:
+- id: semantic
+  model: claude-opus-4-7
+  mandatory: true
+  rubric_version: semantic-v1
+  status: completed
+  verdict: conditional_pass
+  findings:
+  - severity: Important
+    location: "Steps to Reproduce \xA7 shell block"
+    problem: Reproducer paths use ellipsis (`/Users/.../orchestra/...`); captured
+      output has no commit SHA timestamp. Reader cannot copy-paste reproduce + cannot
+      corroborate.
+    raised_by:
+    - semantic
+    scope: instance
+  - severity: Important
+    location: "Environment \xA7 tag claim"
+    problem: "'tag be7cdc0' conflates tag name with commit SHA. v2.0.0 is the tag;\
+      \ be7cdc0 is the commit. HEAD at filing is deferred ('see git rev-parse HEAD\
+      \ at commit time') \u2014 capture SHA now."
+    raised_by:
+    - semantic
+    scope: instance
+  - severity: Important
+    location: "Observed Behavior \xA7 workaround paragraph"
+    problem: "'A ../../ workaround cite ... rejected by path-escape defense at L160'\
+      \ vs Iteration Log r1 'workaround ../../ form happens to land on the right file\
+      \ content only by accident' \u2014 surface contradiction. Reader cannot tell\
+      \ whether workaround ever succeeded historically."
+    raised_by:
+    - semantic
+    scope: instance
+  - severity: Important
+    location: "Fix Description \xA7 item 3 fallback warning"
+    problem: "'PdsaReport.checks[<n>].detail annotation OR stderr line' \u2014 OR-binding\
+      \ unbound. Pipeline consumers cannot test the contract until channel chosen."
+    raised_by:
+    - semantic
+    scope: instance
+  - severity: Important
+    location: "Fix Description \xA7 item 2 (L160)"
+    problem: "Boundary semantics under fallback not specified \u2014 when _discover_repo_root\
+      \ returns None and Path.cwd() fallback engages, is L160 relative_to skipped\
+      \ (fail-open) or anchored to fallback root (fail-closed)? Contract gap."
+    raised_by:
+    - semantic
+    scope: instance
+  - severity: Minor
+    location: "Fix Description \xA7 item 4 vs item 6"
+    problem: Item 4 enumerates 7 test bullets; item 6 says '6 tests' in estimate.
+      Off-by-one in same section.
+    raised_by:
+    - semantic
+    scope: instance
+  - severity: Minor
+    location: "Fix Description \xA7 item 1 helper docstring"
+    problem: "Docstring says 'caller must fall back to Path.cwd() with a logged warning'\
+      \ \u2014 conflates helper contract with caller contract. Helper just returns\
+      \ None; logging is caller-side."
+    raised_by:
+    - semantic
+    scope: instance
+  - severity: Minor
+    location: "Regression Prevention \xA7 bullet 3"
+    problem: Audit-other-CLI-modules bullet defers to v2.1 milestone but no follow-up
+      BUG number or v2.1 plan path cited. Intent-only deferral risks loss.
+    raised_by:
+    - semantic
+    scope: instance
+  justification: "Real defect with concrete reproducer + mechanistic RCA + sized fix.\
+    \ 5 Important findings raise reproducer-strength, tag/SHA precision, internal-contradiction\
+    \ (rejected vs accident), warning-channel OR-binding, and fallback boundary-semantics\
+    \ gaps. 3 Minor are doc-hygiene (off-by-one count, helper-vs-caller contract phrasing,\
+    \ untracked deferral). No Critical \u2014 doc is internally coherent enough for\
+    \ fix-impl. Verdict: conditional_pass."
+- id: adversarial
+  model: claude-opus-4-7
+  mandatory: true
+  rubric_version: adversarial-v1
+  status: completed
+  verdict: conditional_pass
+  findings:
+  - severity: Critical
+    location: "Fix Description \xA7 item 2 (L145 fallback)"
+    problem: Fallback `_discover_repo_root(doc_path) or Path.cwd().resolve()` preserves
+      the broken Path.cwd() behavior when marker walk fails. Operator invoking from
+      /tmp gets identical legacy failure with only a soft warning. Bug diagnoses fail-closed-worst-direction
+      yet fix chooses fail-open by reverting. 'Test fixtures may rely on CWD' justification
+      unverified.
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Critical
+    location: "Fix Description \xA7 item 1 (_discover_repo_root marker set)"
+    problem: Marker set conflates plugin/template repos with consumer repos. orchestra
+      ships consumer `.claude-plugin/plugin.json` files under `cli/templates/`; a
+      doc under that ancestry would resolve repo_root to template subdir not orchestra
+      root, silently mis-resolving all bare cites. Same risk for nested vendored repos
+      with stray `.git` worktree files or stray `pyproject.toml`.
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Critical
+    location: "Fix Description \xA7 item 1 (symlink + worktree semantics)"
+    problem: "cur.resolve() collapses symlinks before walking parents \u2014 if doc_path\
+      \ is reached via symlink that points INTO repo from outside, resolved parent\
+      \ walks symlink target's filesystem not apparent repo. .git as worktree-pointer\
+      \ file (vs dir) passes .exists() check but caller may expect dir. Edge case\
+      \ unstated."
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Important
+    location: "Fix Description \xA7 item 2 (L160 path-escape boundary)"
+    problem: 'If step-1 fallback engaged and discovery returned None, L160 is now
+      anchored to a Path.cwd() that may DIFFER from cwd at L145 (race: another thread
+      or invoked subprocess could chdir between calls). Compute repo_root once, pass
+      everywhere.'
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Important
+    location: "Steps to Reproduce \xA7 captured output"
+    problem: "Output shows workaround returns None \u2014 workaround DOES NOT land\
+      \ on file content; fails identically. 'Happens to land by accident' phrasing\
+      \ in Observed Behavior + Iteration Log contradicts captured evidence."
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Important
+    location: "Fix Description \xA7 item 4 (regression test list)"
+    problem: 'Missing cases: (a) doc AT repo root no parent markers; (b) cross-filesystem
+      doc on macOS resolve() semantics; (c) directory with BOTH .git AND pyproject.toml
+      at different depths (innermost or outermost wins?); (d) python -m cli.spec_review
+      with sys.path injection from outside repo; (e) concurrent invocation race against
+      two PDSA runs in different cwds.'
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Important
+    location: "Fix Description \xA7 item 3 (fallback warning)"
+    problem: '''Soft warning OR stderr line'' unbound; skill body capturing stdout/stderr
+      separately may miss stderr warning; aggregator schema-validating checks[].detail
+      may reject unexpected warning prefix. Choose channel + exact string.'
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Important
+    location: "Regression Prevention \xA7 audit deferral"
+    problem: "Audit cli/lint.py, cli/spec_review.py, cli/install_hooks.py for same\
+      \ Path.cwd() pattern deferred with no tracking. cli/install_hooks.py blast radius\
+      \ (hook installation in wrong dir) is operationally severe \u2014 should be\
+      \ inline audit not v2.1 deferral."
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Important
+    location: "Fix Description \xA7 item 5 (cleanup pass)"
+    problem: '''Strip ../../ workaround cites'' contradicts test (e) backward-compat
+      requirement. Cleanup-pass strips them but BUG-020 may surface when doc author
+      legitimately needs doc-relative cite. Spell out DEPRECATED-but-tolerated vs
+      actively-stripped.'
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Important
+    location: "Environment \xA7 orchestra v2.0.0 tag claim"
+    problem: "'tag be7cdc0' is 7-char SHA prefix not tag name. Tag is v2.0.0; SHA\
+      \ is be7cdc0. Mixed reference confuses future archeology. 'HEAD at filing \u2014\
+      \ see git rev-parse HEAD at commit time' is deferred \u2014 capture SHA at filing\
+      \ not at commit-time-someday."
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Important
+    location: "Root Cause Analysis \xA7 review-filename silent no-op"
+    problem: "`if not reviews_dir.exists(): return` silent early-exit blast-radius\
+      \ understated. Consequence is canon-\xA74.11 review-filename enforcement disabled\
+      \ WITHOUT a fail signal \u2014 malformed review filenames land in docs/reviews/\
+      \ and PDSA reports green. Security-shaped validation bypass via cwd manipulation.\
+      \ Severity escalation to Critical defensible."
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Minor
+    location: "Fix Description \xA7 item 1 (marker walk termination)"
+    problem: "`while cur != cur.parent` is Unix-correct; Windows filesystem-root differs\
+      \ (UNC paths, drive letters). Python 3.12 cross-platform per .claude-plugin/plugin.json\
+      \ \u2014 even if currently macOS-only in practice, walk should use pathlib.PurePath.parents\
+      \ exhaustion idiom for portability."
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Minor
+    location: "Fix Description \xA7 item 1 (.git check)"
+    problem: '(cur/.git).exists() matches both dir AND worktree-pointer file. Submodule/worktree
+      semantics should be specified (likely: still treat as repo root since git-worktree
+      behavior is intended).'
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Minor
+    location: "Iteration Log \xA7 r1"
+    problem: "'No code change in this commit \u2014 BUG report only' but doc is at\
+      \ iter-1 Status=Investigating. Convention check: does Investigating imply no-code-yet?\
+      \ If yes, disclaimer redundant. Status feels stuck at Investigating despite\
+      \ reproducer being captured."
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Minor
+    location: "Fix Description \xA7 missing rollback plan"
+    problem: If repo-root discovery regresses production skill bodies (consumer repo
+      without any of 3 markers), no documented rollback. Step 3 fallback partially
+      covers; no env-var override or feature flag offered. ORCHESTRA_PDSA_LEGACY_CWD=1
+      escape hatch would de-risk rollout.
+    raised_by:
+    - adversarial
+    scope: instance
+  justification: "3 Critical (fallback fail-open paradox; marker collision with cli/templates\
+    \ plugin manifests; symlink/worktree semantics), 8 Important (race in two-Path.cwd\
+    \ reads; workaround-evidence contradiction; missing test cases; warning-channel\
+    \ OR; install_hooks audit not deferred; cleanup vs backward-compat tension; tag/SHA\
+    \ conflation; review-filename Critical-shape severity escalation), 4 Minor (cross-platform\
+    \ walk; .git worktree; status semantics; rollback hatch). Fix design has right\
+    \ shape but fallback-to-Path.cwd() recreates same failure mode the BUG diagnoses;\
+    \ verdict conditional_pass \u2014 fix-impl session MUST resolve fallback semantics\
+    \ + marker-collision risk before merging."
+- id: structure
+  model: claude-sonnet-4-6
+  mandatory: false
+  rubric_version: structure-v1
+  status: completed
+  verdict: pass
+  findings:
+  - severity: Minor
+    location: "Metadata block \xA7 ordering"
+    problem: 'Order: Doc ID, Date, DRI, Type, Severity, Status, Iteration. STANDARDS
+      reference Bug Report blocks may place Status before DRI; cosmetic only.'
+    raised_by:
+    - structure
+    scope: instance
+  - severity: Minor
+    location: "Iteration Log \xA7 single entry"
+    problem: "Only r1 entry present \u2014 acceptable for Investigating-status iter-1\
+      \ BUG. Flagging to confirm future iterations append rather than overwrite."
+    raised_by:
+    - structure
+    scope: instance
+  justification: All required Bug Report sections present and correctly named with
+    Mermaid in Root Cause Analysis. Metadata complete. Filename matches LLD-006-r4.
+    Format consistent with sibling BUG docs. Two cosmetic notes do not block pass.
+- id: gate-compliance
+  model: claude-sonnet-4-6
+  mandatory: false
+  rubric_version: gate-compliance-v1
+  status: completed
+  verdict: pass
+  findings: []
+  justification: "Gate 1 Discovery fired correctly (defect \u2192 BUG before fix;\
+    \ 'No code change in this commit \u2014 BUG report only'). Gate 2 Design \u2014\
+    \ RCA thorough (mermaid + 3 numbered coupled issues + blast radius); Fix Description\
+    \ concrete (helper signature, 3 replacement sites with line numbers, fallback,\
+    \ 7 tests, cleanup, estimate). Gate 3 Spec Review setup \u2014 Iteration: 1, Status:\
+    \ Investigating, Severity: Important, Type: Bug Report all present. Canon-frozen\
+    \ does not apply (Investigating is NOT canon-frozen). Lifecycle position valid\
+    \ (Investigating first state)."
+- id: repo-context
+  model: claude-opus-4-7
+  mandatory: false
+  rubric_version: repo-context-v1
+  status: completed
+  verdict: conditional_pass
+  findings:
+  - severity: Important
+    location: "Environment \xA7 _check_review_filenames cite"
+    problem: Doc names symbol `_check_review_filenames` 6 times. Actual enclosing
+      function at L225 is `_check_class_audit_attestation` (def at L201). L225 line
+      content and bug ARE present and broken; only symbol name is wrong. Fix-impl
+      session would fail to find _check_review_filenames.
+    raised_by:
+    - repo-context
+    scope: instance
+  - severity: Minor
+    location: "Observed Behavior \xA7 L335 + L287 cites"
+    problem: "L287 is def line of _check_refs; call to _resolve_inside_repo at L301.\
+      \ L335 is def line of _check_citations; call at L348. Cited lines locate function\
+      \ but not call site \u2014 minor imprecision."
+    raised_by:
+    - repo-context
+    scope: instance
+  justification: "5 of 6 cited claims fully verified. _resolve_inside_repo L132-165\
+    \ / L145 / L160 confirmed; _check_citations + _check_refs def lines correct (call-site\
+    \ precision minor); plan-doc misleading note + LLD-011 \xA7PDSA + BUG-018 sibling\
+    \ all confirmed. One Important symbol-name error: _check_review_filenames does\
+    \ NOT exist; actual function at L225 is _check_class_audit_attestation."
+- id: architectural-fit
+  model: claude-opus-4-7
+  mandatory: false
+  rubric_version: architectural-fit-v1
+  status: completed
+  verdict: pass
+  findings:
+  - severity: Minor
+    location: "Related Documents \xA7 BUG-018 cross-ref"
+    problem: BUG-018 cross-ref calls it 'sibling bug also filed this session' but
+      BUG-018 is iter-2 while BUG-019 is iter-1. Temporal imprecision could mislead
+      joint fix-impl scheduling about which depth of re-review needed.
+    raised_by:
+    - architectural-fit
+    scope: instance
+  - severity: Minor
+    location: "Fix Description \xA7 item 1 marker precedence"
+    problem: Marker set .git/ | pyproject.toml | .claude-plugin/plugin.json is unordered
+      any-one match. orchestra has all three at same root so unambiguous, but doc
+      doesn't state precedence for edge case where marker appears at nested level.
+      Pick + record.
+    raised_by:
+    - architectural-fit
+    scope: instance
+  justification: "BUG-019 architecturally consistent with LLD-011 PDSA design canon.\
+    \ \xA7Design item 3 silent on repo-root discovery \u2014 BUG-019 proposal lands\
+    \ in canon gap not contradiction (doc self-acknowledges 'canon gap is minor').\
+    \ No ADR conflict (only ADR-001 exists, unrelated). Cross-ref to BUG-018 + plan-note\
+    \ accurate with minor iteration-delta imprecision. Marker walk-up matches conventional\
+    \ Python tooling patterns."
+findings_aggregated:
+- severity: Important
+  location: "Environment \xA7 _check_review_filenames cite"
+  problem: Doc names symbol `_check_review_filenames` 6 times. Actual enclosing function
+    at L225 is `_check_class_audit_attestation` (def at L201). L225 line content and
+    bug ARE present and broken; only symbol name is wrong. Fix-impl session would
+    fail to find _check_review_filenames.
+  raised_by:
+  - repo-context
+  scope: instance
+- severity: Important
+  location: "Environment \xA7 orchestra v2.0.0 tag claim"
+  problem: "'tag be7cdc0' is 7-char SHA prefix not tag name. Tag is v2.0.0; SHA is\
+    \ be7cdc0. Mixed reference confuses future archeology. 'HEAD at filing \u2014\
+    \ see git rev-parse HEAD at commit time' is deferred \u2014 capture SHA at filing\
+    \ not at commit-time-someday."
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Important
+  location: "Environment \xA7 tag claim"
+  problem: "'tag be7cdc0' conflates tag name with commit SHA. v2.0.0 is the tag; be7cdc0\
+    \ is the commit. HEAD at filing is deferred ('see git rev-parse HEAD at commit\
+    \ time') \u2014 capture SHA now."
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Minor
+  location: "Fix Description \xA7 item 1 (.git check)"
+  problem: '(cur/.git).exists() matches both dir AND worktree-pointer file. Submodule/worktree
+    semantics should be specified (likely: still treat as repo root since git-worktree
+    behavior is intended).'
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Critical
+  location: "Fix Description \xA7 item 1 (_discover_repo_root marker set)"
+  problem: Marker set conflates plugin/template repos with consumer repos. orchestra
+    ships consumer `.claude-plugin/plugin.json` files under `cli/templates/`; a doc
+    under that ancestry would resolve repo_root to template subdir not orchestra root,
+    silently mis-resolving all bare cites. Same risk for nested vendored repos with
+    stray `.git` worktree files or stray `pyproject.toml`.
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Minor
+  location: "Fix Description \xA7 item 1 (marker walk termination)"
+  problem: "`while cur != cur.parent` is Unix-correct; Windows filesystem-root differs\
+    \ (UNC paths, drive letters). Python 3.12 cross-platform per .claude-plugin/plugin.json\
+    \ \u2014 even if currently macOS-only in practice, walk should use pathlib.PurePath.parents\
+    \ exhaustion idiom for portability."
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Critical
+  location: "Fix Description \xA7 item 1 (symlink + worktree semantics)"
+  problem: "cur.resolve() collapses symlinks before walking parents \u2014 if doc_path\
+    \ is reached via symlink that points INTO repo from outside, resolved parent walks\
+    \ symlink target's filesystem not apparent repo. .git as worktree-pointer file\
+    \ (vs dir) passes .exists() check but caller may expect dir. Edge case unstated."
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Minor
+  location: "Fix Description \xA7 item 1 helper docstring"
+  problem: "Docstring says 'caller must fall back to Path.cwd() with a logged warning'\
+    \ \u2014 conflates helper contract with caller contract. Helper just returns None;\
+    \ logging is caller-side."
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Minor
+  location: "Fix Description \xA7 item 1 marker precedence"
+  problem: Marker set .git/ | pyproject.toml | .claude-plugin/plugin.json is unordered
+    any-one match. orchestra has all three at same root so unambiguous, but doc doesn't
+    state precedence for edge case where marker appears at nested level. Pick + record.
+  raised_by:
+  - architectural-fit
+  scope: instance
+- severity: Critical
+  location: "Fix Description \xA7 item 2 (L145 fallback)"
+  problem: Fallback `_discover_repo_root(doc_path) or Path.cwd().resolve()` preserves
+    the broken Path.cwd() behavior when marker walk fails. Operator invoking from
+    /tmp gets identical legacy failure with only a soft warning. Bug diagnoses fail-closed-worst-direction
+    yet fix chooses fail-open by reverting. 'Test fixtures may rely on CWD' justification
+    unverified.
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Important
+  location: "Fix Description \xA7 item 2 (L160 path-escape boundary)"
+  problem: 'If step-1 fallback engaged and discovery returned None, L160 is now anchored
+    to a Path.cwd() that may DIFFER from cwd at L145 (race: another thread or invoked
+    subprocess could chdir between calls). Compute repo_root once, pass everywhere.'
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Important
+  location: "Fix Description \xA7 item 2 (L160)"
+  problem: "Boundary semantics under fallback not specified \u2014 when _discover_repo_root\
+    \ returns None and Path.cwd() fallback engages, is L160 relative_to skipped (fail-open)\
+    \ or anchored to fallback root (fail-closed)? Contract gap."
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Important
+  location: "Fix Description \xA7 item 3 (fallback warning)"
+  problem: '''Soft warning OR stderr line'' unbound; skill body capturing stdout/stderr
+    separately may miss stderr warning; aggregator schema-validating checks[].detail
+    may reject unexpected warning prefix. Choose channel + exact string.'
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Important
+  location: "Fix Description \xA7 item 3 fallback warning"
+  problem: "'PdsaReport.checks[<n>].detail annotation OR stderr line' \u2014 OR-binding\
+    \ unbound. Pipeline consumers cannot test the contract until channel chosen."
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Important
+  location: "Fix Description \xA7 item 4 (regression test list)"
+  problem: 'Missing cases: (a) doc AT repo root no parent markers; (b) cross-filesystem
+    doc on macOS resolve() semantics; (c) directory with BOTH .git AND pyproject.toml
+    at different depths (innermost or outermost wins?); (d) python -m cli.spec_review
+    with sys.path injection from outside repo; (e) concurrent invocation race against
+    two PDSA runs in different cwds.'
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Minor
+  location: "Fix Description \xA7 item 4 vs item 6"
+  problem: Item 4 enumerates 7 test bullets; item 6 says '6 tests' in estimate. Off-by-one
+    in same section.
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Important
+  location: "Fix Description \xA7 item 5 (cleanup pass)"
+  problem: '''Strip ../../ workaround cites'' contradicts test (e) backward-compat
+    requirement. Cleanup-pass strips them but BUG-020 may surface when doc author
+    legitimately needs doc-relative cite. Spell out DEPRECATED-but-tolerated vs actively-stripped.'
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Minor
+  location: "Fix Description \xA7 missing rollback plan"
+  problem: If repo-root discovery regresses production skill bodies (consumer repo
+    without any of 3 markers), no documented rollback. Step 3 fallback partially covers;
+    no env-var override or feature flag offered. ORCHESTRA_PDSA_LEGACY_CWD=1 escape
+    hatch would de-risk rollout.
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Minor
+  location: "Iteration Log \xA7 r1"
+  problem: "'No code change in this commit \u2014 BUG report only' but doc is at iter-1\
+    \ Status=Investigating. Convention check: does Investigating imply no-code-yet?\
+    \ If yes, disclaimer redundant. Status feels stuck at Investigating despite reproducer\
+    \ being captured."
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Minor
+  location: "Iteration Log \xA7 single entry"
+  problem: "Only r1 entry present \u2014 acceptable for Investigating-status iter-1\
+    \ BUG. Flagging to confirm future iterations append rather than overwrite."
+  raised_by:
+  - structure
+  scope: instance
+- severity: Minor
+  location: "Metadata block \xA7 ordering"
+  problem: 'Order: Doc ID, Date, DRI, Type, Severity, Status, Iteration. STANDARDS
+    reference Bug Report blocks may place Status before DRI; cosmetic only.'
+  raised_by:
+  - structure
+  scope: instance
+- severity: Minor
+  location: "Observed Behavior \xA7 L335 + L287 cites"
+  problem: "L287 is def line of _check_refs; call to _resolve_inside_repo at L301.\
+    \ L335 is def line of _check_citations; call at L348. Cited lines locate function\
+    \ but not call site \u2014 minor imprecision."
+  raised_by:
+  - repo-context
+  scope: instance
+- severity: Important
+  location: "Observed Behavior \xA7 workaround paragraph"
+  problem: "'A ../../ workaround cite ... rejected by path-escape defense at L160'\
+    \ vs Iteration Log r1 'workaround ../../ form happens to land on the right file\
+    \ content only by accident' \u2014 surface contradiction. Reader cannot tell whether\
+    \ workaround ever succeeded historically."
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Important
+  location: "Regression Prevention \xA7 audit deferral"
+  problem: "Audit cli/lint.py, cli/spec_review.py, cli/install_hooks.py for same Path.cwd()\
+    \ pattern deferred with no tracking. cli/install_hooks.py blast radius (hook installation\
+    \ in wrong dir) is operationally severe \u2014 should be inline audit not v2.1\
+    \ deferral."
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Minor
+  location: "Regression Prevention \xA7 bullet 3"
+  problem: Audit-other-CLI-modules bullet defers to v2.1 milestone but no follow-up
+    BUG number or v2.1 plan path cited. Intent-only deferral risks loss.
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Minor
+  location: "Related Documents \xA7 BUG-018 cross-ref"
+  problem: BUG-018 cross-ref calls it 'sibling bug also filed this session' but BUG-018
+    is iter-2 while BUG-019 is iter-1. Temporal imprecision could mislead joint fix-impl
+    scheduling about which depth of re-review needed.
+  raised_by:
+  - architectural-fit
+  scope: instance
+- severity: Important
+  location: "Root Cause Analysis \xA7 review-filename silent no-op"
+  problem: "`if not reviews_dir.exists(): return` silent early-exit blast-radius understated.\
+    \ Consequence is canon-\xA74.11 review-filename enforcement disabled WITHOUT a\
+    \ fail signal \u2014 malformed review filenames land in docs/reviews/ and PDSA\
+    \ reports green. Security-shaped validation bypass via cwd manipulation. Severity\
+    \ escalation to Critical defensible."
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Important
+  location: "Steps to Reproduce \xA7 captured output"
+  problem: "Output shows workaround returns None \u2014 workaround DOES NOT land on\
+    \ file content; fails identically. 'Happens to land by accident' phrasing in Observed\
+    \ Behavior + Iteration Log contradicts captured evidence."
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Important
+  location: "Steps to Reproduce \xA7 shell block"
+  problem: Reproducer paths use ellipsis (`/Users/.../orchestra/...`); captured output
+    has no commit SHA timestamp. Reader cannot copy-paste reproduce + cannot corroborate.
+  raised_by:
+  - semantic
+  scope: instance
+overall_verdict: conditional_pass
+overall_verdict_basis:
+  worst_sub_judge_verdict: conditional_pass
+  excluded_sub_judges: []
+  mandatory_failures: []
+  reason: null
+attestation_integrity_hash: sha256:8ce63af517111d003b45064d52d723828c531c43a5cc51fa2e515beabbac8a3f

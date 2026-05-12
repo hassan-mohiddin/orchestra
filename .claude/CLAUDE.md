@@ -115,7 +115,7 @@ All orchestra slash commands MUST be `/orchestra:<name>` namespaced. NO bare `/<
 | ✓ | ✗ |
 |---|---|
 | `/orchestra:commit` | `/commit` |
-| `/orchestra:init` | `/orchestra-init` (hyphen-baked-name anomaly — see BUG-013) |
+| `/orchestra:init` | `/orchestra-init` (hyphen-baked-name; closed by BUG-013 2026-05-12) |
 | `/orchestra:spec-review` | `/spec-review` |
 | `/orchestra:design-docs` | `/design-docs` |
 

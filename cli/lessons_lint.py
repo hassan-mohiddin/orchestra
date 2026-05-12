@@ -129,7 +129,7 @@ def _format_proxy_artifact(
 ) -> str:
     target_str = target.as_posix()
     rows = "\n".join(
-        f"| {e.get('ts', '?')} | {e.get('observed', '')} | {e.get('expected', '')} |"
+        f"| {e.get('id', '?')} | {e.get('ts', '?')} | {e.get('observed', '')} | {e.get('expected', '')} |"
         for e in entries
     )
     current_block = (
@@ -192,8 +192,8 @@ when ready.
 
 ## Evidence ({len(entries)} entries)
 
-| ts | observed | expected |
-|---|---|---|
+| id | ts | observed | expected |
+|---|---|---|---|
 {rows}
 
 ## Provenance

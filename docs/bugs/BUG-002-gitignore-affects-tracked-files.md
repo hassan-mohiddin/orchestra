@@ -4,7 +4,7 @@
 > **Date:** 2026-05-06
 > **DRI:** Hassan Mohiddin
 > **Severity:** High
-> **Status:** Investigating
+> **Status:** Fix Applied
 
 ## Observed Behavior
 
@@ -116,3 +116,4 @@ Integration test in `tests/test_cli_init_bucket1.py`:
 |---|---|
 | 2026-05-06 | Filed during SCALE orchestra:init audit. SCALE's `docs/investigations/` had 2 tracked files when init silently added the path. Status: Investigating. Target fix: v1.4. |
 | 2026-05-12 | Fix applied per § Fix Description: tracked-file safety check via `git ls-files`; warnings surfaced; `--force` override; 4 regression tests. Bundle target: v2.0.1. Status remains Investigating pending user fresh-repo verify. |
+| 2026-05-12 | Status: Investigating → Fix Applied. User accepted live-tempdir dry-run (3 scenarios: pre-tracked file skipped + ⚠ warning surfaced; `--force` override appends; fresh repo emits 0 warnings) plus 4 pytest gates as verification. Code shipped in commit `2a3db41`. |

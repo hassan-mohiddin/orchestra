@@ -1,0 +1,591 @@
+schema_version: '2.0'
+doc_subject:
+  path: docs/bugs/BUG-013-slash-command-naming-inconsistency.md
+  content_hash: sha256:1ac43641fb4a615a0eedf83c25fbd850c5161a29a3488275105e66e5b6c8723b
+  iter_commit_sha: 449dd4ea9538147ebc1ecb5e1a858dd7c9254bc1
+  iter_blob_sha: c73ca39d0b83af465ac1f6d4fe6bc0c10bd0f928
+  iteration: 2
+peer_judge:
+  id: orchestra:spec-reviewer
+  invoked_at: '2026-05-12T08:29:32Z'
+  context_isolation: fresh_subagent_per_subjudge
+sub_judges:
+- id: structure
+  model: claude-sonnet-4-6
+  mandatory: false
+  rubric_version: structure-v1
+  status: completed
+  verdict: pass
+  findings:
+  - severity: Minor
+    location: "Frontmatter \xA7 Iteration"
+    problem: "Iteration field value 2 \u2014 cosmetic inconsistency with r-suffix\
+      \ iteration convention used in filename grammar (BUG-NNN-name-rN). Non-blocking."
+    raised_by:
+    - structure
+    scope: instance
+  - severity: Minor
+    location: "Fix Description \xA7 Phase 3"
+    problem: Phase 3 labeled 'DEFERRED to v2.0.1 ship-time' but has no inline description
+      of what Phase 3 entails beyond CHANGELOG sync. Reader cannot tell exact deferred
+      scope without scrolling.
+    raised_by:
+    - structure
+    scope: instance
+- id: semantic
+  model: claude-opus-4-7
+  mandatory: true
+  rubric_version: semantic-v1
+  status: completed
+  verdict: conditional_pass
+  findings:
+  - severity: Minor
+    location: "Fix Description \xA7 Phase 1"
+    problem: CONTRIBUTING.md DEFERRED without target version (Phase 3 cites v2.0.1;
+      Phase 1's CONTRIBUTING.md deferral does not). Reader cannot tell when the deferred
+      item is expected.
+    raised_by:
+    - semantic
+    scope: instance
+  - severity: Important
+    location: "Iteration Log \xA7 r2 closure table"
+    problem: 'Closure table lists 14 rows but doc claims ''12 findings: 2 Crit + 6
+      Imp + 4 Min''. Counts don''t reconcile. Either table double-counts or r1 total
+      misstated.'
+    raised_by:
+    - semantic
+    scope: instance
+  - severity: Important
+    location: "Root Cause Analysis \xA7 item 1"
+    problem: "Claim 'Claude Code's namespacing depended on version (some auto-strip,\
+      \ some surface literal)' has no citation \u2014 no version range, changelog\
+      \ ref, or empirical test. Non-trivial third-party behavioral claim."
+    raised_by:
+    - semantic
+    scope: instance
+  - severity: Minor
+    location: "Observed Behavior \xA7 sub-skill exposure"
+    problem: Sub-skill exposure verification cites session-start available-skills
+      list but doesn't embed the actual list snippet. Reader must trust closure-table
+      assertion.
+    raised_by:
+    - semantic
+    scope: instance
+  - severity: Important
+    location: "Iteration Log \xA7 r2 closure table"
+    problem: 'Closure-table markdown malformed: header row lacks separator line `|---|---|---|---|`.
+      Renders as pipe-separated paragraph not table. Affects readability.'
+    raised_by:
+    - semantic
+    scope: instance
+  - severity: Minor
+    location: "Frontmatter \xA7 Status"
+    problem: "Status: Investigating but Fix Description shows Phase 1 'APPLIED'. Header\
+      \ reads Investigating, body reads APPLIED \u2014 apparent contradiction without\
+      \ scrolling to closure-table rationale."
+    raised_by:
+    - semantic
+    scope: instance
+  - severity: Important
+    location: "Environment \xA7 release context"
+    problem: Environment says 'v2.0.0 LIVE; r2 closure in v2.0.1'. Fix Description
+      Phase 1 applied 2026-05-12. Unclear whether Phase 1 edits land in v2.0.0 (already
+      shipped) or v2.0.1 (pending). Disambiguate by citing commit SHA where Phase
+      1 lands.
+    raised_by:
+    - semantic
+    scope: instance
+  - severity: Minor
+    location: "Frontmatter \xA7 Date"
+    problem: 'Header Date: 2026-05-11 but Iteration Log r2 dated 2026-05-12. Date
+      convention (filing vs latest iter) not stated. Match convention used by other
+      BUG docs in repo.'
+    raised_by:
+    - semantic
+    scope: instance
+- id: gate-compliance
+  model: claude-sonnet-4-6
+  mandatory: false
+  rubric_version: gate-compliance-v1
+  status: completed
+  verdict: conditional_pass
+  findings:
+  - severity: Important
+    location: "Frontmatter \xA7 Status"
+    problem: "Status remains Investigating at r2 despite Phase 1 fix committed (1bbc0d0\
+      \ + 5e82443). STANDARDS.md \xA7 Status Lifecycle requires advancing to Fix Applied\
+      \ alongside fix commit. Bug-iteration-loop rule governs `fix:` commit type,\
+      \ not Status field update."
+    raised_by:
+    - gate-compliance
+    scope: instance
+  - severity: Minor
+    location: "Iteration Log \xA7 r2 closure table"
+    problem: 'Closure table header states ''12 findings: 2 Critical + 6 Important
+      + 4 Minor''. Actual r1 attestation YAML contains 14 findings (3 Critical + 7
+      Important + 4 Minor verified by repo-context). Underreports by 2 findings +
+      undercounts Criticals by 1. Traceability gap.'
+    raised_by:
+    - gate-compliance
+    scope: instance
+  - severity: Minor
+    location: "Iteration Log \xA7 r2 closure row sub-skill"
+    problem: "Sub-skill exposure closure cites 'session-start available-skills list'\
+      \ \u2014 non-persistent evidence (no committed artifact path). Future reviewers\
+      \ cannot reproduce."
+    raised_by:
+    - gate-compliance
+    scope: instance
+- id: adversarial
+  model: claude-opus-4-7
+  mandatory: true
+  rubric_version: adversarial-v1
+  status: completed
+  verdict: fail
+  findings:
+  - severity: Critical
+    location: "Regression Prevention \xA7 mechanical layer"
+    problem: Discipline-only prevention; no mechanical layer. The same drift will
+      recur the moment a future skill author copies an old template. No lint/hook/CI
+      enforces `name:` field consistency. BUG-013 will re-occur within 2-3 skill authoring
+      cycles.
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Critical
+    location: "Root Cause Analysis \xA7 one-level-deep discovery"
+    problem: '''One-level-deep discovery'' invariant treated as stable but is undocumented
+      host-runtime detail. If Claude Code''s plugin loader gains recursive sub-skill
+      discovery, every sub-skill with `name: init` immediately collides with parent''s
+      slash. Time bomb keyed to external version bump.'
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Critical
+    location: "Fix Description \xA7 Phase 3 deferral"
+    problem: 'Phase 3 deferred to v2.0.1 with no committed ship date or issue tracking.
+      CLAUDE.md table marked ''closed by BUG-013'' while CHANGELOG entry deferred.
+      Audit asymmetry: consumers reading CLAUDE.md see ''closed'' while public release
+      notes never record the change if v2.0.1 slips.'
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Important
+    location: "Frontmatter \xA7 rubric note dismissal"
+    problem: "r1 Critical 'Symptom/Test Plan/Risk missing' dismissed via 'canon \xA7\
+      4.8 supersedes' without quoting \xA74.8 text. Sets precedent \u2014 any future\
+      \ Critical can be deflected by 'canon supersedes'. Fail-open escape valve for\
+      \ spec-review gate itself."
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Important
+    location: "Observed Behavior \xA7 verification methodology"
+    problem: "'Session-start available-skills list shows no orchestra:design-docs-init'\
+      \ is one-shot observation not regression test. Next session \u2014 different\
+      \ machine/version/state \u2014 observation may differ. No automated assertion\
+      \ captures invariant."
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Important
+    location: "Observed Behavior \xA7 decorative-documentation claim"
+    problem: 'Sub-skill `name:` field claimed ''decorative documentation'' but `orchestra:design-docs:init`
+      references appear in skill body prose. If sub-skill SKILL.md `name: init` no
+      longer matches prose references, future readers hit contradiction. Decoration
+      without consistency creates new defects.'
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Important
+    location: "Root Cause Analysis \xA7 bare-name collision"
+    problem: 'Bare `name: init` in `skills/init/SKILL.md` assumed to auto-namespace
+      as `/orchestra:init`. If Claude Code ever renders without plugin prefix (flat
+      skill-picker UI, debug mode, future API), `name: init` collides with well-known
+      `/init` (init CLAUDE.md). Host-runtime collision risk unanalyzed.'
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Important
+    location: "Iteration Log \xA7 r2 closure verification"
+    problem: r2 claims 'Phase 1 + Phase 2 closed' but provides no diff or commit-link
+      verification within doc body that 1bbc0d0 + 5e82443 actually changed `name:`
+      field. Reviewer reading only Bug Report can't independently verify without git
+      show. Bug Reports should be self-contained audit artifacts.
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Minor
+    location: "Fix Description \xA7 Phase 3 rollback"
+    problem: '''Deferred to v2.0.1 ship'' has no rollback plan if v2.0.1 cancelled
+      or merged into v2.1. CHANGELOG entry then has no home.'
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Minor
+    location: "Observed Behavior \xA7 verification methodology"
+    problem: "Verification relies on session-start system-reminder block \u2014 itself\
+      \ a host-runtime implementation detail. If Claude Code changes skill-list surface\
+      \ (truncation, lazy-load, grouped display), methodology becomes invalid silently."
+    raised_by:
+    - adversarial
+    scope: instance
+  - severity: Minor
+    location: "Root Cause Analysis \xA7 consumer-plugin collision"
+    problem: "No analysis of consumer repo with own skill named `init` at top-level.\
+      \ Two `name: init` from different plugins \u2192 undefined resolution order.\
+      \ Doc treats orchestra as only plugin in namespace."
+    raised_by:
+    - adversarial
+    scope: instance
+- id: repo-context
+  model: claude-opus-4-7
+  mandatory: false
+  rubric_version: repo-context-v1
+  status: completed
+  verdict: conditional_pass
+  findings:
+  - severity: Important
+    location: "Iteration Log \xA7 r1 attestation count"
+    problem: "Doc claims r1 attestation has '12 findings: 2 Critical + 6 Important\
+      \ + 4 Minor'. Actual r1 YAML contains 14 findings: 3 Critical + 7 Important\
+      \ + 4 Minor (verified). Closure table also lists only 13 rows against 14 actual\
+      \ \u2014 at least one r1 finding unclosed in r2 narrative."
+    raised_by:
+    - repo-context
+    scope: instance
+  - severity: Minor
+    location: "Iteration Log \xA7 r2 closure table"
+    problem: Closure table enumerates 13 rows. Cross-check against r1 YAML severity
+      counts (3+7+4=14) shows one row missing. Re-read r1 attestation and add missed
+      rows.
+    raised_by:
+    - repo-context
+    scope: instance
+- id: architectural-fit
+  model: claude-opus-4-7
+  mandatory: false
+  rubric_version: architectural-fit-v1
+  status: completed
+  verdict: conditional_pass
+  findings:
+  - severity: Important
+    location: "Related Documents \xA7 CLAUDE.md HARD RULE anchor"
+    problem: "Slash-naming convention elevated to canon by precedent via .claude/CLAUDE.md\
+      \ HARD RULE alone. CLAUDE.md is workflow-rule file, not Design Doc / ADR. No\
+      \ ADR records the slash-naming decision (verified via DECISIONS.md). Cross-plugin\
+      \ invariant should be either ADR (Nygard sense) or controlled-vocabulary.md\
+      \ \xA74.X. File ADR-002-skill-name-grammar or extend \xA74.X."
+    raised_by:
+    - architectural-fit
+    scope: instance
+  - severity: Minor
+    location: "Frontmatter \xA7 rubric note canon citation"
+    problem: "Canon \xA74.8 supersession claim verified accurate (line 260 matches).\
+      \ Optional polish: add inline `:260` line anchor to make supersession audit-trivial."
+    raised_by:
+    - architectural-fit
+    scope: instance
+  - severity: Minor
+    location: "Related Documents \xA7 LLD-006-r4 scope"
+    problem: LLD-006-r4 scope verified DOC-filename-only (orthogonal to SKILL.md `name:`
+      field grammar). No deviation entry needed. Audit-trail-only note.
+    raised_by:
+    - architectural-fit
+    scope: instance
+  - severity: Minor
+    location: "Environment \xA7 BUG-012 breadcrumb"
+    problem: 'r2 closure claims BUG-012 cross-ref removed. Verified: substantive scope-aggregation
+      cross-ref removed; residual chronological breadcrumb at Environment line 54
+      (`post-BUG-012 closure`) is benign commit anchor, not scope ref. Reword closure-table
+      cell for precision.'
+    raised_by:
+    - architectural-fit
+    scope: instance
+  - severity: Minor
+    location: "Fix Description \xA7 Phase 3 v2.0.1 release fit"
+    problem: v2.0.1 deferral architecturally consistent with v2.0.0 post-ship state.
+      When v2.0.1 ships, ensure orchestra-philosophy-r2 Changelog row added per Gate
+      5 Design Doc sync.
+    raised_by:
+    - architectural-fit
+    scope: instance
+  - severity: Minor
+    location: "Fix Description \xA7 Phase 2 composition pattern"
+    problem: Sub-skill internal-composition pattern (one-level-deep discovery + Read+delegate)
+      is architecturally novel; not documented in any Design Doc. orchestra-philosophy-r2
+      mentions design-docs:init without specifying discovery-depth/registration invariant.
+      Canonicalize alongside AF-1 anchor.
+    raised_by:
+    - architectural-fit
+    scope: instance
+findings_aggregated:
+- severity: Minor
+  location: "Environment \xA7 BUG-012 breadcrumb"
+  problem: 'r2 closure claims BUG-012 cross-ref removed. Verified: substantive scope-aggregation
+    cross-ref removed; residual chronological breadcrumb at Environment line 54 (`post-BUG-012
+    closure`) is benign commit anchor, not scope ref. Reword closure-table cell for
+    precision.'
+  raised_by:
+  - architectural-fit
+  scope: instance
+- severity: Important
+  location: "Environment \xA7 release context"
+  problem: Environment says 'v2.0.0 LIVE; r2 closure in v2.0.1'. Fix Description Phase
+    1 applied 2026-05-12. Unclear whether Phase 1 edits land in v2.0.0 (already shipped)
+    or v2.0.1 (pending). Disambiguate by citing commit SHA where Phase 1 lands.
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Minor
+  location: "Fix Description \xA7 Phase 1"
+  problem: CONTRIBUTING.md DEFERRED without target version (Phase 3 cites v2.0.1;
+    Phase 1's CONTRIBUTING.md deferral does not). Reader cannot tell when the deferred
+    item is expected.
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Minor
+  location: "Fix Description \xA7 Phase 2 composition pattern"
+  problem: Sub-skill internal-composition pattern (one-level-deep discovery + Read+delegate)
+    is architecturally novel; not documented in any Design Doc. orchestra-philosophy-r2
+    mentions design-docs:init without specifying discovery-depth/registration invariant.
+    Canonicalize alongside AF-1 anchor.
+  raised_by:
+  - architectural-fit
+  scope: instance
+- severity: Minor
+  location: "Fix Description \xA7 Phase 3"
+  problem: Phase 3 labeled 'DEFERRED to v2.0.1 ship-time' but has no inline description
+    of what Phase 3 entails beyond CHANGELOG sync. Reader cannot tell exact deferred
+    scope without scrolling.
+  raised_by:
+  - structure
+  scope: instance
+- severity: Critical
+  location: "Fix Description \xA7 Phase 3 deferral"
+  problem: 'Phase 3 deferred to v2.0.1 with no committed ship date or issue tracking.
+    CLAUDE.md table marked ''closed by BUG-013'' while CHANGELOG entry deferred. Audit
+    asymmetry: consumers reading CLAUDE.md see ''closed'' while public release notes
+    never record the change if v2.0.1 slips.'
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Minor
+  location: "Fix Description \xA7 Phase 3 rollback"
+  problem: '''Deferred to v2.0.1 ship'' has no rollback plan if v2.0.1 cancelled or
+    merged into v2.1. CHANGELOG entry then has no home.'
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Minor
+  location: "Fix Description \xA7 Phase 3 v2.0.1 release fit"
+  problem: v2.0.1 deferral architecturally consistent with v2.0.0 post-ship state.
+    When v2.0.1 ships, ensure orchestra-philosophy-r2 Changelog row added per Gate
+    5 Design Doc sync.
+  raised_by:
+  - architectural-fit
+  scope: instance
+- severity: Minor
+  location: "Frontmatter \xA7 Date"
+  problem: 'Header Date: 2026-05-11 but Iteration Log r2 dated 2026-05-12. Date convention
+    (filing vs latest iter) not stated. Match convention used by other BUG docs in
+    repo.'
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Minor
+  location: "Frontmatter \xA7 Iteration"
+  problem: "Iteration field value 2 \u2014 cosmetic inconsistency with r-suffix iteration\
+    \ convention used in filename grammar (BUG-NNN-name-rN). Non-blocking."
+  raised_by:
+  - structure
+  scope: instance
+- severity: Minor
+  location: "Frontmatter \xA7 rubric note canon citation"
+  problem: "Canon \xA74.8 supersession claim verified accurate (line 260 matches).\
+    \ Optional polish: add inline `:260` line anchor to make supersession audit-trivial."
+  raised_by:
+  - architectural-fit
+  scope: instance
+- severity: Important
+  location: "Frontmatter \xA7 rubric note dismissal"
+  problem: "r1 Critical 'Symptom/Test Plan/Risk missing' dismissed via 'canon \xA7\
+    4.8 supersedes' without quoting \xA74.8 text. Sets precedent \u2014 any future\
+    \ Critical can be deflected by 'canon supersedes'. Fail-open escape valve for\
+    \ spec-review gate itself."
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Minor
+  location: "Frontmatter \xA7 Status"
+  problem: "Status: Investigating but Fix Description shows Phase 1 'APPLIED'. Header\
+    \ reads Investigating, body reads APPLIED \u2014 apparent contradiction without\
+    \ scrolling to closure-table rationale."
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Important
+  location: "Frontmatter \xA7 Status"
+  problem: "Status remains Investigating at r2 despite Phase 1 fix committed (1bbc0d0\
+    \ + 5e82443). STANDARDS.md \xA7 Status Lifecycle requires advancing to Fix Applied\
+    \ alongside fix commit. Bug-iteration-loop rule governs `fix:` commit type, not\
+    \ Status field update."
+  raised_by:
+  - gate-compliance
+  scope: instance
+- severity: Important
+  location: "Iteration Log \xA7 r1 attestation count"
+  problem: "Doc claims r1 attestation has '12 findings: 2 Critical + 6 Important +\
+    \ 4 Minor'. Actual r1 YAML contains 14 findings: 3 Critical + 7 Important + 4\
+    \ Minor (verified). Closure table also lists only 13 rows against 14 actual \u2014\
+    \ at least one r1 finding unclosed in r2 narrative."
+  raised_by:
+  - repo-context
+  scope: instance
+- severity: Minor
+  location: "Iteration Log \xA7 r2 closure row sub-skill"
+  problem: "Sub-skill exposure closure cites 'session-start available-skills list'\
+    \ \u2014 non-persistent evidence (no committed artifact path). Future reviewers\
+    \ cannot reproduce."
+  raised_by:
+  - gate-compliance
+  scope: instance
+- severity: Important
+  location: "Iteration Log \xA7 r2 closure table"
+  problem: 'Closure table lists 14 rows but doc claims ''12 findings: 2 Crit + 6 Imp
+    + 4 Min''. Counts don''t reconcile. Either table double-counts or r1 total misstated.'
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Important
+  location: "Iteration Log \xA7 r2 closure table"
+  problem: 'Closure-table markdown malformed: header row lacks separator line `|---|---|---|---|`.
+    Renders as pipe-separated paragraph not table. Affects readability.'
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Minor
+  location: "Iteration Log \xA7 r2 closure table"
+  problem: 'Closure table header states ''12 findings: 2 Critical + 6 Important +
+    4 Minor''. Actual r1 attestation YAML contains 14 findings (3 Critical + 7 Important
+    + 4 Minor verified by repo-context). Underreports by 2 findings + undercounts
+    Criticals by 1. Traceability gap.'
+  raised_by:
+  - gate-compliance
+  scope: instance
+- severity: Minor
+  location: "Iteration Log \xA7 r2 closure table"
+  problem: Closure table enumerates 13 rows. Cross-check against r1 YAML severity
+    counts (3+7+4=14) shows one row missing. Re-read r1 attestation and add missed
+    rows.
+  raised_by:
+  - repo-context
+  scope: instance
+- severity: Important
+  location: "Iteration Log \xA7 r2 closure verification"
+  problem: r2 claims 'Phase 1 + Phase 2 closed' but provides no diff or commit-link
+    verification within doc body that 1bbc0d0 + 5e82443 actually changed `name:` field.
+    Reviewer reading only Bug Report can't independently verify without git show.
+    Bug Reports should be self-contained audit artifacts.
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Important
+  location: "Observed Behavior \xA7 decorative-documentation claim"
+  problem: 'Sub-skill `name:` field claimed ''decorative documentation'' but `orchestra:design-docs:init`
+    references appear in skill body prose. If sub-skill SKILL.md `name: init` no longer
+    matches prose references, future readers hit contradiction. Decoration without
+    consistency creates new defects.'
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Minor
+  location: "Observed Behavior \xA7 sub-skill exposure"
+  problem: Sub-skill exposure verification cites session-start available-skills list
+    but doesn't embed the actual list snippet. Reader must trust closure-table assertion.
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Important
+  location: "Observed Behavior \xA7 verification methodology"
+  problem: "'Session-start available-skills list shows no orchestra:design-docs-init'\
+    \ is one-shot observation not regression test. Next session \u2014 different machine/version/state\
+    \ \u2014 observation may differ. No automated assertion captures invariant."
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Minor
+  location: "Observed Behavior \xA7 verification methodology"
+  problem: "Verification relies on session-start system-reminder block \u2014 itself\
+    \ a host-runtime implementation detail. If Claude Code changes skill-list surface\
+    \ (truncation, lazy-load, grouped display), methodology becomes invalid silently."
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Critical
+  location: "Regression Prevention \xA7 mechanical layer"
+  problem: Discipline-only prevention; no mechanical layer. The same drift will recur
+    the moment a future skill author copies an old template. No lint/hook/CI enforces
+    `name:` field consistency. BUG-013 will re-occur within 2-3 skill authoring cycles.
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Important
+  location: "Related Documents \xA7 CLAUDE.md HARD RULE anchor"
+  problem: "Slash-naming convention elevated to canon by precedent via .claude/CLAUDE.md\
+    \ HARD RULE alone. CLAUDE.md is workflow-rule file, not Design Doc / ADR. No ADR\
+    \ records the slash-naming decision (verified via DECISIONS.md). Cross-plugin\
+    \ invariant should be either ADR (Nygard sense) or controlled-vocabulary.md \xA7\
+    4.X. File ADR-002-skill-name-grammar or extend \xA74.X."
+  raised_by:
+  - architectural-fit
+  scope: instance
+- severity: Minor
+  location: "Related Documents \xA7 LLD-006-r4 scope"
+  problem: LLD-006-r4 scope verified DOC-filename-only (orthogonal to SKILL.md `name:`
+    field grammar). No deviation entry needed. Audit-trail-only note.
+  raised_by:
+  - architectural-fit
+  scope: instance
+- severity: Important
+  location: "Root Cause Analysis \xA7 bare-name collision"
+  problem: 'Bare `name: init` in `skills/init/SKILL.md` assumed to auto-namespace
+    as `/orchestra:init`. If Claude Code ever renders without plugin prefix (flat
+    skill-picker UI, debug mode, future API), `name: init` collides with well-known
+    `/init` (init CLAUDE.md). Host-runtime collision risk unanalyzed.'
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Minor
+  location: "Root Cause Analysis \xA7 consumer-plugin collision"
+  problem: "No analysis of consumer repo with own skill named `init` at top-level.\
+    \ Two `name: init` from different plugins \u2192 undefined resolution order. Doc\
+    \ treats orchestra as only plugin in namespace."
+  raised_by:
+  - adversarial
+  scope: instance
+- severity: Important
+  location: "Root Cause Analysis \xA7 item 1"
+  problem: "Claim 'Claude Code's namespacing depended on version (some auto-strip,\
+    \ some surface literal)' has no citation \u2014 no version range, changelog ref,\
+    \ or empirical test. Non-trivial third-party behavioral claim."
+  raised_by:
+  - semantic
+  scope: instance
+- severity: Critical
+  location: "Root Cause Analysis \xA7 one-level-deep discovery"
+  problem: '''One-level-deep discovery'' invariant treated as stable but is undocumented
+    host-runtime detail. If Claude Code''s plugin loader gains recursive sub-skill
+    discovery, every sub-skill with `name: init` immediately collides with parent''s
+    slash. Time bomb keyed to external version bump.'
+  raised_by:
+  - adversarial
+  scope: instance
+overall_verdict: fail
+overall_verdict_basis:
+  worst_sub_judge_verdict: fail
+  excluded_sub_judges: []
+  mandatory_failures: []
+  reason: null
+attestation_integrity_hash: sha256:09966b8d9f03a79203638995f23f87be23825a73df2d973b4d1228060a6c8e59

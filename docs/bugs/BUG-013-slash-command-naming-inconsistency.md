@@ -1,14 +1,16 @@
 # BUG-013: Slash-command naming inconsistency across orchestra skills
 
 > **Doc ID:** BUG-013-slash-command-naming-inconsistency
-> **Date:** 2026-05-11
+> **Date:** 2026-05-11 (filed); latest iteration 2026-05-12
 > **DRI:** Hassan Mohiddin
 > **Type:** Bug Report
 > **Severity:** Medium
-> **Status:** Investigating
-> **Iteration:** 2
+> **Status:** Fix Applied
+> **Iteration:** 3
 
-**Rubric note (closes r1 Completeness Critical):** Bug Report required-sections list is now canon §4.8 (`docs/design/controlled-vocabulary.md`), not the older 4-gate rubric the r1 reviewer applied. Canon §4.8 specifies: `Observed Behavior, Expected Behavior, Steps to Reproduce, Environment, Root Cause Analysis, Fix Description, Iteration Log, Regression Prevention, Related Documents, Changelog`. All present below. "Symptom / Test Plan / Risk" are NOT canon-required sections for the `bug` doc-type; the r1 Critical finding was based on a superseded rubric.
+**Status note:** Phase 1 + Phase 2 APPLIED in code (commits `1bbc0d0` + `5e82443`); r3 body closures applied 2026-05-12 with user-confirmed authorization. Status flipped Investigating → Fix Applied at r3 closure commit. Phase 3 (CHANGELOG sync) tracks separately to v2.0.1 patch ship; not blocking BUG-013 closure (see §Fix Description Phase 3 audit-trail note).
+
+**Rubric note (closes r1 Completeness Critical):** Bug Report required-sections list is now canon §4.8 at `docs/design/controlled-vocabulary.md:260` (the `bug` row of the §4.8 table), not the older 4-gate rubric the r1 reviewer applied. Canon §4.8 specifies: `Observed Behavior, Expected Behavior, Steps to Reproduce, Environment, Root Cause Analysis, Fix Description, Iteration Log, Regression Prevention, Related Documents, Changelog`. All present below. "Symptom / Test Plan / Risk" are NOT canon-required sections for the `bug` doc-type; the r1 Critical finding was based on a superseded rubric. Canon §4.8 line 272 `Replaces:` annotation explicitly supersedes the older rubric (`cli/lint.py:105-130` + `docs/STANDARDS.md:115-222` are listed as replaced).
 
 ## Observed Behavior
 
@@ -48,40 +50,55 @@ Post-fix (HEAD ≥ r2 closure commit): only `/orchestra:init`, `/orchestra:commi
 
 ## Environment
 
-- orchestra v1.7.0 (commit `b074d7e`) — original filing context
-- Post-fix verification: orchestra v2.0.0 LIVE (tag `be7cdc0`); BUG-013 r2 closure in v2.0.1 patch cycle
-- Claude Code plugin discovery: one-level-deep `skills/<plugin>/SKILL.md` registration (verified via available-skills list)
-- Commit context: pre-fix HEAD = `0cd41f9` (post-BUG-012 closure); post-fix HEAD recorded in Iteration Log r2
+- orchestra v1.7.0 (commit `b074d7e`) — original BUG filing context
+- Post-fix release positioning: **v2.0.0 already shipped** (tag `be7cdc0`) without BUG-013 fix; the SKILL.md `name:` field renames + CLAUDE.md update land in commits `1bbc0d0` (code) + `5e82443` (doc) post-v2.0.0. These commits bundle into the **v2.0.1 patch release** alongside other v2.0.1 bundled fixes. BUG-013 closure does NOT retroactively modify v2.0.0; consumers on v2.0.0 see the pre-fix surface until they upgrade to v2.0.1.
+- Claude Code plugin discovery: one-level-deep `skills/<plugin>/SKILL.md` registration (verified via available-skills list inspection during r1 + r2 review sessions)
+- Commit lineage: pre-fix HEAD = `0cd41f9` (post-BUG-012 closure, post-v2.0.0); fix commits = `1bbc0d0` (code: skill renames) + `5e82443` (doc: r2 body + CLAUDE.md HARD RULE table update); r3 closure commit recorded in Iteration Log r3
 
 ## Root Cause Analysis
 
-1. `skills/init/SKILL.md:2` frontmatter pre-fix declared `name: orchestra-init` — the hyphen was baked into the name. Other skills correctly declared bare names (`commit`, `spec-review`, `design-docs`) and Claude Code auto-namespaces them under plugin to `/orchestra:<name>`. The `orchestra-` prefix on the init skill was a leftover from pre-namespace-discovery skill drafting; once Claude Code's plugin-prefix-auto-prepend behavior stabilized, the literal `orchestra-` in `name:` became a duplicate-namespacing bug — Claude Code's rendering depended on its version (some versions auto-strip; some surface as `/orchestra-init` literal).
-2. No project-wide naming convention documented before BUG-013 filing. Each skill author picked their own form. **Now documented in:** `.claude/CLAUDE.md § Slash command naming convention (HARD RULE)` (closes r1 Important — Root Cause #2 citation request).
-3. Sub-skill exposure semantics undocumented at filing. `skills/design-docs/init/SKILL.md` existed but its slash-command visibility was implicit. **Resolved at r2:** Claude Code skill discovery is one-level deep — sub-skills under `skills/<plugin>/<subskill>/SKILL.md` are NOT auto-registered. The `name:` field on sub-skills is decorative for documentation; renamed to bare `init` at r2 for convention-consistency.
+1. `skills/init/SKILL.md:2` frontmatter pre-fix declared `name: orchestra-init` — the hyphen was baked into the name. Other skills correctly declared bare names (`commit`, `spec-review`, `design-docs`) and Claude Code auto-namespaces them under plugin to `/orchestra:<name>`. The `orchestra-` prefix on the init skill was a leftover from pre-namespace-discovery skill drafting. **Behavioral note (downgrades r1 Evidence Important — "version-dependent rendering" claim removed):** No public Claude Code changelog documents a behavior change in plugin-prefix-auto-prepend rendering; the original observation that `/orchestra-init` surfaced in autocomplete (per user screenshot 2026-05-11) is consistent with Claude Code literally rendering the `name:` field as the slash command without stripping `orchestra-` prefix. The fix (rename to bare `init`) routes through the standard plugin-namespace auto-prepend that other 3 skills already used.
+2. No project-wide naming convention documented before BUG-013 filing. Each skill author picked their own form. **Now documented in:** `.claude/CLAUDE.md § Slash command naming convention (HARD RULE)` lines 111-124 (closes r1 Important — Root Cause #2 citation request).
+3. Sub-skill exposure semantics undocumented at filing. `skills/design-docs/init/SKILL.md` existed but its slash-command visibility was implicit. **Resolved at r2:** Claude Code skill discovery is one-level deep — sub-skills under `skills/<plugin>/<subskill>/SKILL.md` are NOT auto-registered as slashes by the host runtime. The `name:` field on sub-skills is decorative for documentation; renamed to bare `init` at r2 for convention-consistency. **Risk caveat (closes r2 adversarial Critical #2):** This invariant depends on Claude Code's current one-level-deep discovery behavior, which is an undocumented host-runtime implementation detail, not a stable contract. See `## Risks` section below for the time-bomb mitigation.
 
 ## Fix Description
 
-**Phase 1 — APPLIED at r2 (2026-05-12):**
+**Phase 1 — APPLIED at r2 (2026-05-12; closure marker: Phase 1/2 closed, Phase 3 pending v2.0.1):**
 
-- ~~Edit `skills/init/SKILL.md` frontmatter: `name: orchestra-init` → `name: init`~~ — DONE; verified post-fix at `skills/init/SKILL.md:2`.
-- ~~Edit `skills/design-docs/init/SKILL.md` frontmatter: `name: design-docs-init` → `name: init`~~ — DONE; description field also annotated with "INTERNAL composition — auto-invoked by parent `design-docs` skill on first-time detection; not a user-facing slash command."
-- ~~Add naming convention to project canon~~ — DONE; convention already documented in `.claude/CLAUDE.md § Slash command naming convention (HARD RULE)` (lines 111-124). CLAUDE.md table entry updated to mark BUG-013 closure (line 118).
-- CONTRIBUTING.md update — **DEFERRED**: orchestra repo has no `CONTRIBUTING.md` at HEAD; future task to add CONTRIBUTING.md with skill-author conventions. Out of BUG-013 scope.
+- ~~Edit `skills/init/SKILL.md` frontmatter: `name: orchestra-init` → `name: init`~~ — DONE in commit `1bbc0d0`. Verified post-fix at `skills/init/SKILL.md:2`. Diff:
+
+  ```
+  -name: orchestra-init
+  +name: init
+  ```
+
+- ~~Edit `skills/design-docs/init/SKILL.md` frontmatter: `name: design-docs-init` → `name: init`~~ — DONE in commit `1bbc0d0`. Description field also annotated with "INTERNAL composition — auto-invoked by parent `design-docs` skill on first-time detection; not a user-facing slash command." Diff:
+
+  ```
+  -name: design-docs-init
+  +name: init
+  -description: Use when setting up design docs scaffolding ... + Triggers ... + Runs 3-prompt flow ...
+  +description: Use when setting up design docs scaffolding ... + Triggers ... + Runs 3-prompt flow ... INTERNAL composition — auto-invoked by parent `design-docs` skill on first-time detection; not a user-facing slash command.
+  ```
+
+- ~~Add naming convention to project canon~~ — DONE in commit `5e82443`; convention already documented in `.claude/CLAUDE.md § Slash command naming convention (HARD RULE)` (lines 111-124). CLAUDE.md:118 cell updated to mark BUG-013 closure: `| /orchestra:init | /orchestra-init (hyphen-baked-name; closed by BUG-013 2026-05-12) |`.
+- CONTRIBUTING.md update — **DEFERRED to v2.0.1 alongside Phase 3**: orchestra repo has no `CONTRIBUTING.md` at HEAD; the file is targeted to be added in v2.1+ when authoring-guide stabilizes. Out of BUG-013 scope but tracked in §Regression Prevention §future-work.
 
 **Phase 2 — sub-skill composition contract (resolved r2; no behavior change required):**
 
-- Claude Code skill discovery is **one-level deep** (`skills/<plugin>/SKILL.md` only). Sub-skills at `skills/<plugin>/<subskill>/SKILL.md` are NOT auto-registered as separate `/orchestra:<name>` slashes. Verified empirically via session-start available-skills list (no `orchestra:design-docs-init` present despite SKILL.md existence).
+- Claude Code skill discovery is **one-level deep** (`skills/<plugin>/SKILL.md` only). Sub-skills at `skills/<plugin>/<subskill>/SKILL.md` are NOT auto-registered as separate `/orchestra:<name>` slashes. Verified empirically via session-start available-skills list during r1 + r2 review sessions (no `orchestra:design-docs-init` present despite SKILL.md existence). **Caveat:** This is observed behavior of current Claude Code, not a documented contract — see `## Risks` for the time-bomb mitigation.
 - Parent skill `skills/design-docs/SKILL.md` invokes sub-skill via `Read` tool on the sub-skill SKILL.md + delegates per body (see `skills/design-docs/SKILL.md:26-36` § Setup detection). This is the documented internal-composition pattern; no auto-invoke wiring needed beyond the parent skill's body-level routing.
 - CLAUDE.md HARD RULE codifies the convention going forward.
 
-**Phase 3 — README + CHANGELOG sync (DEFERRED to v2.0.1 patch release):**
+**Phase 3 — README + CHANGELOG sync (PENDING v2.0.1 patch release; tracked, not closed):**
 
-- No README slash-command listing exists at HEAD requiring update.
-- CHANGELOG v2.0.1 entry will document BUG-013 closure when the patch release ships (BUG-013 is one of several v2.0.1 bundled fixes; CHANGELOG row binds at tag time).
+- No README slash-command listing exists at HEAD requiring update. **Re-confirm at v2.0.1 ship time** — if README grows a listing between now and v2.0.1, add to Phase 3 scope.
+- CHANGELOG v2.0.1 entry will document BUG-013 closure at v2.0.1 ship time. **Rollback plan (closes r2 adversarial Minor — Phase 3 v2.0.1 cancellation):** If v2.0.1 is rolled into v2.1, the Phase 3 CHANGELOG entry moves to v2.1 release notes. Owner: ship-coordinator at release-cut time.
+- **Audit-trail asymmetry note (closes r2 adversarial Critical #3):** CLAUDE.md HARD RULE table at `:118` marked "closed by BUG-013 2026-05-12" — this reflects Phase 1+2 closure (code + canon), NOT Phase 3 (CHANGELOG sync). Consumers reading CLAUDE.md see the convention rule active; consumers reading CHANGELOG see the rename when v2.0.1 ships. The asymmetry window is bounded by v2.0.1 ship timing.
 
 ## Iteration Log
 
-- r1 (2026-05-11) — filed post-user-report. Severity: Medium (UX confusion + cross-plugin collision risk via bare `/commit` namespace). Status: Investigating. r1 v1 spec-review attestation: `docs/reviews/BUG-013-slash-command-naming-inconsistency-r1.orchestra.review.yaml` (overall_verdict: fail, 12 findings: 2 Critical + 6 Important + 4 Minor).
+- r1 (2026-05-11) — filed post-user-report. Severity: Medium (UX confusion + cross-plugin collision risk via bare `/commit` namespace). Status: Investigating. r1 v1 spec-review attestation: `docs/reviews/BUG-013-slash-command-naming-inconsistency-r1.orchestra.review.yaml` (overall_verdict: fail, **14 findings: 3 Critical + 7 Important + 4 Minor** — corrected at r3 from prior r2 narrative undercount of 12).
 - r2 (2026-05-12) — fix applied + r1 attestation findings closed inline. Code changes:
   - `skills/init/SKILL.md:2` — `name: orchestra-init` → `name: init` (single-line rename; slash surface becomes `/orchestra:init` via Claude Code plugin-namespace auto-prepend).
   - `skills/design-docs/init/SKILL.md:2` — `name: design-docs-init` → `name: init` + description annotated as INTERNAL composition (decorative since sub-skill not auto-registered by Claude Code one-level-deep discovery, but renamed for convention-consistency).
@@ -106,19 +123,52 @@ Post-fix (HEAD ≥ r2 closure commit): only `/orchestra:init`, `/orchestra:commi
   | Consistency | Phase 2 vs Expected Behavior contradiction | Important | Phase 2 rewritten to state invariant IS established (one-level-deep discovery is the mechanism) |
   | Consistency | Status: Investigating vs concrete 3-phase fix | Minor | Status stays Investigating until user-confirm per bug-iteration-loop rule; flips to Fix Applied at r2 closure |
 
-  Reviewed: pending r2 v2 spec-review.
+  Reviewed at r2: `docs/reviews/BUG-013-slash-command-naming-inconsistency-r2.orchestra.review.yaml` (v2 schema, 6 sub-judge ensemble under --override-cap; overall_verdict: fail; 32 aggregated findings: 3 Critical + 12 Important + 17 Minor; adversarial mandatory failed).
+- r3 (2026-05-12) — r2 attestation closure batch. Free edit applied (Status: Investigating). Key closures:
+  - **r1 finding-count correction** (closes r2 repo-context Important + r2 gate-compliance Minor + r2 semantic Important): r1 narrative count updated 12 → 14 (3 Critical + 7 Important + 4 Minor); closure table itself had 14 rows but narrative was off-by-2 / Crit-off-by-1.
+  - **3 r2 Criticals addressed** by reframing/restructuring (closes adversarial mandatory failure):
+    - Critical #1 (discipline-only Regression Prevention) → added §Risks #1 acknowledging discipline-only enforcement boundary; `cli.lint --skill-names` future-work mechanical fix is tracked, not closed.
+    - Critical #2 (one-level-deep discovery time-bomb) → added §Risks #2 with watchpoint + defensive-rename fallback; root-cause + Phase 2 narrative include caveats.
+    - Critical #3 (Phase 3 audit-trail asymmetry) → Phase 3 downgraded from "DEFERRED" to "PENDING v2.0.1 (tracked)"; CLAUDE.md "closed" marker explicitly scoped to Phase 1+2 not Phase 3; rollback plan if v2.0.1 rolls into v2.1.
+  - **Inline diff snippets added** to Fix Description Phase 1 (closes r2 adversarial Important — self-contained audit artifact).
+  - **Status visibility note** added under frontmatter explaining Investigating-vs-APPLIED discrepancy per bug-iteration-loop rule (closes r2 semantic Minor).
+  - **Canon §4.8 line anchor** added (`:260`) + replaces-line cite (`line 272`) (closes r2 architectural-fit Minor).
+  - **Date convention** explicit ("filed; latest iteration") (closes r2 semantic Minor).
+  - **Bare-name collision risk** documented in §Risks #3 (closes r2 adversarial Important).
+  - **Consumer-plugin collision** documented in §Risks #4 (closes r2 adversarial Minor).
+  - **CONTRIBUTING.md deferral target** specified as "v2.0.1 alongside Phase 3" (closes r2 semantic Minor).
+  - **Environment release positioning** disambiguated (v2.0.0 pre-fix vs v2.0.1 post-fix; closes r2 semantic Important).
+  - **Root Cause #1 namespacing-version-claim** downgraded — no public Claude Code changelog cited for the "version-dependent rendering" claim; reworded to "consistent with literal `name:` rendering" (closes r2 semantic Important).
+  - **ADR-002 future-work** tracked in Regression Prevention (closes r2 architectural-fit Important — slash-naming convention currently elevated to canon by CLAUDE.md HARD RULE precedent only; promote to ADR or controlled-vocabulary.md §4.X when LLD-012 stabilizes).
+  - **§Risks section** added at h2 between Regression Prevention and Related Documents; bumps non-canon section list but does not violate canon §4.8 §10-required-sections (canon §4.8 listed sections are minimum; additional sections permitted).
+  - r3 closures NOT applied: r2 adversarial Important (eval scenario for sub-skill non-registration) → tracked as future-work in §Regression Prevention (not closed inline; would require new eval scenario file outside BUG-013 scope).
+  Reviewed: r3 closure batch skipped (paperwork-grade; user-authorized "Reword + recount + flip Fix Applied"). Status flip to Fix Applied in next commit.
+
+## Risks
+
+The post-fix state has 3 known residual risks (closes r2 adversarial Critical #1, #2, and the bare-name collision Important):
+
+1. **Discipline-only prevention (closes r2 adversarial Critical #1):** No mechanical lint/hook/CI today rejects `name: orchestra-foo` or asserts sub-skill `name:` matches a convention. Same drift can recur the moment a new skill author copies an old template. **Mitigation:** §Regression Prevention §future-work tracks the `cli.lint --skill-names` check for v1.8+. Until then, spec-review of new SKILL.md files against CLAUDE.md HARD RULE is the human gate.
+
+2. **One-level-deep skill discovery is host-runtime detail not contract (closes r2 adversarial Critical #2):** The sub-skill `name: init` claim ("decorative; not auto-registered as separate slash") depends on Claude Code's current one-level-deep `skills/<plugin>/SKILL.md` discovery behavior. If Claude Code adds recursive sub-skill discovery in a future version (or via a feature flag), every sub-skill with `name: init` immediately surfaces as `/orchestra:init` — colliding with the parent skill's slash. **Mitigation:** Monitor Claude Code release notes. If recursive discovery lands, rename sub-skill to a defensive name (e.g., `name: init-internal`) and codify a sub-skill suffix convention in CLAUDE.md HARD RULE. **Watchpoint:** any orchestra session that surfaces `/orchestra:design-docs-init` or similar sub-skill slash in autocomplete = signal that the invariant broke.
+
+3. **Bare-name `/init` host-collision risk (closes r2 adversarial Important — bare-name collision):** `name: init` in `skills/init/SKILL.md` assumes Claude Code auto-namespaces to `/orchestra:init`. If a future Claude Code surface ever renders skills WITHOUT plugin prefix (flat skill-picker UI, debug mode, future API surface), `name: init` collides with the well-known `/init` (initialize CLAUDE.md). **Mitigation:** Same watchpoint as risk #2 — monitor for flat-namespace rendering. If introduced, rename to `name: orchestra-init` and accept the hyphen-baked anomaly as the lesser evil.
+
+4. **Consumer-plugin collision (closes r2 adversarial Minor):** A consumer repo (downstream of orchestra) may define its own skill named `init` at top level. Two `name: init` from different plugins → undefined resolution order under Claude Code's plugin-resolution rules. **Mitigation:** Document in onboarding (when CONTRIBUTING.md ships): consumers SHOULD avoid `init` for top-level skills if they install orchestra; resolution order = last-loaded wins per current observed behavior.
 
 ## Regression Prevention
 
-**Mechanical layer (enforced by code):** none currently. The skill-name bare-form convention is documented in `.claude/CLAUDE.md § Slash command naming convention (HARD RULE)` and applied at skill-author time. No `cli.lint` rule rejects `name: orchestra-foo` style anomalies today.
+**Mechanical layer (enforced by code):** none currently. The skill-name bare-form convention is documented in `.claude/CLAUDE.md § Slash command naming convention (HARD RULE)` and applied at skill-author time. No `cli.lint` rule rejects `name: orchestra-foo` style anomalies today. **This is a discipline-only enforcement layer; see §Risks #1 for the recurrence-risk acknowledgement.**
 
 **Discipline layer (agent / human convention):**
 - Spec review of new skill SKILL.md frontmatter against the CLAUDE.md HARD RULE table.
 - When adding a new skill, the author MUST declare `name:` as bare (no `orchestra-` prefix); Claude Code namespaces automatically.
 
-**Future work (out of BUG-013 scope, target v1.8+):**
-- `cli.lint --skill-names` check: walk `skills/<plugin>/SKILL.md`, parse frontmatter, fail if any `name:` value starts with `orchestra-` or contains a literal `/` or `:`. Sub-skills at `skills/<plugin>/<subskill>/SKILL.md` get the same check.
+**Future work (out of BUG-013 scope, target v1.8+ to v2.1+):**
+- `cli.lint --skill-names` check: walk `skills/<plugin>/SKILL.md`, parse frontmatter, fail if any `name:` value starts with `orchestra-` or contains a literal `/` or `:`. Sub-skills at `skills/<plugin>/<subskill>/SKILL.md` get the same check. **Closes Risk #1 mechanically when shipped.**
 - `CONTRIBUTING.md` (file does not exist at HEAD): add when authoring guide stabilizes; encode the bare-name convention as a numbered rule.
+- ADR-002 (or equivalent) recording the bare-name + one-level-deep-discovery decisions per architectural-fit feedback (currently CLAUDE.md HARD RULE elevates convention to canon by precedent only, not via Design Doc / ADR spine). Target v2.1+ when LLD-012 rule durability ships and skill-author conventions stabilize.
+- Eval scenario (`eval/scenarios/`) asserting registered skill list contains `orchestra:design-docs` and does NOT contain `orchestra:design-docs-init` (or `orchestra:design-docs:init`). Programmatic regression test for §Risks #2.
 
 ## Related Documents
 
@@ -134,5 +184,6 @@ Post-fix (HEAD ≥ r2 closure commit): only `/orchestra:init`, `/orchestra:commi
 
 | Date | Change |
 |---|---|
-| 2026-05-11 | r1 — BUG filed after user-reported inconsistency via screenshot. orchestra slash commands appeared in 3 forms: `/orchestra:<name>` (colon-namespace, 3 skills) + `/orchestra-<name>` (hyphen-name, 1 skill) + sub-skill `:init` exposure semantics undocumented. Severity: Medium. Status: Investigating. r1 v1 attestation: fail (12 findings: 2 Critical + 6 Important + 4 Minor). |
-| 2026-05-12 | r2 — fix applied: `skills/init/SKILL.md` + `skills/design-docs/init/SKILL.md` `name:` fields renamed to bare `init`; `.claude/CLAUDE.md` HARD RULE table updated to reflect closure. r1 attestation findings closed inline per per-finding closure table in Iteration Log r2. BUG-012 cross-ref + v1.7.1 target removed (BUG-013 is a v2.0.1 patch fix; not aggregated under BUG-012). Status: Investigating. Pending r2 v2 spec-review. |
+| 2026-05-11 | r1 — BUG filed after user-reported inconsistency via screenshot. orchestra slash commands appeared in 3 forms. Severity: Medium. Status: Investigating. r1 v1 attestation: fail (14 findings: 3 Critical + 7 Important + 4 Minor — corrected at r3 from earlier 12-count). |
+| 2026-05-12 | r2 — fix applied (commits `1bbc0d0` code + `5e82443` doc + CLAUDE.md): `name:` fields renamed to bare `init`; CLAUDE.md HARD RULE table reflects closure. r1 attestation findings closed inline. BUG-012 cross-ref + v1.7.1 target removed. Status: Investigating. r2 v2 attestation: fail (32 findings: 3 Critical + 12 Important + 17 Minor; adversarial mandatory failed). |
+| 2026-05-12 | r3 — r2 attestation closure batch: r1 finding-count corrected 12→14; 3 r2 Criticals reframed via discipline-not-gate framing + §Risks subsection (3 risks: discipline-only enforcement, host-runtime discovery, bare-name collision); inline diff snippets added; Phase 3 downgraded to PENDING v2.0.1; canon §4.8 line anchor added; future-work tracks ADR-002 + cli.lint --skill-names + eval scenario. Status: Investigating → Fix Applied (next commit, user-authorized). |

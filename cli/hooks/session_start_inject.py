@@ -12,7 +12,10 @@ Subsequent slices add budget enforcement (3.2) and structured violations (3.3).
 from __future__ import annotations
 
 import json
+import logging
+import os
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 from cli.tldr_extractor import TldrSection, extract_tldr
@@ -21,6 +24,13 @@ ORCHESTRA_MARKER = "[ORCHESTRA TLDR]"
 HOOK_EVENT = "SessionStart"
 CLAUDE_FILE = Path(".claude/CLAUDE.md")
 RULES_DIR = Path(".claude/rules")
+STATE_DIR = Path(".claude/state")
+OVERFLOW_LOG = STATE_DIR / "budget-overflow.log"
+TOKEN_BUDGET = 500
+FALLBACK_MODEL = "claude-opus-4-7"
+HTTP_TIMEOUT_SECONDS = 2.0
+
+_logger = logging.getLogger(__name__)
 
 
 def _schema_layer_paths(root: Path) -> list[Path]:
@@ -57,6 +67,54 @@ def _format_additional_context(tldrs: list[tuple[Path, list[str]]]) -> str:
     return "\n".join(lines)
 
 
+def _format_fallback(tldrs: list[tuple[Path, list[str]]]) -> str:
+    names = ", ".join(p.name for p, _ in tldrs) if tldrs else "(none)"
+    return "\n".join(
+        [
+            ORCHESTRA_MARKER,
+            "<system-reminder>",
+            f"Rule files in effect: {names}",
+            "(TLDR injection over budget — see .claude/state/budget-overflow.log)",
+            "</system-reminder>",
+        ]
+    )
+
+
+def _count_tokens(text: str) -> int | None:
+    """Return Anthropic token count for `text`, or None when API unavailable.
+
+    Returns None on: missing ANTHROPIC_API_KEY, SDK import failure, HTTP error,
+    timeout. Caller treats None as "fall back to identity index" to keep
+    Claude Code startup non-blocking.
+    """
+    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    if not api_key:
+        return None
+    try:
+        import anthropic
+    except ImportError:
+        return None
+    try:
+        client = anthropic.Anthropic(api_key=api_key, timeout=HTTP_TIMEOUT_SECONDS)
+        result = client.messages.count_tokens(
+            model=FALLBACK_MODEL,
+            messages=[{"role": "user", "content": text}],
+        )
+        return int(result.input_tokens)
+    except Exception:
+        return None
+
+
+def _log_overflow(root: Path, tokens: int) -> None:
+    state_dir = root / STATE_DIR
+    state_dir.mkdir(parents=True, exist_ok=True)
+    line = (
+        f"{datetime.now(timezone.utc).isoformat()} "
+        f"tokens={tokens} budget={TOKEN_BUDGET}\n"
+    )
+    (root / OVERFLOW_LOG).open("a", encoding="utf-8").write(line)
+
+
 def _emit(payload: dict[str, object]) -> None:
     json.dump(payload, sys.stdout)
     sys.stdout.write("\n")
@@ -65,7 +123,15 @@ def _emit(payload: dict[str, object]) -> None:
 def main(argv: list[str] | None = None) -> int:
     root = Path.cwd()
     tldrs = _read_tldrs(root)
-    additional = _format_additional_context(tldrs)
+    full = _format_additional_context(tldrs)
+    tokens = _count_tokens(full)
+    if tokens is None:
+        additional = _format_fallback(tldrs)
+    elif tokens > TOKEN_BUDGET:
+        _log_overflow(root, tokens)
+        additional = _format_fallback(tldrs)
+    else:
+        additional = full
     payload: dict[str, object] = {
         "hookSpecificOutput": {
             "hookEventName": HOOK_EVENT,

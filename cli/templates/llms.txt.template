@@ -1,7 +1,10 @@
-# Project Documentation
+# {{project_name}} — Documentation
 
 > LLM-readable navigation index conformant with the llms.txt spec
 > (Jeremy Howard / Answer.AI — llmstxt.org).
+
+- **Repo:** {{repo_url}}
+- **Tech stack:** {{tech_stack}}
 
 ## Standards
 

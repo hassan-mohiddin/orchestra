@@ -5,8 +5,11 @@
 
 ## Project
 
-This repository uses [orchestra](https://github.com/hassan-mohiddin/orchestra)
+**{{project_name}}** — uses [orchestra](https://github.com/hassan-mohiddin/orchestra)
 for documentation discipline.
+
+- **Repo:** {{repo_url}}
+- **Tech stack:** {{tech_stack}}
 
 ## Documentation
 

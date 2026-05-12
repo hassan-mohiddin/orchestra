@@ -76,10 +76,96 @@ def scaffold_bucket_1(config: dict, root: Path, force: bool = False) -> Scaffold
     return result
 
 
+_MISSING_VALUE = "—"  # em-dash — clearer than empty when a field isn't detected
+
+
+def detect_project_context(root: Path) -> dict[str, str]:
+    """Best-effort project introspection for AGENTS.md / llms.txt templating.
+
+    Returns dict with keys: project_name, repo_url, tech_stack.
+    Missing fields are returned as empty strings — `_render_template` is
+    responsible for substituting the em-dash sentinel at render time.
+    Name fallback order: pyproject.toml [project].name → package.json
+    name → repo dir name.
+    """
+    project_name = ""
+    repo_url = ""
+    stacks: list[str] = []
+
+    pyproject = root / "pyproject.toml"
+    if pyproject.exists():
+        try:
+            import tomllib
+            data = tomllib.loads(pyproject.read_text())
+            name = data.get("project", {}).get("name")
+            if isinstance(name, str) and name.strip():
+                project_name = name.strip()
+        except (OSError, ValueError, ImportError):
+            pass
+        stacks.append("Python")
+
+    pkg = root / "package.json"
+    if pkg.exists():
+        if not project_name:
+            try:
+                data = json.loads(pkg.read_text())
+                name = data.get("name")
+                if isinstance(name, str) and name.strip():
+                    project_name = name.strip()
+            except (OSError, ValueError):
+                pass
+        stacks.append("Node.js")
+
+    if (root / "Cargo.toml").exists():
+        stacks.append("Rust")
+    if (root / "go.mod").exists():
+        stacks.append("Go")
+    if (root / "Gemfile").exists():
+        stacks.append("Ruby")
+
+    if not project_name:
+        project_name = root.name
+
+    try:
+        proc = subprocess.run(
+            ["git", "-C", str(root), "config", "--get", "remote.origin.url"],
+            capture_output=True, text=True, check=False,
+        )
+        if proc.returncode == 0:
+            repo_url = proc.stdout.strip()
+    except (FileNotFoundError, OSError):
+        pass
+
+    return {
+        "project_name": project_name,
+        "repo_url": repo_url,
+        "tech_stack": ", ".join(stacks),
+    }
+
+
+def _render_template(template: str, ctx: dict[str, str]) -> str:
+    """Substitute `{{key}}` placeholders. Missing/empty values render as em-dash.
+
+    Keeps the contract simple: any `{{x}}` literal in the template is
+    replaced with either ctx[x] (when non-empty) or the em-dash sentinel.
+    Unknown placeholders also render as em-dash — never leak the literal.
+    """
+    import re
+
+    def sub(match: "re.Match[str]") -> str:
+        key = match.group(1).strip()
+        value = ctx.get(key, "")
+        return value if value else _MISSING_VALUE
+
+    return re.sub(r"\{\{\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\}\}", sub, template)
+
+
 def scaffold_bucket_2(config: dict, root: Path, force: bool = False) -> ScaffoldResult:
-    """Create CI workflow + AGENTS.md + llms.txt."""
+    """Create CI workflow + AGENTS.md + llms.txt with project-aware substitution."""
     result = ScaffoldResult()
     dd = config["skills"]["design-docs"]
+
+    ctx = detect_project_context(root)
 
     if dd.get("ci_workflow_installed"):
         ci_path = root / ".github" / "workflows" / "orchestra-lint.yml"
@@ -95,7 +181,8 @@ def scaffold_bucket_2(config: dict, root: Path, force: bool = False) -> Scaffold
         if agents_path.exists() and not force:
             result.skipped.append(agents_path)
         else:
-            agents_path.write_text((TEMPLATES_DIR / "AGENTS.md.template").read_text())
+            template = (TEMPLATES_DIR / "AGENTS.md.template").read_text()
+            agents_path.write_text(_render_template(template, ctx))
             result.created.append(agents_path)
 
     if dd.get("llms_txt_installed"):
@@ -103,7 +190,8 @@ def scaffold_bucket_2(config: dict, root: Path, force: bool = False) -> Scaffold
         if llms_path.exists() and not force:
             result.skipped.append(llms_path)
         else:
-            llms_path.write_text((TEMPLATES_DIR / "llms.txt.template").read_text())
+            template = (TEMPLATES_DIR / "llms.txt.template").read_text()
+            llms_path.write_text(_render_template(template, ctx))
             result.created.append(llms_path)
 
     return result

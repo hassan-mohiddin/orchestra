@@ -94,6 +94,10 @@ POSTMORTEM_SUPERSESSION_RE = re.compile(
 )
 RUNBOOK_FIRST_ITERATION_RE = re.compile(r"^RUNBOOK-([a-z][a-z0-9-]*)\.md$")
 RUNBOOK_SUPERSESSION_RE = re.compile(r"^RUNBOOK-([a-z][a-z0-9-]*)-r(\d+)\.md$")
+# Post-BUG-013 closure — ADR-NNN-name lint_doc_id_burn dispatch was missing
+# (BUG-014-class gap). Canon §4.10 specifies `ADR-NNN-name(-rN)?.md`.
+ADR_FIRST_ITERATION_RE = re.compile(r"^ADR-(\d+)-([a-z][a-z0-9-]*)\.md$")
+ADR_SUPERSESSION_RE = re.compile(r"^ADR-(\d+)-([a-z][a-z0-9-]*)-r(\d+)\.md$")
 
 # ---------------------------------------------------------------------------
 # L2 required-section helpers (slice 3 — canon §4.8 + tolerant prefix-match)
@@ -998,7 +1002,49 @@ def lint_doc_id_burn(new_doc_path: Path, repo_root: Path) -> list[Finding]:
             "(canon §4.10)",
         )]
 
-    # Existing NNN- / BUG-NNN- flow (features, bugs, adr)
+    # Post-BUG-013 — ADR-NNN-name dispatch. lint_doc_id_burn pre-this-fix
+    # used FIRST_ITERATION_RE / FIRST_ITERATION_BUG_RE which don't match
+    # `ADR-NNN-name.md`. Canon §4.10 defines the ADR grammar; mirror the
+    # RUNBOOK/POSTMORTEM dispatch shape (regex + supersession-via-helper +
+    # first-iter id-burn check).
+    if doc_type == "adr":
+        m_super = ADR_SUPERSESSION_RE.match(name)
+        if m_super:
+            new_id_str, base, new_r = m_super.group(1), m_super.group(2), int(m_super.group(3))
+            return _check_supersession_with_base(
+                new_doc_path, canon_dir, archive_dir,
+                first_iter_name=f"ADR-{new_id_str}-{base}.md",
+                base_for_glob=f"ADR-{new_id_str}-{base}",
+                new_r=new_r,
+                super_re=ADR_SUPERSESSION_RE,
+            )
+        m_first = ADR_FIRST_ITERATION_RE.match(name)
+        if m_first:
+            new_id = int(m_first.group(1))
+            new_doc_resolved = new_doc_path.resolve() if new_doc_path.exists() else new_doc_path
+            existing_ids: list[int] = []
+            for d in (canon_dir, archive_dir):
+                if not d.exists():
+                    continue
+                for p in d.glob("ADR-*.md"):
+                    m = ADR_FIRST_ITERATION_RE.match(p.name)
+                    if m and p.resolve() != new_doc_resolved:
+                        existing_ids.append(int(m.group(1)))
+            max_id = max(existing_ids, default=0)
+            if new_id <= max_id:
+                return [Finding(
+                    "error", str(new_doc_path),
+                    f"first-iteration doc-id {new_id} reuses existing or burned id "
+                    f"(max={max_id}). Next available: {max_id + 1}.",
+                )]
+            return []
+        return [Finding(
+            "error", str(new_doc_path),
+            f"filename {name!r} does not match ADR-NNN-name pattern "
+            "(canon §4.10)",
+        )]
+
+    # Existing NNN- / BUG-NNN- flow (features, bugs)
     m_first = FIRST_ITERATION_RE.match(name) or FIRST_ITERATION_BUG_RE.match(name)
     m_super = SUPERSESSION_ITERATION_RE.match(name) or SUPERSESSION_ITERATION_BUG_RE.match(name)
 

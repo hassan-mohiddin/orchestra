@@ -36,6 +36,51 @@ def test_design_bare_name_first_iter_accepted(tmp_path):
     assert findings == [], f"expected no findings, got: {[f.message for f in findings]}"
 
 
+# ---------------------------------------------------------------------------
+# ADR-NNN-name first-iter + supersession (post-BUG-013 gap closure)
+# ---------------------------------------------------------------------------
+
+
+def test_adr_first_iter_accepted(tmp_path):
+    """First-iter ADR with strictly-greater id passes."""
+    _mk(tmp_path, "docs", "adr", "ADR-001-foo.md")
+    new_doc = _mk(tmp_path, "docs", "adr", "ADR-002-bar.md")
+    findings = lint_doc_id_burn(new_doc, tmp_path)
+    assert findings == [], f"expected no findings, got: {[f.message for f in findings]}"
+
+
+def test_adr_first_iter_duplicate_id_rejected(tmp_path):
+    """First-iter ADR reusing existing id is rejected."""
+    _mk(tmp_path, "docs", "adr", "ADR-001-foo.md")
+    new_doc = _mk(tmp_path, "docs", "adr", "ADR-001-collision.md")
+    findings = lint_doc_id_burn(new_doc, tmp_path)
+    assert findings, "expected duplicate-id rejection"
+    assert any("reuses existing or burned id" in f.message for f in findings)
+
+
+def test_adr_supersession_accepted(tmp_path):
+    """Supersession-iteration ADR with base + valid r passes."""
+    _mk(tmp_path, "docs", "adr", "ADR-001-foo.md")
+    new_doc = _mk(tmp_path, "docs", "adr", "ADR-001-foo-r2.md")
+    findings = lint_doc_id_burn(new_doc, tmp_path)
+    assert findings == [], f"expected no findings, got: {[f.message for f in findings]}"
+
+
+def test_adr_supersession_without_base_rejected(tmp_path):
+    """Supersession-iteration ADR with no base anywhere rejected."""
+    new_doc = _mk(tmp_path, "docs", "adr", "ADR-099-orphan-r2.md")
+    findings = lint_doc_id_burn(new_doc, tmp_path)
+    assert findings, "expected supersession-without-base rejection"
+    assert any("does not exist" in f.message for f in findings)
+
+
+def test_adr_filename_invalid_rejected(tmp_path):
+    """ADR file with malformed name rejected with clear ADR-pattern message."""
+    new_doc = _mk(tmp_path, "docs", "adr", "ADR-bogus-no-number.md")
+    findings = lint_doc_id_burn(new_doc, tmp_path)
+    assert findings, "expected pattern-mismatch rejection"
+
+
 def test_design_bare_name_supersession_accepted(tmp_path):
     # First-iter base must exist for supersession to be valid.
     _mk(tmp_path, "docs", "design", "vocabulary-canon.md")

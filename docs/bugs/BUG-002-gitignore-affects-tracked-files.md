@@ -97,6 +97,7 @@ Files:
 |---|---|---|---|
 | 2026-05-06 | (none yet — bug filed for v1.4 fix) | — | — |
 | 2026-05-10 | v1.4 burnt; deferred to v1.7+. Fix: cli.init must `git ls-files --error-unmatch <path>` before appending to .gitignore; if tracked, warn + skip. | none — deferred | Status remains Investigating; v1.7+ |
+| 2026-05-12 | Implemented BUG-002 § Fix Description as specified (Path-as-specified, no scope deviation). New `_check_tracked_in_path(root, pattern)` helper uses `git ls-files -- <pattern>` (trailing `/` stripped); returns `[]` on non-git repos or git-missing — safe no-op. `_append_gitignore` now skips non-comment entries when tracked-file list non-empty + `force=False`, appending warning to `ScaffoldResult.warnings`. New `warnings: list[str]` field added to `ScaffoldResult` dataclass (`default_factory=list` — backwards-compatible). `run_init` propagates warnings through combined result. `main()` emits warnings to stderr with ⚠ prefix. `--force` flag overrides the safety check (per BUG-002 § Fix Description). | `cli/init.py`: ScaffoldResult.warnings field, _check_tracked_in_path helper, _append_gitignore skip+warn branch, run_init warnings propagation, main() stderr emit. `tests/test_cli_init_bucket1.py`: 4 new tests — skip-on-tracked, force-overrides, no-warning-fresh-repo, sibling-patterns-still-append. pytest 543 pass (+4 from prior 539) / pyrefly 0 / cli.lint --pre-commit clean. Status holds at Investigating pending user-verify in real repo with pre-existing `docs/investigations/` content. |
 
 ## Regression Prevention
 
@@ -114,3 +115,4 @@ Integration test in `tests/test_cli_init_bucket1.py`:
 | Date | Change |
 |---|---|
 | 2026-05-06 | Filed during SCALE orchestra:init audit. SCALE's `docs/investigations/` had 2 tracked files when init silently added the path. Status: Investigating. Target fix: v1.4. |
+| 2026-05-12 | Fix applied per § Fix Description: tracked-file safety check via `git ls-files`; warnings surfaced; `--force` override; 4 regression tests. Bundle target: v2.0.1. Status remains Investigating pending user fresh-repo verify. |

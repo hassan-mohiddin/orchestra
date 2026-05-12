@@ -1,7 +1,34 @@
 # Orchestra Handoff — Session Continuity Pointer
 
-> **Last updated:** 2026-05-12 — BUG-012 + BUG-013 both SHIPPED (Fix Applied). LLD-012 v2.1 PLAN READY for execution (parallel session). HEAD: `de0eee4`.
-> **Last session ended:** BUG-013 r3 closure batch committed (`de0eee4`) — slash-command naming inconsistency closed. SKILL.md `name:` field renames (`orchestra-init` → `init`, `design-docs-init` → `init`) shipped in commit `1bbc0d0`; r2 body + CLAUDE.md HARD RULE update in `5e82443`; r3 reframing + Status flip in `de0eee4`. r2 v2 attestation (32 findings: 3 Crit + 12 Imp + 17 Min) closed via discipline-not-gate framing + §Risks subsection. Phase 3 (CHANGELOG sync) tracks to v2.0.1 ship. BUG-012 closed earlier this session (`a0c8fa9`).
+> **Last updated:** 2026-05-12 — v2.0.1 LAUNCHED. Tag `v2.0.1` pushed at commit `c30d358`. GitHub release: https://github.com/hassan-mohiddin/orchestra/releases/tag/v2.0.1. HEAD `9e98ca1`.
+> **Last session ended:** v2.0.1 onboarding hotfix bundle shipped — 6 BUGs closed (BUG-001 init flow, BUG-002 gitignore, BUG-004 templates, BUG-005 mkdocs nav, BUG-013 slash-command naming, BUG-018 lint v2 validator). Plugin metadata bumped 2.0.0 → 2.0.1. Canon §4.9 + §4.11 updated with v2 sub-judge vocabulary. pytest 580 / pyrefly 0 / cli.lint clean.
+
+---
+
+## 🚀 v2.0.1 LAUNCHED (this session)
+
+**Tag:** `v2.0.1` at `c30d358`. Pushed to origin.
+**Release:** https://github.com/hassan-mohiddin/orchestra/releases/tag/v2.0.1
+**Release notes:** drafted at `/tmp/v2.0.1-release-notes.md` (also on release page).
+
+**6 BUGs closed (Fix Applied)**:
+- **BUG-001** init flow not interactive (Critical) — AskUserQuestion-driven 3-prompt flow; `cli.init --migrate-v10`; 17 regression tests.
+- **BUG-002** gitignore affects tracked files (High) — `git ls-files` safety check; `--force` override.
+- **BUG-004** templates not project-aware (Medium) — `detect_project_context` + `_render_template`; em-dash sentinel for missing fields.
+- **BUG-005** mkdocs nav no-auto-detect (Medium) — `--auto-nav` flag; scan + inject.
+- **BUG-013** slash-command naming (Medium) — `/orchestra-init` → `/orchestra:init`. **Shipped by parallel session within this window.**
+- **BUG-018** lint v2 validator (High) — `schema_version` branch; v1.0 / v2.0+ canon vocab; tiered narrow-change against v2 attestations works.
+
+**Final gate state:** pytest 580 / pyrefly 0 / cli.lint --pre-commit clean.
+
+**Open Investigating (parallel-session-owned, NOT touched by this session):**
+- BUG-019 PDSA cwd-assumed-as-repo-root — filed this session; r1 attestation persisted.
+
+---
+
+## ✅ Pre-v1.7 sweep DONE (v2.0.1 bundle)
+
+All 4 pre-v1.7 onboarding-critical BUGs from the standing backlog are Fix Applied + shipped in v2.0.1 (plus BUG-013 + BUG-018 added during the sweep). No remaining items in this backlog.
 
 ---
 
@@ -29,27 +56,9 @@ TDD vertical slicing per workflow §Step 4. One failing test → one impl → gr
 
 ---
 
-## 🎯 Standing backlog (pre-v1.7 BUG sweep — bundle as v2.0.1 patch release)
+## ✅ Pre-v1.7 BUG sweep CLOSED (shipped in v2.0.1)
 
-Onboarding-critical bugs open since v1.4, deferred through v1.5/v1.6/v1.7/v2.0.0. Now that v2.0.0 has shipped, new consumer installs will hit these on day-1. Severity-ordered sequence:
-
-| Order | BUG | Severity | Est | Why first |
-|---|---|---|---|---|
-| 1 | `docs/bugs/BUG-001-init-flow-not-interactive.md` | Critical | ~4h (could be a full day — structural) | `/orchestra:init` improvises instead of firing `AskUserQuestion` prompts; visible to every consumer on first install |
-| 2 | `docs/bugs/BUG-002-gitignore-affects-tracked-files.md` | High | ~2h | silent data-handling defect; same install path as BUG-001 |
-| 3 | `docs/bugs/BUG-004-templates-not-project-aware.md` | Medium | ~3h | AGENTS.md / llms.txt are orchestra-generic, not project-aware |
-| 4 | `docs/bugs/BUG-005-mkdocs-nav-no-auto-detect.md` | Medium | ~2h | mkdocs.yml nav hardcoded; auto-detect from filesystem |
-
-**Bundle target:** v2.0.1 patch release (4 fixes, no API change).
-
-**Discipline:** Each BUG = full iteration loop:
-1. Read BUG doc + reproduce
-2. Hypothesis + fix
-3. Tests
-4. Wait for user-confirm before `fix:` commit
-5. Status flip Investigating → Fix Applied → Verified
-
-**Start with BUG-001.** Read full body + propose attack-surface analysis BEFORE any code change. Authorization needed per-BUG.
+All 4 standing-backlog onboarding-critical BUGs + 2 sweep-discovered (BUG-013, BUG-018) shipped in v2.0.1. See "🚀 v2.0.1 LAUNCHED" section above for full list + commit refs. No remaining items in this backlog.
 
 ---
 

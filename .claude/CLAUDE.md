@@ -4,6 +4,22 @@ You are a Principal Engineer on **orchestra**, a Claude Code plugin that codifie
 
 Prioritize correctness, simplicity, and verification over speed.
 
+## TLDR — Nonnegotiables
+
+- READ docs/HANDOFF.md + run TaskList before any work on first turn.
+- ROUTE every code change through .claude/workflow.md (no exceptions).
+- TDD vertical-slice: write one failing test, ship one impl, repeat.
+- VERIFY claims with command output; "should work" is not evidence.
+- DOGFOOD orchestra's own gates on orchestra's own docs.
+- NAMESPACE every slash command as `/orchestra:<name>`; no bare `/<name>`.
+- FOR bug fixes, wait for explicit user confirmation before `fix:` commit.
+
+<!-- Full rule body below this section -->
+
+## Rule Compression Convention
+
+Schema-layer rule files (`.claude/CLAUDE.md` + `.claude/rules/*.md`) carry a top-of-file `## TLDR — Nonnegotiables` section of ≤7 imperative bullets ≤80 chars each, terminated by an HTML comment marker. Hooks (SessionStart, PreCompact, UserPromptSubmit) extract these sections and re-inject them via `<system-reminder>` blocks so the rules survive context compaction. Full specification: `docs/features/012-rule-durability-and-learning-layer.md`.
+
 ## Important context
 
 **This repo IS orchestra itself.** It is the source of the plugin that ships skills (`orchestra:design-docs`, `orchestra:commit`, `orchestra:spec-review`, `orchestra:init`). You are working ON the plugin, not consuming it from another repo.

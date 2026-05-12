@@ -1,7 +1,8 @@
 """TLDR section extractor for orchestra schema-layer files (LLD-012 SC-1 substrate).
 
-Parses `## TLDR — Nonnegotiables` ... `<!-- Full rule body below this section -->`
-sections. Pure parsing — no I/O. Caller is responsible for reading file contents.
+`extract_tldr` is pure parsing — no I/O. A thin __main__ CLI reads a single
+file path and exits 0 (OK) / 1 (TldrError) / 2 (bad args) for use as a
+verification step during TLDR authoring.
 
 Format spec: docs/features/012-rule-durability-and-learning-layer.md § TLDR section format.
 """
@@ -10,7 +11,9 @@ from __future__ import annotations
 
 import logging
 import re
+import sys
 from dataclasses import dataclass, field
+from pathlib import Path
 
 _logger = logging.getLogger(__name__)
 
@@ -70,3 +73,23 @@ def extract_tldr(text: str) -> TldrSection | TldrError:
             detail=f"bullet length exceeds {MAX_BULLET_LENGTH} chars: {sample}",
         )
     return TldrSection(bullets=bullets)
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = sys.argv[1:] if argv is None else argv
+    if len(args) != 1:
+        print("usage: python -m cli.tldr_extractor <file>", file=sys.stderr)
+        return 2
+    text = Path(args[0]).read_text(encoding="utf-8")
+    result = extract_tldr(text)
+    if isinstance(result, TldrError):
+        print(f"FAIL: {result.reason}: {result.detail}", file=sys.stderr)
+        return 1
+    print(f"OK: {len(result.bullets)} bullets")
+    for bullet in result.bullets:
+        print(f"  - {bullet}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

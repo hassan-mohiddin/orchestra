@@ -77,3 +77,134 @@ def test_gather_keywords_from_seeded_repo(
     assert len(keywords) == 2
     assert "HANDOFF.md" in keywords[0]
     assert "TaskList" in keywords[1]
+
+
+def test_probe_keyword_survival_all_survived(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from cli import compaction_probe
+
+    monkeypatch.setattr(
+        compaction_probe,
+        "_run_compaction_summary",
+        lambda _payload: "The summary preserves HANDOFF.md and TaskList verbatim.",
+    )
+    result = compaction_probe.probe_keyword_survival(
+        "payload", ["HANDOFF.md", "TaskList"]
+    )
+    assert result["all_survived"] is True
+    assert result["error"] is None
+    assert result["survived"] == {"HANDOFF.md": True, "TaskList": True}
+
+
+def test_probe_keyword_survival_some_lost(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from cli import compaction_probe
+
+    monkeypatch.setattr(
+        compaction_probe,
+        "_run_compaction_summary",
+        lambda _payload: "Only HANDOFF.md survives this summary.",
+    )
+    result = compaction_probe.probe_keyword_survival(
+        "payload", ["HANDOFF.md", "TaskList"]
+    )
+    assert result["all_survived"] is False
+    assert result["survived"] == {"HANDOFF.md": True, "TaskList": False}
+
+
+def test_compact_invocation_mocked_exits_zero_when_all_survive(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    from cli import compaction_probe
+
+    (tmp_path / ".claude").mkdir()
+    (tmp_path / ".claude/CLAUDE.md").write_text(
+        "## TLDR — Nonnegotiables\n\n- READ HANDOFF.md anchor.\n\n<!-- Full rule body below this section -->\n",
+        encoding="utf-8",
+    )
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(
+        compaction_probe,
+        "_run_compaction_summary",
+        lambda _payload: "summary contains HANDOFF.md verbatim",
+    )
+    rc = compaction_probe.main([])
+    out = capsys.readouterr().out
+    assert rc == 0
+    assert "PASS" in out
+
+
+def test_compact_invocation_mocked_exits_1_when_keyword_lost(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    from cli import compaction_probe
+
+    (tmp_path / ".claude").mkdir()
+    (tmp_path / ".claude/CLAUDE.md").write_text(
+        "## TLDR — Nonnegotiables\n\n- READ HANDOFF.md anchor.\n\n<!-- Full rule body below this section -->\n",
+        encoding="utf-8",
+    )
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(
+        compaction_probe,
+        "_run_compaction_summary",
+        lambda _payload: "the summary paraphrased everything away",
+    )
+    rc = compaction_probe.main([])
+    err = capsys.readouterr().err
+    assert rc == 1
+    assert "FAIL" in err
+    assert "HANDOFF.md" in err
+
+
+def test_missing_api_key_exits_2(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    from cli import compaction_probe
+
+    (tmp_path / ".claude").mkdir()
+    (tmp_path / ".claude/CLAUDE.md").write_text(
+        "## TLDR — Nonnegotiables\n\n- One HANDOFF.md bullet.\n\n<!-- Full rule body below this section -->\n",
+        encoding="utf-8",
+    )
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.setattr(
+        compaction_probe, "_run_compaction_summary", lambda _payload: None
+    )
+    rc = compaction_probe.main([])
+    err = capsys.readouterr().err
+    assert rc == 2
+    assert "ANTHROPIC_API_KEY" in err
+
+
+def test_allow_skip_local_dev_only(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    from cli import compaction_probe
+
+    (tmp_path / ".claude").mkdir()
+    (tmp_path / ".claude/CLAUDE.md").write_text(
+        "## TLDR — Nonnegotiables\n\n- One bullet HANDOFF.md.\n\n<!-- Full rule body below this section -->\n",
+        encoding="utf-8",
+    )
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.setattr(
+        compaction_probe, "_run_compaction_summary", lambda _payload: None
+    )
+    rc = compaction_probe.main(["--allow-skip"])
+    err = capsys.readouterr().err
+    assert rc == 0
+    assert "WARN" in err
+    assert "skipped" in err

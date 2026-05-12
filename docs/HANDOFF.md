@@ -1,11 +1,55 @@
 # Orchestra Handoff — Session Continuity Pointer
 
-> **Last updated:** 2026-05-12 — v2.0.1 LAUNCHED. Tag `v2.0.1` pushed at commit `c30d358`. GitHub release: https://github.com/hassan-mohiddin/orchestra/releases/tag/v2.0.1. HEAD `9e98ca1`.
-> **Last session ended:** v2.0.1 onboarding hotfix bundle shipped — 6 BUGs closed (BUG-001 init flow, BUG-002 gitignore, BUG-004 templates, BUG-005 mkdocs nav, BUG-013 slash-command naming, BUG-018 lint v2 validator). Plugin metadata bumped 2.0.0 → 2.0.1. Canon §4.9 + §4.11 updated with v2 sub-judge vocabulary. pytest 580 / pyrefly 0 / cli.lint clean.
+> **Last updated:** 2026-05-12 — v2.1.0 SHIPPED. Tag pending user authorization for push. HEAD `151e521`.
+> **Last session ended:** LLD-012 Rule Durability + Learning Layer shipped end-to-end. 35 slice commits across Phases 1-9. Plugin metadata bumped 2.0.1 → 2.1.0. 14 SCs from LLD-012 met. BUG-019 (PDSA cwd-assumed-as-repo-root) also fixed mid-session (commit `81f8e59`, GH issue #9 closed).
 
 ---
 
-## 🚀 v2.0.1 LAUNCHED (this session)
+## 🚀 v2.1.0 SHIPPED (this session)
+
+**Tag:** pending — local tag `v2.1.0` on slice 9.5 commit; push deferred for user authorization per CLAUDE.md irreversible-action rule.
+
+**LLD-012 ship summary — 9 phases, 35 slices:**
+
+| Phase | Slices | Output |
+|---|---|---|
+| 1 | 1.0–1.7 | anthropic dep, TLDR extractor (5 failure modes), lessons store, `.claude/state/` gitignore |
+| 2 | 2.1–2.6 | `## TLDR — Nonnegotiables` sections on `.claude/CLAUDE.md` + 4 rule files + Karpathy K-lineage Changelog row on `orchestra-philosophy-r2` |
+| 3 | 3.1–3.6 | `cli/hooks/` package: SessionStart + PreCompact + UserPromptSubmit handlers + 500-token budget + structured-violation allowlist + fail-loud `_run()` wrappers |
+| 4 | 4.1–4.5 | `cli/install_claude_hooks.py`: install + uninstall + --verify CI gate + merge-with-existing + --force flag |
+| 5 | 5.1–5.4 | `skills/lessons/SKILL.md` + 3 slash-command shims (`/orchestra:teach`, `/orchestra:violation`, `/orchestra:lessons-lint`) + `cli/lessons_teach.py` + `cli/lessons_violation.py` (allowlist + path-traversal defense + symlink rejection) |
+| 6 | 6.1–6.6 | `cli/lessons_lint.py` (recurrence scan + proxy artifact draft + tie-break) + `cli/lessons_apply.py` (iter-aware attestation lookup + target mutation + auto-promote marker) + `cli/compaction_probe.py` (Q3-resolved: messages.create fallback) |
+| 7 | 7.1 | `cli/spec_review.py` force-mode fail-closed on malformed v2.0 attestation (codex #4 fix) |
+| 8 | 8.1–8.2 | `tests/integration/test_hook_emission.py` + `tests/integration/test_end_to_end_violation.py` (install → SessionStart → 3 violations → lint → mocked attestation pass → apply → marker) |
+| 9 | 9.1–9.6 | self-install on this repo (settings.json gitignored), compaction probe verify (--allow-skip local), plugin.json/marketplace.json 2.0.1 → 2.1.0, this HANDOFF update, LLD-012 Status flip Draft → Implemented, local tag `v2.1.0` |
+
+**14 SCs from LLD-012 met:** SC-1 (TLDR sections) / SC-2 (install_claude_hooks) / SC-3 (SessionStart emission) / SC-4 (PreCompact compact_instructions) / SC-5 (compaction_probe CI gate) / SC-6 (3 slash commands) / SC-7 (lessons file format + auto-promote marker) / SC-8 (lessons_lint proxy artifact, no auto-spec-review) / SC-9 (lessons_apply attestation-gated mutation) / SC-10 (sys.executable resolution + --verify) / SC-11 (free-text teach never injected) / SC-12 (unit + integration test coverage) / SC-13 (philosophy K-lineage + CLAUDE.md compression convention) / SC-14 (UserPromptSubmit Nth-turn).
+
+**Final gate state:** pytest ~660 (was 580 pre-LLD-012; +80 new) / pyrefly 0 / cli.lint --pre-commit clean / cli.eval 12/12 (unchanged).
+
+**Deviations from plan:**
+- `.claude/settings.json` gitignored (per-user absolute interpreter path) — each contributor re-runs `python -m cli.install_claude_hooks` after clone.
+- Slice 9.2 compaction probe ran with `--allow-skip` (no ANTHROPIC_API_KEY in dev env). CI must NOT skip — set ANTHROPIC_API_KEY + drop the flag.
+- Q3 resolved at slice 6.6: `compact_20260112` is NOT exposed in `anthropic` SDK 0.101.0; probe uses `messages.create` summarization endpoint as the Q3-default fallback.
+
+**Deferred to v2.2/v2.3 hardening** (from LLD-012 r2 + plan r2 attestations):
+- LLD-014: hook signing + manifest fingerprint
+- LLD-015: attestation auth + judge-identity binding + hash-chain
+- LLD-016: lesson injection semantic sanitization
+- v2.2: local tokenizer fallback (eliminate API-blocking hook); compaction probe n-trial statistical sampling; concurrency primitives for turn-counter
+
+---
+
+## 🎯 NEXT
+
+1. **Push v2.1.0 tag.** Requires explicit user authorization (irreversible action per CLAUDE.md). Command: `git push origin v2.1.0`.
+2. **Set ANTHROPIC_API_KEY in CI + remove `--allow-skip` from any CI invocation** of `python -m cli.compaction_probe`. The probe is a CI gate per LLD-012 SC-5; locally it can skip but CI must not.
+3. **Pre-v2.2 backlog:** open issues against LLD-014 (hook signing), LLD-015 (attestation auth), LLD-016 (lesson sanitization) when ready to plan v2.2.
+4. **Contributors after clone** must run `python -m cli.install_claude_hooks` to regenerate the per-user `.claude/settings.json` (gitignored, absolute interpreter path is per-user).
+
+---
+
+## 🚀 v2.0.1 LAUNCHED (last session)
 
 **Tag:** `v2.0.1` at `c30d358`. Pushed to origin.
 **Release:** https://github.com/hassan-mohiddin/orchestra/releases/tag/v2.0.1

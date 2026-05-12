@@ -17,6 +17,8 @@ _logger = logging.getLogger(__name__)
 TLDR_HEADER_RE = re.compile(r"^## TLDR — Nonnegotiables\s*$", re.MULTILINE)
 TLDR_CLOSE_MARKER = "<!-- Full rule body below this section -->"
 BULLET_RE = re.compile(r"^-\s+(.+?)\s*$")
+MAX_BULLETS = 7
+MAX_BULLET_LENGTH = 80
 
 
 @dataclass
@@ -50,4 +52,16 @@ def extract_tldr(text: str) -> TldrSection | TldrError:
     else:
         body = text[header_end:close_idx]
     bullets = [m.group(1) for line in body.splitlines() if (m := BULLET_RE.match(line))]
+    if len(bullets) > MAX_BULLETS:
+        return TldrError(
+            reason="overflow",
+            detail=f"bullet count {len(bullets)} exceeds max {MAX_BULLETS}",
+        )
+    over_length = [b for b in bullets if len(b) > MAX_BULLET_LENGTH]
+    if over_length:
+        sample = "; ".join(f"{b[:40]}…" for b in over_length[:3])
+        return TldrError(
+            reason="overflow",
+            detail=f"bullet length exceeds {MAX_BULLET_LENGTH} chars: {sample}",
+        )
     return TldrSection(bullets=bullets)

@@ -46,6 +46,8 @@ Promotion: investigation scratch notes that confirm a defect graduate to BUG-NNN
 
 See `rules/documentation-gate.md` Gate 1 for full rule.
 
+**Interview Gate** (cheap-half of backward-flow workflow, shipped v1.7+) fires alongside Phase 0 on: low context, ambiguous instruction, silent design decision, ambiguous scope, pre-dispatch checklist hit, judgment call with >10 min blast radius, iteration plateau. STOP and ask the user before silently picking a direction. Full rule: `rules/interview-gate.md`.
+
 ---
 
 ## Step 1 — Brainstorm
@@ -118,7 +120,7 @@ For multi-step features, write an implementation plan.
 | `refactor:` | Code restructuring, no behavior change |
 | `chore:` | Maintenance, config, Design Doc sync |
 | `docs:` | Documentation-only changes |
-| `wip:` | Work-in-progress during bug iteration loops |
+| `wip:` | Work-in-progress during bug iteration loops (see §Bug iteration — user confirmation gate below) |
 
 ---
 
@@ -130,6 +132,8 @@ If reality diverged → add a `DEVIATION:` changelog entry explaining what chang
 If matches → add a confirmation entry: `Implementation matches design. Status → Implemented`.
 
 Commit doc update before verification. Never verify against a stale doc.
+
+**Canon-frozen edits require supersession, not in-place body rewrites.** If the design doc Status ∈ {Approved, Implemented, Verified, Fix Applied, Current}, body changes follow either (a) whitelist edit (Status / Iteration / Superseded by + Changelog append only), (b) tiered narrow-change (`Addresses:` line per finding), or (c) supersession to `-rN.md` with prior archived. See `skills/commit/references/canon-frozen-guard.md`.
 
 ---
 
@@ -218,4 +222,4 @@ If the registry's bound skill is not in the current session's available-skills l
 1. Check whether the plugin is enabled (settings + `/reload-plugins`)
 2. If still missing → tell user, do NOT silently skip the step
 
-Override rules (alternate paths, suppression, etc.) live in `.claude/skills-registry.md` under "Override rules."
+Override rules (alternate paths, suppression, etc.) live in `.claude/skills-registry.md` under "Override rules." See that section for save-path overrides, vocabulary suppressions, and skill-shape enforcement.

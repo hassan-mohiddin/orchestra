@@ -3,6 +3,18 @@
 This rule is auto-loaded every session. It defines how Claude resolves a "situation" in the
 workflow file to a concrete skill, and what to do when resolution fails.
 
+## TLDR — Nonnegotiables
+
+- RESOLVE situations to skills via .claude/skills-registry.md only.
+- NEVER invent skill names by guessing; if not in available list, surface.
+- IF bound skill missing → check plugin enabled + /reload-plugins, then ask.
+- DO NOT silently skip workflow steps when resolution fails.
+- DO NOT hardcode plugin paths; use skill names + let Claude Code resolve.
+- WORKFLOW.md stays situation-language only — no skill names in workflow file.
+- PRECEDENCE: user-msg > project rules > registry > SKILL.md > default.
+
+<!-- Full rule body below this section -->
+
 ---
 
 ## The Three-File System

@@ -4,7 +4,7 @@
 > **Date:** 2026-05-06
 > **DRI:** Hassan Mohiddin
 > **Severity:** Medium
-> **Status:** Investigating
+> **Status:** Fix Applied
 
 ## Observed Behavior
 
@@ -76,6 +76,7 @@ Files:
 |---|---|---|---|
 | 2026-05-06 | (none yet — bug filed for v1.4 fix) | — | — |
 | 2026-05-10 | v1.4 burnt; deferred to v1.7+. Fix: extend mkdocs_hooks.py with on_files event auto-discovering docs/ subdirs not in nav and emitting nav warnings; or migrate to awesome-pages plugin. | none — deferred | Status remains Investigating; v1.7+ |
+| 2026-05-12 | Implemented BUG-005 § Fix Description (both phases together, no mkdocs_hooks.py change — install-time approach simpler than runtime plugin). Phase 1: `_scan_extra_doc_dirs(docs_dir)` returns sorted list of non-default-7, non-internal subdirs (excludes `features|bugs|adr|design|postmortems|runbooks|plans` + orchestra-internal `archive|investigations|reviews`); install-time warning surfaces extras with `--auto-nav` remediation pointer. Phase 2: `--auto-nav` flag wires `_generate_nav_entries(extras)` (hyphen-aware title-casing: `my-policies` → `My Policies`) + `_inject_nav_entries()` (inserts inside existing `nav:` block before next top-level key, preserving YAML validity). | `cli/viewer.py`: InstallResult.warnings field; _DEFAULT_7_DIRS / _INTERNAL_DIRS frozensets; _scan_extra_doc_dirs, _title_case_segment, _generate_nav_entries, _inject_nav_entries helpers; install_mkdocs accepts auto_nav param; argparse `--auto-nav` flag on install-mkdocs subcommand; main() emits warnings to stderr with ⚠ prefix. `tests/test_cli_viewer.py`: 8 new tests covering scan (default-7 / internal / files-and-hidden), warn (extras / no-warn), auto-nav (appends / yaml-parseable / hyphen-title-casing). Status: Investigating → Fix Applied — user accepted live-tempdir dry-run (Phase 1 warning fires on `docs/{policies,research}/` extras; Phase 2 `--auto-nav` injects `Policies: policies/` + `Research: research/` lines into nav block before `hooks:` key) + 8 pytest gates as verification. Bundle target: v2.0.1. | pytest 559 pass (+8 from prior 551) / pyrefly 0 / cli.lint --pre-commit clean. |
 
 ## Regression Prevention
 
@@ -94,3 +95,4 @@ Test asserts:
 | Date | Change |
 |---|---|
 | 2026-05-06 | Filed during SCALE audit. Status: Investigating. Target fix: v1.4. |
+| 2026-05-12 | Fix Applied — both Phase 1 (warn-on-extras) + Phase 2 (`--auto-nav`) shipped in single iter. 8 regression tests. Live dry-run validated both paths. Bundle target: v2.0.1. |

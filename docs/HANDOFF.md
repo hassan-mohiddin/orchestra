@@ -1,13 +1,35 @@
 # Orchestra Handoff — Session Continuity Pointer
 
-> **Last updated:** 2026-05-12 — BUG-012 SHIPPED (Status: Fix Applied). T2 enumeration test landed (commit `8af4b45`). BUG-018 surfaced (cli.lint Addresses: validator v2.0 schema gap). v2.0.0 LIVE.
-> **Last session ended:** BUG-012 v1.7.1 minor-followups aggregate tracker closed at r6 (user-confirmed flip). r5 v2 attestation (32 findings: 3 Crit + 15 Imp + 14 Min) addressed inline in r6 body. Open trackers: Post-ship #1 (lint.py split deferred v1.8+) + Post-ship #5 (A3 sync awaits BUG-018, target v2.0.1).
+> **Last updated:** 2026-05-12 — LLD-012 v2.1 PLAN READY for execution. HEAD `6745a17`.
+> **Last session ended:** Plan iter-2 v2 spec-review attestation persisted (verdict: fail; 10 Critical aggregated — 4 line-cite Criticals fixed inline, 6 adversarial Criticals deferred to v2.2/v2.3 hardening LLDs). LLD-012 iter-2 supplementary edits committed: SC-6 slash-shape aligned with `commands/<name>.md` repo convention; ship target v1.8.0 → v2.1.0. workflow.md G3/G4/G7/G8 refresh applied.
 
 ---
 
 ## 🎯 NEXT (post-compact)
 
-**Pre-v1.7 BUG sweep — bundle as v2.0.1 patch release.**
+**Execute LLD-012 v2.1 Phase 1 (Foundation).** Plan: `docs/plans/2026-05-11-lld-012-v18-implementation.md` (committed `4f7c7e2`).
+
+Phase 1 slices (8 total, sequential):
+1. **Slice 1.0** — Add `anthropic` to `pyproject.toml [project.dependencies]`. Test: `tests/test_anthropic_import.py`.
+2. **Slice 1.1** — TLDR extractor pure-parsing (`cli/tldr_extractor.py`). Test: extracts valid TLDR section.
+3. **Slice 1.2** — TLDR extractor missing-close-marker warn-and-extract-to-EOF.
+4. **Slice 1.3** — TLDR extractor multiple-TLDR-sections reject.
+5. **Slice 1.4** — TLDR extractor bullet-count / length overflow reject.
+6. **Slice 1.5** — TLDR extractor empty-section reject (fail-loud).
+7. **Slice 1.6** — Lessons store append + read helper (`cli/lessons_store.py`).
+8. **Slice 1.7** — `.claude/state/` directory + .gitignore entry. Test: `tests/test_state_dir_gitignore.py`.
+
+Phase 1 exit: pytest green, pyrefly 0, all 8 slice commits land sequentially.
+
+TDD vertical slicing per workflow §Step 4. One failing test → one impl → green → commit. NOT all-tests-then-all-impl.
+
+**Plan parallel-session interactions:** `cli/spec_review.py` interaction surface at HEAD `a35a0f7`. Phase 7 anchor symbols: `v1.0_attestation_frozen` (~lines 718-728), `if out_path.exists() and not args.force:` (~lines 730-735), PDSA gate (~line 737+). Re-grep at edit time — line numbers will drift as parallel sessions land patches.
+
+**Deferred to v2.2/v2.3 hardening (from LLD-012 r2 + plan r2 attestations)**: LLD-014 (hook signing + manifest fingerprint), LLD-015 (attestation auth + judge-identity binding + hash-chain), LLD-016 (lesson injection semantic sanitization), v2.2 (local tokenizer fallback, compaction probe n-trial statistical sampling, concurrency primitives).
+
+---
+
+## 🎯 Standing backlog (pre-v1.7 BUG sweep — bundle as v2.0.1 patch release)
 
 Onboarding-critical bugs open since v1.4, deferred through v1.5/v1.6/v1.7/v2.0.0. Now that v2.0.0 has shipped, new consumer installs will hit these on day-1. Severity-ordered sequence:
 

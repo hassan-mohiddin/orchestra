@@ -4,7 +4,7 @@
 > **Date:** 2026-05-06
 > **DRI:** Hassan Mohiddin
 > **Severity:** Critical
-> **Status:** Investigating
+> **Status:** Fix Applied
 
 ## Observed Behavior
 
@@ -99,3 +99,4 @@ Test: monkeypatch `builtins.input` in `tests/test_cli_init_interactive.py` to fe
 | 2026-05-11 | Path C fix applied: skill body now imperatively drives 3 prompts via AskUserQuestion tool; `tests/test_init_skill_prompts.py` regression gate added. Bundle target: v2.0.1 patch release. Status remains Investigating pending user fresh-repo verification. |
 | 2026-05-11 | Edge-path tightening pass: closes 6 improvisation-slack leaks (A-F) outside the fresh-install hot path — re-run branch, v1.0 detection, label-strip uniformity, subset-rename fallback, final-summary template linkage. Regression gate extended to 13 tests. Hot + edge paths now both deterministic. |
 | 2026-05-11 | Cold-read dry-run #3 pass: closes 3 remaining leaks (G/H/I) — Re-run init shortcut to cli.init --force, unwired v1.0 migration code path, prompts.md Q2 mapping contradicting SKILL.md. CLI gains --migrate-v10 flag wiring `migrate_v10_to_v11()` into main(). Regression gate extended to 17 tests. |
+| 2026-05-12 | Status: Investigating → Fix Applied. User accepted 3 dry-run passes (file-by-file inspection, cold-read trace across 4 user-flows, post-tightening verification) + 17 skill-body regression tests + cli.init --migrate-v10 end-to-end subprocess test as verification. Code shipped in commits `a35a0f7` (iter-1 hot path) + `e27382f` (iter-2 edge paths A-F) + `18041ef` (iter-3 leaks G/H/I + --migrate-v10 wiring). Bundle target: v2.0.1. |

@@ -68,10 +68,92 @@ class InstallResult:
     files_written: list[Path] = field(default_factory=list)
     files_skipped: list[Path] = field(default_factory=list)
     errors: list[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
 
     @property
     def ok(self) -> bool:
         return not self.errors
+
+
+# BUG-005: dirs that count as "default-7" content paths the template nav
+# already covers, and orchestra-internal dirs that should never appear in
+# the user-facing nav.
+_DEFAULT_7_DIRS = frozenset({
+    "features", "bugs", "adr", "design", "postmortems", "runbooks", "plans",
+})
+_INTERNAL_DIRS = frozenset({"archive", "investigations", "reviews"})
+
+
+def _scan_extra_doc_dirs(docs_dir: Path) -> list[str]:
+    """Return sorted list of non-default-7, non-internal subdirs under docs_dir.
+
+    Hidden dirs and plain files are ignored. Returns [] when docs_dir
+    doesn't exist (e.g., pre-init). Safe to call before scaffold_bucket_1.
+    """
+    if not docs_dir.is_dir():
+        return []
+    extras: list[str] = []
+    for child in docs_dir.iterdir():
+        if not child.is_dir():
+            continue
+        name = child.name
+        if name.startswith("."):
+            continue
+        if name in _DEFAULT_7_DIRS or name in _INTERNAL_DIRS:
+            continue
+        extras.append(name)
+    return sorted(extras)
+
+
+def _title_case_segment(name: str) -> str:
+    """Hyphen-aware title-casing: 'my-policies' → 'My Policies'."""
+    return " ".join(part.title() for part in name.split("-"))
+
+
+def _generate_nav_entries(extras: list[str]) -> str:
+    """Build YAML nav entry lines (2-space indent) for the given extra dir names."""
+    return "".join(
+        f"  - {_title_case_segment(name)}: {name}/\n"
+        for name in extras
+    )
+
+
+def _inject_nav_entries(mkdocs_yml: str, extras: list[str]) -> str:
+    """Insert auto-detected nav entries inside the existing `nav:` block.
+
+    Finds the line `nav:` and appends the generated entries immediately
+    after the last existing nav line (before the next blank line / top-level
+    key). YAML safety: 2-space indent matches template convention.
+    """
+    if not extras:
+        return mkdocs_yml
+    addition = _generate_nav_entries(extras)
+    lines = mkdocs_yml.splitlines(keepends=True)
+    out: list[str] = []
+    in_nav = False
+    inserted = False
+    for line in lines:
+        if not in_nav:
+            out.append(line)
+            if line.rstrip() == "nav:":
+                in_nav = True
+            continue
+        # In nav block — append our entries before the first non-nav line
+        if inserted or line.startswith("  ") or line.strip() == "":
+            if line.strip() == "" and not inserted:
+                out.append(addition)
+                inserted = True
+            out.append(line)
+        else:
+            # Top-level key reached (e.g., `hooks:`) — inject before it
+            if not inserted:
+                out.append(addition)
+                inserted = True
+            out.append(line)
+    if in_nav and not inserted:
+        # nav: was last block in file — append at end
+        out.append(addition)
+    return "".join(out)
 
 
 def _ensure_gitignore_entry(repo_root: Path, entry: str) -> bool:
@@ -127,16 +209,24 @@ def render_doc(doc: Path, output_dir: Path, format: str = "svg",
     return result
 
 
-def install_mkdocs(repo_root: Path, force: bool = False) -> InstallResult:
+def install_mkdocs(repo_root: Path, force: bool = False,
+                   auto_nav: bool = False) -> InstallResult:
     """Write 5 files (mkdocs.yml, docs/index.md, docs/tags.md,
     requirements-docs.txt, mkdocs_hooks.py) and append site/ to .gitignore.
 
-    Idempotent: skip-existing default. --force overwrites.
+    Idempotent: skip-existing default. --force overwrites. When
+    `auto_nav=True` and the repo has non-default-7 doc dirs (e.g.,
+    `docs/policies/`, `docs/research/`), append matching nav entries
+    to mkdocs.yml. Regardless of `auto_nav`, when extras are detected
+    a warning is appended to `result.warnings` listing them.
 
     BUG-007 v1.6.2: emits a post-install warning when `.pre-commit-config.yaml`
     is present, since the shipped mkdocs.yml uses a YAML python-tag for the
     mkdocs-mermaid2-plugin fence wiring which strict `check-yaml` hooks reject
     without `--unsafe`.
+
+    BUG-005 v2.0.1: scans docs/ for non-default-7 dirs after install;
+    warns + optionally rewrites mkdocs.yml nav.
     """
     templates_dir = Path(__file__).parent / "templates"
     result = InstallResult()
@@ -155,6 +245,21 @@ def install_mkdocs(repo_root: Path, force: bool = False) -> InstallResult:
         result.files_written.append(target)
 
     _ensure_gitignore_entry(repo_root, GITIGNORE_SITE_ENTRY)
+
+    # BUG-005: detect non-default-7 doc dirs not in the nav template.
+    extras = _scan_extra_doc_dirs(repo_root / "docs")
+    if extras:
+        if auto_nav:
+            mkdocs_path = repo_root / "mkdocs.yml"
+            if mkdocs_path.exists():
+                content = mkdocs_path.read_text()
+                mkdocs_path.write_text(_inject_nav_entries(content, extras))
+        else:
+            result.warnings.append(
+                f"Detected {len(extras)} non-default doc dir(s) not in "
+                f"mkdocs nav: {', '.join(extras)}. Add manually or rerun "
+                f"with --auto-nav."
+            )
 
     # BUG-007: warn when pre-commit framework is in use
     if (repo_root / ".pre-commit-config.yaml").exists():
@@ -236,6 +341,9 @@ def main(argv: list[str] | None = None) -> int:
     p_install = sub.add_parser("install-mkdocs", help="Install mkdocs config + templates")
     p_install.add_argument("--force", action="store_true",
                            help="Overwrite existing mkdocs.yml + index.md")
+    p_install.add_argument("--auto-nav", action="store_true",
+                           help="Append nav entries for non-default-7 doc dirs "
+                                "(e.g., docs/policies/, docs/research/) detected at install time.")
 
     p_build = sub.add_parser("build", help="Build static doc site via mkdocs")
     p_build.add_argument("--output", default="site")
@@ -249,12 +357,15 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         if args.cmd == "install-mkdocs":
-            result = install_mkdocs(repo_root, force=args.force)
+            result = install_mkdocs(repo_root, force=args.force,
+                                    auto_nav=args.auto_nav)
             for p in result.files_written:
                 print(f"  + {p.relative_to(repo_root) if p.is_relative_to(repo_root) else p}")
             for p in result.files_skipped:
                 rel = p.relative_to(repo_root) if p.is_relative_to(repo_root) else p
                 print(f"  = {rel} (exists; use --force to overwrite)")
+            for w in result.warnings:
+                print(f"  ⚠ {w}", file=sys.stderr)
             for err in result.errors:
                 print(f"  ! {err}", file=sys.stderr)
             return 0 if result.ok else 1

@@ -204,6 +204,108 @@ def test_build_site_errors_when_mkdocs_absent(tmp_repo: Path) -> None:
             build_site(tmp_repo)
 
 
+# ---------------------------------------------------------------------------
+# BUG-005 — auto-detect non-default-7 doc dirs for mkdocs nav
+# ---------------------------------------------------------------------------
+
+
+def _make_doc(repo: Path, rel: str) -> None:
+    p = repo / rel
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text("# stub\n")
+
+
+def test_scan_extra_doc_dirs_returns_non_default_7(tmp_repo: Path) -> None:
+    """BUG-005 — scan returns user-added subdirs, excludes default-7."""
+    from cli.viewer import _scan_extra_doc_dirs
+    _make_doc(tmp_repo, "docs/features/x.md")    # default-7
+    _make_doc(tmp_repo, "docs/policies/y.md")    # extra
+    _make_doc(tmp_repo, "docs/research/z.md")    # extra
+    extras = _scan_extra_doc_dirs(tmp_repo / "docs")
+    assert extras == ["policies", "research"]   # sorted alphabetically, no default-7 names
+
+
+def test_scan_extra_doc_dirs_skips_internal(tmp_repo: Path) -> None:
+    """BUG-005 — orchestra-internal dirs (archive, investigations, reviews) excluded."""
+    from cli.viewer import _scan_extra_doc_dirs
+    _make_doc(tmp_repo, "docs/archive/x.md")
+    _make_doc(tmp_repo, "docs/investigations/y.md")
+    _make_doc(tmp_repo, "docs/reviews/z.md")
+    extras = _scan_extra_doc_dirs(tmp_repo / "docs")
+    assert extras == []
+
+
+def test_scan_extra_doc_dirs_skips_files_and_hidden(tmp_repo: Path) -> None:
+    """BUG-005 — top-level files and hidden dirs ignored."""
+    from cli.viewer import _scan_extra_doc_dirs
+    (tmp_repo / "docs").mkdir(exist_ok=True)
+    (tmp_repo / "docs" / "STANDARDS.md").write_text("# standards\n")
+    (tmp_repo / "docs" / ".cache").mkdir()
+    _make_doc(tmp_repo, "docs/policies/x.md")
+    extras = _scan_extra_doc_dirs(tmp_repo / "docs")
+    assert extras == ["policies"]
+
+
+def test_install_mkdocs_warns_on_extras(tmp_repo: Path) -> None:
+    """BUG-005 — extras present → InstallResult.warnings populated."""
+    _make_doc(tmp_repo, "docs/policies/x.md")
+    _make_doc(tmp_repo, "docs/research/y.md")
+    result = install_mkdocs(tmp_repo)
+    assert any("policies" in w and "research" in w for w in result.warnings), (
+        "Warning must enumerate extra dirs by name."
+    )
+    assert any("--auto-nav" in w for w in result.warnings), (
+        "Warning must point at the --auto-nav remediation."
+    )
+
+
+def test_install_mkdocs_no_warning_default_7_only(tmp_repo: Path) -> None:
+    """BUG-005 — only default-7 or nothing → no warning."""
+    _make_doc(tmp_repo, "docs/features/x.md")
+    _make_doc(tmp_repo, "docs/bugs/y.md")
+    result = install_mkdocs(tmp_repo)
+    assert result.warnings == []
+
+
+def test_install_mkdocs_auto_nav_appends_extras(tmp_repo: Path) -> None:
+    """BUG-005 — auto_nav=True + extras → mkdocs.yml nav block contains extras."""
+    _make_doc(tmp_repo, "docs/policies/x.md")
+    _make_doc(tmp_repo, "docs/research/y.md")
+    result = install_mkdocs(tmp_repo, auto_nav=True)
+    mkdocs_yml = (tmp_repo / "mkdocs.yml").read_text()
+    assert "Policies: policies/" in mkdocs_yml
+    assert "Research: research/" in mkdocs_yml
+    _ = result
+
+
+def test_install_mkdocs_auto_nav_yaml_parseable(tmp_repo: Path) -> None:
+    """BUG-005 — generated nav must keep mkdocs.yml as valid YAML."""
+    import yaml
+    _make_doc(tmp_repo, "docs/policies/x.md")
+    _make_doc(tmp_repo, "docs/research/y.md")
+    install_mkdocs(tmp_repo, auto_nav=True)
+    mkdocs_yml = (tmp_repo / "mkdocs.yml").read_text()
+    # Strip the python-tag line (mermaid2 fence) before yaml.safe_load
+    safe_yml = "\n".join(
+        line for line in mkdocs_yml.splitlines()
+        if "!!python" not in line
+    )
+    data = yaml.safe_load(safe_yml)
+    assert isinstance(data, dict)
+    assert "nav" in data
+    nav_labels = [list(item.keys())[0] if isinstance(item, dict) else item for item in data["nav"]]
+    assert "Policies" in nav_labels
+    assert "Research" in nav_labels
+
+
+def test_install_mkdocs_auto_nav_title_cases_hyphens(tmp_repo: Path) -> None:
+    """BUG-005 — hyphenated dir names get per-segment title-casing."""
+    from cli.viewer import _generate_nav_entries
+    out = _generate_nav_entries(["my-policies", "research-notes"])
+    assert "My Policies: my-policies/" in out
+    assert "Research Notes: research-notes/" in out
+
+
 def test_publish_gh_pages_refuses_dirty_tree(tmp_repo: Path) -> None:
     fake_status = MagicMock(stdout=" M somefile.md\n", returncode=0)
     with patch("cli.viewer.shutil.which", return_value="/usr/bin/mkdocs"), \

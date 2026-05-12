@@ -1,5 +1,17 @@
 # Task Tracking + Artifact Mapping
 
+## TLDR — Nonnegotiables
+
+- TaskCreate at START of multi-step work; never batch at end.
+- MARK in_progress when starting; completed only when fully done.
+- DO NOT write task.md, implementation_plan.md, walkthrough.md (Gemini artifacts).
+- SAVE implementation plans to docs/plans/YYYY-MM-DD-name.md ONLY.
+- OVERRIDE superpowers default — never create docs/superpowers/ directories.
+- DESIGN DOC is canonical (not HLD); ADR is recorded (not deliberated).
+- SEE docs/STANDARDS.md for required metadata + sections + naming.
+
+<!-- Full rule body below this section -->
+
 ## Task Tracking (Claude-Native)
 
 Use built-in task tools for ALL multi-step work. Create tasks at the START, not the end.

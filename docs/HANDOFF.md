@@ -1,7 +1,7 @@
 # Orchestra Handoff — Session Continuity Pointer
 
-> **Last updated:** 2026-05-11 late night — v2.0.0 TAGGED + PUSHED + RELEASE LIVE. v2.1 milestone + 7 backlog issues filed. BUG-016 vocab-canon migration SHIPPED (12/12 slices). LLD-011 spec-review v2 ALL phases shipped + 2-iter dogfood complete.
-> **Last session ended:** v2.0.0 launch complete. GitHub release: https://github.com/hassan-mohiddin/orchestra/releases/tag/v2.0.0. v2.1 milestone #1 + issues #1-#7 filed. pytest 515 / pyrefly 0 / lint clean / eval 12/12.
+> **Last updated:** 2026-05-12 — BUG-012 SHIPPED (Status: Fix Applied). T2 enumeration test landed (commit `8af4b45`). BUG-018 surfaced (cli.lint Addresses: validator v2.0 schema gap). v2.0.0 LIVE.
+> **Last session ended:** BUG-012 v1.7.1 minor-followups aggregate tracker closed at r6 (user-confirmed flip). r5 v2 attestation (32 findings: 3 Crit + 15 Imp + 14 Min) addressed inline in r6 body. Open trackers: Post-ship #1 (lint.py split deferred v1.8+) + Post-ship #5 (A3 sync awaits BUG-018, target v2.0.1).
 
 ---
 
@@ -406,10 +406,14 @@ v1.7.1 = paperwork-cleanup + 2 small bug fixes. Decided NOT to do full doc super
 
 ### Open BUGs (deferred)
 
-- **BUG-001 / BUG-002 / BUG-004 / BUG-005** — pre-v1.7 backlog, never triaged. Could be already fixed by LLD-008/009/010. Triage when v1.7.1 closes.
-- **BUG-012** — v1.7.1 minor-followups aggregate (open items: LLD-008 #3 + cli/lint.py split deferred v1.8)
-- **BUG-013** — slash command naming inconsistency (Investigating; fix planned v1.7.1)
-- **BUG-014** — L4 doc-id-burn rejects bare-name design supersession (Investigating; fix planned v1.7.1)
+- **BUG-001** — `/orchestra:init` improvises instead of AskUserQuestion (parallel-session WIP; see git log `wip: BUG-001 *` commits)
+- **BUG-002 / BUG-004 / BUG-005** — pre-v1.7 backlog, never triaged. Could be already fixed by LLD-008/009/010. Triage post-BUG-001.
+- ~~**BUG-012**~~ — **Fix Applied 2026-05-12** (commit `a0c8fa9`). Aggregate tracker closed. Open trackers (not blocking BUG-012): Post-ship #1 (lint.py split deferred v1.8+) + Post-ship #5 (A3 prose sync awaits BUG-018; target v2.0.1).
+- **BUG-013** — slash command naming inconsistency (Investigating; fix planned v2.0.1)
+- **BUG-014** — L4 doc-id-burn rejects bare-name design supersession (Fix Applied per parallel-session work)
+- **BUG-016** — scattered vocabulary canon (Fix Applied — 12 slices shipped)
+- **BUG-017** — spec-review v2 notes list vs schema string (Fix Applied — schema canon fix at commit `1e9ebe5`)
+- **BUG-018** — cli.lint Addresses: validator v2.0 schema gap (Investigating, iter-2, High; blocks tiered narrow-change against v2.0 attestations; target v2.0.1)
 
 ---
 

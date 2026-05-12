@@ -34,6 +34,11 @@ def extract_tldr(text: str) -> TldrSection | TldrError:
     matches = list(TLDR_HEADER_RE.finditer(text))
     if not matches:
         return TldrError(reason="no_tldr_section")
+    if len(matches) > 1:
+        return TldrError(
+            reason="ambiguous_tldr",
+            detail=f"found {len(matches)} TLDR sections; expected exactly 1",
+        )
     header_end = matches[0].end()
     close_idx = text.find(TLDR_CLOSE_MARKER, header_end)
     if close_idx == -1:

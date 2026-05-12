@@ -2,7 +2,7 @@ import logging
 
 import pytest
 
-from cli.tldr_extractor import TldrSection, extract_tldr
+from cli.tldr_extractor import TldrError, TldrSection, extract_tldr
 
 
 def test_extracts_valid_tldr_section() -> None:
@@ -41,3 +41,22 @@ def test_missing_close_marker_warns_and_extracts_to_eof(
     assert any(
         "close marker" in rec.message.lower() for rec in caplog.records
     ), f"expected WARN about missing close marker, got {caplog.records!r}"
+
+
+def test_multiple_tldr_sections_rejects() -> None:
+    text = (
+        "## TLDR — Nonnegotiables\n"
+        "\n"
+        "- first.\n"
+        "\n"
+        "<!-- Full rule body below this section -->\n"
+        "\n"
+        "## TLDR — Nonnegotiables\n"
+        "\n"
+        "- second.\n"
+        "\n"
+        "<!-- Full rule body below this section -->\n"
+    )
+    result = extract_tldr(text)
+    assert isinstance(result, TldrError)
+    assert result.reason == "ambiguous_tldr"

@@ -99,6 +99,11 @@ RUNBOOK_SUPERSESSION_RE = re.compile(r"^RUNBOOK-([a-z][a-z0-9-]*)-r(\d+)\.md$")
 ADR_FIRST_ITERATION_RE = re.compile(r"^ADR-(\d+)-([a-z][a-z0-9-]*)\.md$")
 ADR_SUPERSESSION_RE = re.compile(r"^ADR-(\d+)-([a-z][a-z0-9-]*)-r(\d+)\.md$")
 
+# ADR-002 — bare-name regex for SKILL.md `name:` frontmatter validation.
+# Strict canon: lowercase ASCII, hyphen-separated, no plugin prefix, no
+# `:` or `/`. Mirrors ADR-002 §Decision rules 2-3.
+SKILL_NAME_BARE_RE = re.compile(r"^[a-z][a-z0-9-]*$")
+
 # ---------------------------------------------------------------------------
 # L2 required-section helpers (slice 3 — canon §4.8 + tolerant prefix-match)
 # ---------------------------------------------------------------------------
@@ -1117,6 +1122,124 @@ def lint_doc_id_burn(new_doc_path: Path, repo_root: Path) -> list[Finding]:
 
 
 # ---------------------------------------------------------------------------
+# ADR-002 — skill-name field validation (--skill-names)
+# ---------------------------------------------------------------------------
+
+
+def lint_skill_names(repo_root: Path) -> list[Finding]:
+    """Walk skills/**/SKILL.md, validate `name:` frontmatter against ADR-002.
+
+    Canon source: `docs/adr/ADR-002-skill-naming-convention.md § Decision`.
+    Rules:
+    - `name:` MUST be present and non-empty
+    - Value MUST match `^[a-z][a-z0-9-]*$` (bare lowercase + hyphens)
+    - MUST NOT start with `orchestra-` (plugin namespacing is via shims)
+    - MUST NOT contain `:` or `/` characters
+    - Sub-skills under `skills/<parent>/<subskill>/SKILL.md` follow same rules
+      AND additionally MUST NOT carry the parent skill's name as prefix
+      (e.g., `name: design-docs-init` rejected — use bare `name: init`)
+
+    Returns one Finding per violation. Empty list = all skills pass.
+    """
+    import yaml as _yaml
+
+    skills_dir = repo_root / "skills"
+    findings: list[Finding] = []
+    if not skills_dir.is_dir():
+        return findings
+
+    for skill_md in skills_dir.rglob("SKILL.md"):
+        rel = skill_md.relative_to(repo_root)
+        loc = str(rel)
+        try:
+            body = skill_md.read_text(encoding="utf-8")
+        except OSError as e:
+            findings.append(Finding("error", loc, f"unreadable: {e}"))
+            continue
+
+        if not body.startswith("---"):
+            findings.append(Finding(
+                "error", loc, "SKILL.md missing YAML frontmatter (must start with `---`)"
+            ))
+            continue
+        try:
+            _, fm_raw, _ = body.split("---", 2)
+        except ValueError:
+            findings.append(Finding(
+                "error", loc, "SKILL.md frontmatter not closed (expected second `---`)"
+            ))
+            continue
+        try:
+            fm = _yaml.safe_load(fm_raw) or {}
+        except _yaml.YAMLError as e:
+            findings.append(Finding("error", loc, f"YAML frontmatter parse error: {e}"))
+            continue
+        if not isinstance(fm, dict):
+            findings.append(Finding("error", loc, "frontmatter must be a YAML mapping"))
+            continue
+
+        if "name" not in fm:
+            findings.append(Finding(
+                "error", loc, "missing `name:` field (ADR-002 §Decision rule 2)"
+            ))
+            continue
+        name_val = fm["name"]
+        if not isinstance(name_val, str) or not name_val:
+            findings.append(Finding(
+                "error", loc,
+                f"`name:` must be a non-empty string, got {name_val!r}"
+            ))
+            continue
+
+        if name_val.startswith("orchestra-"):
+            findings.append(Finding(
+                "error", loc,
+                f"`name: {name_val}` has forbidden `orchestra-` prefix — use bare "
+                f"`name: {name_val.removeprefix('orchestra-')}` and ship slash via "
+                f"`commands/<name>.md` shim (ADR-002 §Decision rule 2)"
+            ))
+            continue
+        if ":" in name_val:
+            findings.append(Finding(
+                "error", loc,
+                f"`name: {name_val}` contains forbidden `:` character — use bare "
+                f"identifier without colon (ADR-002 §Decision rule 2)"
+            ))
+            continue
+        if "/" in name_val:
+            findings.append(Finding(
+                "error", loc,
+                f"`name: {name_val}` contains forbidden `/` character — use bare "
+                f"identifier without slash (ADR-002 §Decision rule 2)"
+            ))
+            continue
+        if not SKILL_NAME_BARE_RE.match(name_val):
+            findings.append(Finding(
+                "error", loc,
+                f"`name: {name_val}` does not match bare-name grammar "
+                f"`^[a-z][a-z0-9-]*$` (ADR-002 §Decision rule 2)"
+            ))
+            continue
+
+        # Sub-skill parent-prefix rejection: if this SKILL.md is at
+        # `skills/<parent>/<subskill>/SKILL.md` and `name:` starts with
+        # `<parent>-`, flag it. Bare `name: <subskill>` is required.
+        rel_parts = rel.parts
+        if len(rel_parts) >= 4 and rel_parts[0] == "skills":
+            parent_dir = rel_parts[1]
+            if name_val.startswith(f"{parent_dir}-"):
+                findings.append(Finding(
+                    "error", loc,
+                    f"sub-skill `name: {name_val}` carries parent prefix "
+                    f"`{parent_dir}-` — use bare "
+                    f"`name: {name_val.removeprefix(f'{parent_dir}-')}` "
+                    f"(ADR-002 §Decision rule 3)"
+                ))
+
+    return findings
+
+
+# ---------------------------------------------------------------------------
 # Commit validation
 # ---------------------------------------------------------------------------
 
@@ -1545,6 +1668,11 @@ def lint_staged(repo_root: Path) -> list[Finding]:
     if staged_attestations:
         findings.extend(lint_attestation_path_resolution(repo_root, staged_attestations))
 
+    # ADR-002 — validate skill name fields only when a SKILL.md is staged.
+    # Avoids penalizing routine doc/code commits with skill-tree audit cost.
+    if any(p.startswith("skills/") and p.endswith("SKILL.md") for p in staged):
+        findings.extend(lint_skill_names(repo_root))
+
     return findings
 
 
@@ -1572,6 +1700,8 @@ def main(argv: list[str] | None = None) -> int:
                    help="L2-finalize: read pending + msg + staged; apply tiered rule")
     g.add_argument("--pre-stage-check", metavar="DOC_PATH",
                    help="Author pre-stage check against working tree + draft commit msg")
+    g.add_argument("--skill-names", action="store_true",
+                   help="Validate skills/**/SKILL.md `name:` fields against ADR-002")
     parser.add_argument("--commit-msg-draft",
                         help="Draft commit message text (used with --pre-stage-check)")
     parser.add_argument("--mermaid", action="store_true", default=None,
@@ -1614,6 +1744,8 @@ def main(argv: list[str] | None = None) -> int:
             print("error: --pre-stage-check requires --commit-msg-draft <text>", file=sys.stderr)
             return 2
         return lint_pre_stage_check(args.pre_stage_check, args.commit_msg_draft, root)
+    elif args.skill_names:
+        findings = lint_skill_names(root)
     elif args.pre_commit:
         findings = lint_staged(root)
         if run_mermaid:
